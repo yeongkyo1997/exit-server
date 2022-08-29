@@ -1,0 +1,42 @@
+{
+  "template": "product-*",
+  "index_patterns": ["*"],
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "my_tokenizer",
+          "filter": ["lowercase", "unique", "my_filter", "lowercase"]
+        }
+      },
+      "tokenizer": {
+        "my_tokenizer": {
+          "type": "nGram",
+          "min_gram": "1",
+          "max_gram": "10"
+        }
+      },
+      "filter": {
+        "my_filter": {
+          "type": "stop",
+          "ignore_case": true,
+          "stopwrods_path": "/usr/share/logstash/stopword.txt",
+          "stopwords": ["_english_", "_cjk_"]
+        }
+      }
+    },
+    "max_ngram_diff": "10"
+  },
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "my_analyzer"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "my_analyzer"
+      }
+    }
+  }
+}
