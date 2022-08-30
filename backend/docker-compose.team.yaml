@@ -1,20 +1,18 @@
-version: "3.7"
+version: '3.7'
 
 services:
   team-backend:
-    image: galvanic-cirrus-360400/team-backend:0.01
-    platform: linux/x86_64
     build:
       context: .
-      dockerfile: Dockerfile.prod
-    # volumes:
-    #   - ./src:/myfolder/src
-    # ports:
-    #   - 3000:3000
-    # env_file:
-    #   - ./.env
-    # environment:brew
-    #   - TZ=Asia/Seoul
+      dockerfile: Dockerfile.team
+    volumes:
+      - ./src:/teamfolder/src
+    ports:
+      - 8080:8080
+    env_file:
+      - ./.env.team
+    environment:
+      - TZ=Asia/Seoul
 
   # my-database:
   #   platform: linux/x86_64
@@ -51,10 +49,11 @@ services:
   #   environment:
   #     TZ: Asia/Seoul
 
-  # # kibana:
-  # #   image: kibana:7.17.0
-  # #   environment:
-  # #     ELASTICSEARCH_URL: http://elasticsearch:9200
-  # #     ELASTICSEARCH_HOST: http://elasticsearch:9200
-  # #   ports:
-  # #     - 5601:5601
+  # kibana:
+  #   image: kibana:7.17.0
+  #   environment:
+  #     ELASTICSEARCH_URL: http://elasticsearch:9200
+  #     ELASTICSEARCH_HOST: http://elasticsearch:9200
+  #   ports:
+  #     - 5601:5601
+

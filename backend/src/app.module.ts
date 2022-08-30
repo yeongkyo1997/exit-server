@@ -25,11 +25,11 @@ import * as redisStore from "cache-manager-redis-store";
       synchronize: true,
       logging: true,
     }),
-    CacheModule.register<RedisClientOptions>({
-      store: redisStore,
-      url: "redis://my-redis:6379",
-      isGlobal: true,
-    }),
+//    CacheModule.register<RedisClientOptions>({
+//      store: redisStore,
+//      url: "redis://my-redis:6379",
+//      isGlobal: true,
+//    }),
     UsersModule,
   ],
 })
