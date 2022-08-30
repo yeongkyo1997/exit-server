@@ -1,8 +1,8 @@
 version: "3.7"
 
 services:
-  my-backend:
-    image: galvanic-cirrus-360400/my-backend:0.01
+  team-backend:
+    image: galvanic-cirrus-360400/team-backend:0.01
     platform: linux/x86_64
     build:
       context: .
@@ -16,7 +16,7 @@ services:
     # environment:brew
     #   - TZ=Asia/Seoul
 
-  # my-database:
+  # team-database:
   #   platform: linux/x86_64
   #   image: mysql:latest
   #   environment:
@@ -26,7 +26,7 @@ services:
   #   ports:
   #     - 3306:3306
 
-  # my-redis:
+  # team-redis:
   #   image: redis:latest
   #   ports:
   #     - 6379:6379

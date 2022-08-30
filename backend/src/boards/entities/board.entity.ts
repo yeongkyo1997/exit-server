@@ -1,8 +1,8 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
-import { Board } from "src/boards/entities/board.entity";
+import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
-import { UserImage } from "src/user-images/entities/user-image.entity";
+import { User } from "src/users/entities/user.entity";
 import {
   Column,
   CreateDateColumn,
@@ -18,37 +18,41 @@ import {
 
 @Entity()
 @ObjectType()
-export class User {
+export class Board {
   @PrimaryGeneratedColumn("uuid")
   @Field(() => String)
   id: string;
 
   @Column()
   @Field(() => String)
-  email: string;
+  title: string;
 
   @Column()
   @Field(() => String)
-  password: string;
+  context: string;
 
   @Column()
-  @Field(() => String)
-  nickname: string;
+  @Field(() => Int)
+  num: number;
 
   @Column()
   @Field(() => String)
   description: string;
 
   @Column()
-  @Field(() => Boolean)
-  isRemote: boolean;
+  @Field(() => String)
+  leader: string;
 
   @Column()
-  @Field(() => Int)
-  point: number;
+  @Field(() => Boolean)
+  isPremium: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  startAt: Date;
+
+  @Column()
+  @Field(() => Date)
+  endAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
@@ -56,27 +60,23 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @Column()
-  @Field(() => String)
-  history: string;
-
   @JoinColumn()
-  @OneToOne(() => UserImage)
-  @Field(() => UserImage)
-  imageId: UserImage;
+  @OneToOne(() => BoardImage)
+  @Field(() => BoardImage)
+  imageId: BoardImage;
 
   @JoinTable()
-  @ManyToMany(() => Tag, (tags) => tags.users)
+  @ManyToMany(() => Tag, (tags) => tags.boards)
   @Field(() => [Tag])
   tags: Tag[];
 
   @JoinTable()
-  @ManyToMany(() => Board, (boards) => boards.users)
-  @Field(() => [Board])
-  boards: Board[];
+  @ManyToMany(() => User, (users) => users.boards)
+  @Field(() => [User])
+  users: User[];
 
   @JoinTable()
-  @ManyToMany(() => Keyword, (keywords) => keywords.users)
+  @ManyToMany(() => Keyword, (keywords) => keywords.boards)
   @Field(() => [Keyword])
   keywords: Keyword[];
 }
