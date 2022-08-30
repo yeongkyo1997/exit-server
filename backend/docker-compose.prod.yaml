@@ -1,8 +1,8 @@
 version: "3.7"
 
 services:
-  team-backend:
-    image: galvanic-cirrus-360400/team-backend:0.01
+  my-backend:
+    image: galvanic-cirrus-360400/my-backend:0.01
     platform: linux/x86_64
     build:
       context: .
