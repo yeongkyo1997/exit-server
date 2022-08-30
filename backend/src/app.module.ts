@@ -5,6 +5,17 @@ import "dotenv/config";
 import { GraphQLModule } from "@nestjs/graphql";
 import { RedisClientOptions } from "redis";
 import { UsersModule } from './users/users.module';
+import { BoardsModule } from './boards/boards.module';
+import { KeywordsModule } from './keywords/keywords.module';
+import { TagsModule } from './tags/tags.module';
+import { CategoriesModule } from './categories/categories.module';
+import { LikesModule } from './likes/likes.module';
+import { PaymentsModule } from './payments/payments.module';
+import { UserUrlsModule } from './user-urls/user-urls.module';
+import { UserImagesModule } from './user-images/user-images.module';
+import { BoardImagesModule } from './board-images/board-images.module';
+import { CommentsModule } from './comments/comments.module';
+import { SubCommentsModule } from './sub-comments/sub-comments.module';
 import * as redisStore from "cache-manager-redis-store";
 
 @Module({
@@ -31,6 +42,17 @@ import * as redisStore from "cache-manager-redis-store";
       isGlobal: true,
     }),
     UsersModule,
+    BoardsModule,
+    KeywordsModule,
+    TagsModule,
+    CategoriesModule,
+    LikesModule,
+    PaymentsModule,
+    UserUrlsModule,
+    UserImagesModule,
+    BoardImagesModule,
+    CommentsModule,
+    SubCommentsModule,
   ],
 })
 export class AppModule {}
