@@ -4,6 +4,7 @@ import { Category } from "src/categories/entities/category.entity";
 import { User } from "src/users/entities/user.entity";
 import {
   Column,
+  DeleteDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
@@ -21,6 +22,9 @@ export class Tag {
   @Column()
   @Field(() => String)
   name: string;
+
+  @DeleteDateColumn()
+  deleteAt: Date;
 
   @ManyToOne(() => Category)
   @Field(() => Category)
