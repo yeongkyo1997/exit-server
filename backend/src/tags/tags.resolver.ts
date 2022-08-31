@@ -32,4 +32,9 @@ export class TagsResolver {
   removeTag(@Args("id", { type: () => String }) id: string) {
     return this.tagsService.remove(id);
   }
+
+  @Mutation(() => Tag)
+  restoreTag(@Args("id", { type: () => String }) id: string) {
+    return this.tagsService.restore(id);
+  }
 }
