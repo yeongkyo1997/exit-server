@@ -6,30 +6,41 @@ import { UpdateBoardInput } from "./dto/update-board.input";
 
 @Resolver(() => Board)
 export class BoardsResolver {
-  constructor(private readonly boardsService: BoardsService) {}
+  constructor(
+    private readonly boardsService: BoardsService //
+  ) {}
 
-  @Mutation(() => Board)
-  createBoard(@Args("createBoardInput") createBoardInput: CreateBoardInput) {
-    return this.boardsService.create(createBoardInput);
-  }
-
-  @Query(() => [Board], { name: "boards" })
-  findAll() {
+  @Query(() => [Board])
+  fetchBoards() {
     return this.boardsService.findAll();
   }
 
-  @Query(() => Board, { name: "board" })
-  findOne(@Args("id", { type: () => String }) id: string) {
-    return this.boardsService.findOne(id);
+  @Query(() => Board)
+  fetchBoard(
+    @Args("boardId") boardId: string //
+  ) {
+    return this.boardsService.findOne({ boardId });
   }
 
   @Mutation(() => Board)
-  updateBoard(@Args("updateBoardInput") updateBoardInput: UpdateBoardInput) {
-    return this.boardsService.update(updateBoardInput.id, updateBoardInput);
+  createBoard(
+    @Args("createBoardInput") createBoardInput: CreateBoardInput //
+  ) {
+    return this.boardsService.create({ createBoardInput });
   }
 
   @Mutation(() => Board)
-  removeBoard(@Args("id", { type: () => String }) id: string) {
-    return this.boardsService.remove(id);
+  async updateBoard(
+    @Args("boardId") boardId: string,
+    @Args("updateBoardInput") updateBoardInput: UpdateBoardInput //
+  ) {
+    return this.boardsService.update({ boardId, updateBoardInput });
+  }
+
+  @Mutation(() => Boolean)
+  removeBoard(
+    @Args("boardId") boardId: string //
+  ) {
+    return this.boardsService.remove({ boardId });
   }
 }

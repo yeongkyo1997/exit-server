@@ -43,16 +43,20 @@ export class Board {
   @Field(() => String)
   leader: string;
 
-  @Column()
-  @Field(() => Boolean)
-  isPremium: boolean;
+  @Column({ default: 0 })
+  @Field(() => Int)
+  price: number;
 
-  @CreateDateColumn()
+  @Column()
+  @Field(() => Date)
   startAt: Date;
 
   @Column()
   @Field(() => Date)
   endAt: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
@@ -63,7 +67,7 @@ export class Board {
   @JoinColumn()
   @OneToOne(() => BoardImage)
   @Field(() => BoardImage)
-  imageId: BoardImage;
+  boardImage: BoardImage;
 
   @JoinTable()
   @ManyToMany(() => Tag, (tags) => tags.boards)
