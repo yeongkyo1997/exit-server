@@ -35,8 +35,13 @@ export class CategoriesResolver {
     );
   }
 
-  @Mutation(() => Category)
+  @Mutation(() => Boolean)
   removeCategory(@Args("id", { type: () => String }) id: string) {
     return this.categoriesService.remove(id);
+  }
+
+  @Mutation(() => Category)
+  restoreCategory(@Args("id", { type: () => String }) id: string) {
+    return this.categoriesService.restore(id);
   }
 }
