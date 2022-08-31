@@ -1,4 +1,5 @@
-import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { ObjectType, Field } from "@nestjs/graphql";
+import { Comment } from "src/comments/entities/comment.entity";
 import {
   Column,
   Entity,
