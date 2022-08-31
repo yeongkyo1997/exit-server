@@ -1,4 +1,4 @@
-import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { ObjectType, Field } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
 import {
   Column,
