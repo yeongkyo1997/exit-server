@@ -98,6 +98,12 @@ type SubComment {
   commentId: [Comment!]!
 }
 
+type PaymentHistory {
+  id: String!
+  userId: [User!]!
+  boardId: [Board!]!
+}
+
 type Query {
   users: [User!]!
   user(id: String!): User!
@@ -123,6 +129,8 @@ type Query {
   comment(id: String!): Comment!
   subComments: [SubComment!]!
   subComment(id: Int!): SubComment!
+  paymentHistories: [PaymentHistory!]!
+  paymentHistory(id: Int!): PaymentHistory!
 }
 
 type Mutation {
@@ -162,6 +170,9 @@ type Mutation {
   createSubComment(createSubCommentInput: CreateSubCommentInput!): SubComment!
   updateSubComment(updateSubCommentInput: UpdateSubCommentInput!): SubComment!
   removeSubComment(id: Int!): SubComment!
+  createPaymentHistory(createPaymentHistoryInput: CreatePaymentHistoryInput!): PaymentHistory!
+  updatePaymentHistory(updatePaymentHistoryInput: UpdatePaymentHistoryInput!): PaymentHistory!
+  removePaymentHistory(id: Int!): PaymentHistory!
 }
 
 input CreateUserInput {
@@ -270,4 +281,15 @@ input CreateSubCommentInput {
 
 input UpdateSubCommentInput {
   id: String!
+}
+
+input CreatePaymentHistoryInput {
+  """Example field (placeholder)"""
+  exampleField: Int!
+}
+
+input UpdatePaymentHistoryInput {
+  """Example field (placeholder)"""
+  exampleField: Int
+  id: Int!
 }

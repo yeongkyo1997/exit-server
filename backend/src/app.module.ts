@@ -15,6 +15,7 @@ import { UserImagesModule } from "./user-images/user-images.module";
 import { BoardImagesModule } from "./board-images/board-images.module";
 import { CommentsModule } from "./comments/comments.module";
 import { SubCommentsModule } from "./sub-comments/sub-comments.module";
+import { PaymentHistoriesModule } from './payment-histories/payment-histories.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { SubCommentsModule } from "./sub-comments/sub-comments.module";
     BoardImagesModule,
     CommentsModule,
     SubCommentsModule,
+    PaymentHistoriesModule,
   ],
 })
 export class AppModule {}
