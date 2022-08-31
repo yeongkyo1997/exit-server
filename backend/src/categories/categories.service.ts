@@ -62,4 +62,12 @@ export class CategoriesService {
     }
     return this.categoryRepository.softDelete({ id });
   }
+
+  async restore(id: string) {
+    // 카테고리가 존재하지 않는다면 에러를 던진다.
+    if (!(await this.categoryRepository.findOne({ where: { id } }))) {
+      throw new Error("존재하지 않는 카테고리입니다.");
+    }
+    return this.categoryRepository.restore({ id });
+  }
 }
