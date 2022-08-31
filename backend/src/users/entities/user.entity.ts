@@ -63,7 +63,7 @@ export class User {
   @JoinColumn()
   @OneToOne(() => UserImage)
   @Field(() => UserImage)
-  imageId: UserImage;
+  userImage: UserImage;
 
   @JoinTable()
   @ManyToMany(() => Tag, (tags) => tags.users)
