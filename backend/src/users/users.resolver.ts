@@ -1,9 +1,11 @@
-import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
 import { UsersService } from "./users.service";
 import { User } from "./entities/user.entity";
 import { CreateUserInput } from "./dto/create-user.input";
 import { UpdateUserInput } from "./dto/update-user.input";
 import * as bcrypt from "bcrypt";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -32,15 +34,18 @@ export class UsersResolver {
   }
 
   @Mutation(() => User)
-  removeUser(@Args("userId", { type: () => String }) userId: string) {
-    return this.usersService.remove({ userId });
+  removeUser(@Args("email", { type: () => String }) email: string) {
+    return this.usersService.remove({ email });
   }
 
+  // 로그인한 user 정보 수정
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => User)
   updateUser(
-    @Args("userId") userId: string,
+    @Context() context: any,
     @Args("updateUserInput") updateUserInput: UpdateUserInput
   ) {
-    return this.usersService.update({ userId, updateUserInput });
+    const email = context.req.user.email;
+    return this.usersService.update({ email, updateUserInput });
   }
 }
