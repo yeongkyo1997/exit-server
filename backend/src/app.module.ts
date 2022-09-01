@@ -17,6 +17,7 @@ import { CommentsModule } from "./comments/comments.module";
 import { SubCommentsModule } from "./sub-comments/sub-comments.module";
 import * as redisStore from "cache-manager-redis-store";
 import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
+import { RedisClientOptions } from "redis";
 
 @Module({
   imports: [
