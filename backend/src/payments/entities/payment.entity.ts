@@ -24,8 +24,4 @@ export class Payment {
   @ManyToOne(() => User)
   @Field(() => [User])
   user: User[];
-
-  @ManyToOne(() => Comment)
-  @Field(() => [Comment])
-  comment: Comment[];
 }
