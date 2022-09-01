@@ -3,7 +3,6 @@ import { Comment } from "src/comments/entities/comment.entity";
 import {
   Column,
   Entity,
-  JoinTable,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -19,7 +18,6 @@ export class SubComment {
   @Field(() => String)
   subComment: string;
 
-  @JoinTable()
   @ManyToOne(() => Comment)
   @Field(() => [Comment])
   commentId: Comment[];

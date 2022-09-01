@@ -4,7 +4,6 @@ import { User } from "src/users/entities/user.entity";
 import {
   Column,
   Entity,
-  JoinTable,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -20,12 +19,10 @@ export class Comment {
   @Field(() => String)
   comment: string;
 
-  @JoinTable()
   @ManyToOne(() => Board)
   @Field(() => [Board])
   board: Board[];
 
-  @JoinTable()
   @ManyToOne(() => User)
   @Field(() => [User])
   user: User[];
