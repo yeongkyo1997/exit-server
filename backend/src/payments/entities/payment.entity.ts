@@ -1,5 +1,4 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
-import { Comment } from "src/comments/entities/comment.entity";
 import { User } from "src/users/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -25,8 +24,4 @@ export class Payment {
   @ManyToOne(() => User)
   @Field(() => [User])
   user: User[];
-
-  @ManyToOne(() => Comment)
-  @Field(() => [Comment])
-  comment: Comment[];
 }
