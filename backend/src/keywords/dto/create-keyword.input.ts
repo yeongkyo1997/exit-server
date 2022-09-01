@@ -2,6 +2,12 @@ import { InputType, Field } from "@nestjs/graphql";
 
 @InputType()
 export class CreateKeywordInput {
-  @Field(() => String, { description: "Example field (placeholder)" })
-  id: string;
+  @Field(() => String)
+  name: string;
+
+  @Field(() => [String])
+  users: string[];
+
+  @Field(() => [String])
+  boards: string[];
 }
