@@ -15,13 +15,13 @@ export class KeywordsResolver {
     return this.keywordsService.create(createKeywordInput);
   }
 
-  @Query(() => [Keyword], { name: "keywords" })
-  findAll() {
+  @Query(() => [Keyword])
+  fetchKeywords() {
     return this.keywordsService.findAll();
   }
 
-  @Query(() => Keyword, { name: "keyword" })
-  findOne(@Args("id", { type: () => String }) id: string) {
+  @Query(() => Keyword)
+  fetchKeyword(@Args("id", { type: () => String }) id: string) {
     return this.keywordsService.findOne(id);
   }
 

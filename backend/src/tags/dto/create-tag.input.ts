@@ -7,4 +7,10 @@ export class CreateTagInput {
 
   @Field(() => String)
   categoryId: string;
+
+  @Field(() => [String])
+  users: string[];
+
+  @Field(() => [String])
+  boards: string[];
 }
