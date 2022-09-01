@@ -16,12 +16,12 @@ export class CategoriesResolver {
   }
 
   @Query(() => [Category], { name: "categories" })
-  findAll() {
+  fetchCategories() {
     return this.categoriesService.findAll();
   }
 
-  @Query(() => Category, { name: "category" })
-  findOne(@Args("id", { type: () => String }) id: string) {
+  @Query(() => Category)
+  fetchCategory(@Args("id", { type: () => String }) id: string) {
     return this.categoriesService.findOne(id);
   }
 
