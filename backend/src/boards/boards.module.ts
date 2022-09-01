@@ -5,6 +5,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { Board } from "./entities/board.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
+import { User } from "src/users/entities/user.entity";
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
       Board, //
       Tag,
       Keyword,
+      User,
     ]),
   ],
   providers: [
