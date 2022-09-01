@@ -1,4 +1,4 @@
-import { InputType, Field } from "@nestjs/graphql";
+import { InputType, Field, Int } from "@nestjs/graphql";
 import { CreateUserImageInput } from "src/user-images/dto/create-user-image.input";
 
 @InputType()
