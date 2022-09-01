@@ -38,3 +38,4 @@ lerna-debug.log*
 gcp-file-storage.json
 gcp-bigquery.json
 .env*
+schema.gql
