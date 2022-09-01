@@ -13,13 +13,13 @@ export class TagsResolver {
     return this.tagsService.create(createTagInput);
   }
 
-  @Query(() => [Tag], { name: "tags" })
-  findAll() {
+  @Query(() => [Tag])
+  fetchTags() {
     return this.tagsService.findAll();
   }
 
-  @Query(() => Tag, { name: "tag" })
-  findOne(@Args("id", { type: () => String }) id: string) {
+  @Query(() => Tag)
+  fetchTag(@Args("id", { type: () => String }) id: string) {
     return this.tagsService.findOne(id);
   }
 

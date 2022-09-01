@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { CreateTagInput } from "./dto/create-tag.input";
 import { UpdateTagInput } from "./dto/update-tag.input";
 import { Tag } from "./entities/tag.entity";
 
@@ -12,7 +11,7 @@ export class TagsService {
     private tagsRepository: Repository<Tag>
   ) {}
 
-  create(createTagInput: CreateTagInput) {
+  create(createTagInput) {
     const checkTag = this.tagsRepository.findOne({
       where: { name: createTagInput.name },
     });
@@ -21,9 +20,7 @@ export class TagsService {
     if (checkTag) {
       throw new Error("이미 존재하는 태그입니다.");
     }
-
-    const newTag = this.tagsRepository.create(createTagInput);
-    return this.tagsRepository.save(newTag);
+    return this.tagsRepository.save(createTagInput);
   }
 
   findAll() {
@@ -34,7 +31,7 @@ export class TagsService {
     return this.tagsRepository.findOne({ where: { id } });
   }
 
-  update(id: string, updateTagInput: UpdateTagInput) {
+  update(id: string, updateTagInput) {
     const tag = this.tagsRepository.findOne({ where: { id } });
     // 태그가 존재하지 않는다면 에러를 던진다.
     if (!tag) {
