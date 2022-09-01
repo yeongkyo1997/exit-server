@@ -11,5 +11,5 @@ export class UserUrl {
 
   @ManyToOne(() => User)
   @Field(() => User)
-  userId: User;
+  user: User;
 }
