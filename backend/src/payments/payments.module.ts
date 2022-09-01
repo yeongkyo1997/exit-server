@@ -2,9 +2,9 @@ import { Module } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
 import { PaymentsResolver } from "./payments.resolver";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { User } from "src/users/entities/user.entity";
+import { User } from "../users/entities/user.entity";
+import { IamportService } from "../iamport/iamport.service";
 import { Payment } from "./entities/payment.entity";
-import { IamportService } from "src/iamport/iamport.service";
 
 @Module({
   imports: [

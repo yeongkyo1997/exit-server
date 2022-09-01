@@ -39,7 +39,7 @@ import { RedisClientOptions } from "redis";
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
-      url: "redis://my-redis:6379",
+      url: "redis://team-redis:6379",
       isGlobal: true,
     }),
     UsersModule,
