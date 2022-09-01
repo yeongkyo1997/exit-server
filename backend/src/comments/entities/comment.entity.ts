@@ -1,5 +1,6 @@
 import { ObjectType, Field } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
+import { User } from "src/users/entities/user.entity";
 import {
   Column,
   Entity,
@@ -22,5 +23,10 @@ export class Comment {
   @JoinTable()
   @ManyToOne(() => Board)
   @Field(() => [Board])
-  boardId: Board[];
+  board: Board[];
+
+  @JoinTable()
+  @ManyToOne(() => User)
+  @Field(() => [User])
+  user: User[];
 }

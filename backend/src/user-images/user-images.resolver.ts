@@ -15,22 +15,23 @@ export class UserImagesResolver {
     return this.userImagesService.create(createUserImageInput);
   }
 
-  @Query(() => [UserImage], { name: "userImages" })
+  @Query(() => [UserImage])
   findAll() {
     return this.userImagesService.findAll();
   }
 
-  @Query(() => UserImage, { name: "userImage" })
+  @Query(() => UserImage)
   findOne(@Args("id", { type: () => String }) id: string) {
     return this.userImagesService.findOne(id);
   }
 
   @Mutation(() => UserImage)
   updateUserImage(
+    @Args("userId") userId: string,
     @Args("updateUserImageInput") updateUserImageInput: UpdateUserImageInput
   ) {
     return this.userImagesService.update(
-      updateUserImageInput.id,
+      userId,
       updateUserImageInput
     );
   }

@@ -12,10 +12,10 @@ export class PaymentHistory {
 
   @ManyToOne(() => User)
   @Field(() => [User])
-  userId: User[];
+  user: User[];
 
   @JoinTable()
   @ManyToOne(() => Board)
   @Field(() => [Board])
-  boardId: Board[];
+  board: Board[];
 }

@@ -30,12 +30,10 @@ export class Tag {
   @Field(() => Category)
   CategoryId: Category;
 
-  @JoinTable()
   @ManyToMany(() => User, (users) => users.tags)
   @Field(() => [User])
   users: User[];
 
-  @JoinTable()
   @ManyToMany(() => Board, (boards) => boards.tags)
   @Field(() => [Board])
   boards: Board[];

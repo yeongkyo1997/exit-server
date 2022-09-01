@@ -20,12 +20,10 @@ export class Keyword {
   @Field(() => String)
   name: string;
 
-  @JoinTable()
   @ManyToMany(() => User, (users) => users.keywords)
   @Field(() => [User])
   users: User[];
 
-  @JoinTable()
   @ManyToMany(() => Board, (boards) => boards.keywords)
   @Field(() => [Board])
   boards: Board[];
