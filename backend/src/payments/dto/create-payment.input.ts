@@ -2,6 +2,15 @@ import { InputType, Field } from "@nestjs/graphql";
 
 @InputType()
 export class CreatePaymentInput {
-  @Field(() => String, { description: "Example field (placeholder)" })
-  id: string;
+  @Field(() => Number)
+  amount: number;
+
+  @Field(() => String)
+  method: string;
+
+  @Field(() => Boolean)
+  isCancel: boolean;
+
+  @Field(() => String)
+  userId: string;
 }
