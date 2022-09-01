@@ -1,5 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
-import { Module } from "@nestjs/common";
+import { CacheModule, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import "dotenv/config";
 import { GraphQLModule } from "@nestjs/graphql";
@@ -15,7 +15,8 @@ import { UserImagesModule } from "./user-images/user-images.module";
 import { BoardImagesModule } from "./board-images/board-images.module";
 import { CommentsModule } from "./comments/comments.module";
 import { SubCommentsModule } from "./sub-comments/sub-comments.module";
-import { PaymentHistoriesModule } from './payment-histories/payment-histories.module';
+import * as redisStore from "cache-manager-redis-store";
+import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
 
 @Module({
   imports: [
@@ -35,11 +36,11 @@ import { PaymentHistoriesModule } from './payment-histories/payment-histories.mo
       synchronize: true,
       logging: true,
     }),
-    // CacheModule.register<RedisClientOptions>({
-    //   store: redisStore,
-    //   url: "redis://my-redis:6379",
-    //   isGlobal: true,
-    // }),
+    CacheModule.register<RedisClientOptions>({
+      store: redisStore,
+      url: "redis://my-redis:6379",
+      isGlobal: true,
+    }),
     UsersModule,
     BoardsModule,
     KeywordsModule,
