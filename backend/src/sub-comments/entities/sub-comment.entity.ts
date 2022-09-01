@@ -1,11 +1,7 @@
 import { ObjectType, Field } from "@nestjs/graphql";
 import { Comment } from "src/comments/entities/comment.entity";
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { User } from "src/users/entities/user.entity";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 @ObjectType()
@@ -20,5 +16,9 @@ export class SubComment {
 
   @ManyToOne(() => Comment)
   @Field(() => [Comment])
-  commentId: Comment[];
+  comment: Comment[];
+
+  @ManyToOne(() => User)
+  @Field(() => [User])
+  user: User[];
 }
