@@ -21,9 +21,6 @@ export class CreateUserInput {
   @Field(() => Int)
   point: number;
 
-  @Field(() => String)
-  history: string;
-
   @Field(() => CreateUserImageInput)
   userImage: CreateUserImageInput;
 

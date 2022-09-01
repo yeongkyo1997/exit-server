@@ -28,10 +28,9 @@ export class User {
   email: string;
 
   @Column()
-  @Field(() => String)
   password: string;
 
-  @Column()
+  @Column({ unique: true })
   @Field(() => String)
   nickname: string;
 
@@ -39,11 +38,11 @@ export class User {
   @Field(() => String)
   description: string;
 
-  @Column()
+  @Column({ default: false })
   @Field(() => Boolean)
   isRemote: boolean;
 
-  @Column()
+  @Column({ default: 0 })
   @Field(() => Int)
   point: number;
 
@@ -56,24 +55,19 @@ export class User {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @Column()
-  @Field(() => String)
-  history: string;
-
   @JoinColumn()
   @OneToOne(() => UserImage)
   @Field(() => UserImage)
   userImage: UserImage;
 
+  @ManyToMany(() => Board, (boards) => boards.users)
+  @Field(() => [Board])
+  boards: Board[];
+
   @JoinTable()
   @ManyToMany(() => Tag, (tags) => tags.users)
   @Field(() => [Tag])
   tags: Tag[];
-
-  @JoinTable()
-  @ManyToMany(() => Board, (boards) => boards.users)
-  @Field(() => [Board])
-  boards: Board[];
 
   @JoinTable()
   @ManyToMany(() => Keyword, (keywords) => keywords.users)

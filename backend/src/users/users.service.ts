@@ -86,7 +86,7 @@ export class UsersService {
 
   async findAll() {
     const findUsers = await this.userRepository.find({
-      relations: ["userImage, tags, boards, keywords"],
+      relations: ["userImage", "boards", "tags", "keywords"],
     });
     return findUsers;
   }
@@ -94,7 +94,7 @@ export class UsersService {
   async findOne({ userId }) {
     const findUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ["userImage, tags, boards, keywords"],
+      relations: ["userImage", "boards", "tags", "keywords"],
     });
     return findUser;
   }
