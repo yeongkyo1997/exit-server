@@ -2,6 +2,7 @@ import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
@@ -13,7 +14,9 @@ export class BoardsService {
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
     @InjectRepository(Keyword)
-    private readonly keywordRepository: Repository<Keyword>
+    private readonly keywordRepository: Repository<Keyword>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
   findAll() {
     return this.boardRepository.find({
@@ -65,11 +68,19 @@ export class BoardsService {
       }
     }
 
+    const usersResult = [];
+    for (let i = 0; i < users.length; i++) {
+      const userInfo = await this.userRepository.findOne({
+        where: { id: users[i] },
+      });
+      usersResult.push(userInfo);
+    }
+
     const savedInfo = await this.boardRepository.save({
       ...board,
       tags: tagsResult,
       keywords: keywordsResult,
-      users: users,
+      users: usersResult,
       boardImage: image,
     });
 
@@ -91,6 +102,7 @@ export class BoardsService {
 
     const tagsResult = [];
     const keywordsResult = [];
+    const usersResult = [];
 
     if (tags) {
       for (let i = 0; i < tags.length; i++) {
@@ -124,9 +136,18 @@ export class BoardsService {
       }
     }
 
+    if (users) {
+      for (let i = 0; i < users.length; i++) {
+        const userInfo = await this.userRepository.findOne({
+          where: { id: users[i] },
+        });
+        usersResult.push(userInfo);
+      }
+    }
+
     originTags.push(...tagsResult);
     originKeywords.push(...keywordsResult);
-    originUsers.push(...users);
+    originUsers.push(...usersResult);
 
     const updatedInfo = this.boardRepository.save({
       ...originBoard,
