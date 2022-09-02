@@ -7,10 +7,12 @@ import {
   Inject,
   UnauthorizedException,
   UnprocessableEntityException,
+  UseGuards,
 } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { IContext } from "src/commons/type/context";
 import * as jwt from "jsonwebtoken";
+import { GqlAuthRefreshGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver()
 export class AuthsResolver {
@@ -82,5 +84,14 @@ export class AuthsResolver {
       }
     );
     return "로그아웃에 성공했습니다.";
+  }
+
+  // 리프레시 토큰 생성
+  @UseGuards(GqlAuthRefreshGuard)
+  @Mutation(() => String)
+  restoreAccessToken(
+    @Context() context: IContext //
+  ) {
+    return this.authsService.getAccessToken({ user: context.req.user });
   }
 }
