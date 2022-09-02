@@ -18,6 +18,7 @@ import { SubCommentsModule } from "./sub-comments/sub-comments.module";
 import * as redisStore from "cache-manager-redis-store";
 import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
 import { RedisClientOptions } from "redis";
+import { AuthsModule } from "./auths/auths.module";
 
 @Module({
   imports: [
@@ -33,15 +34,16 @@ import { RedisClientOptions } from "redis";
       username: process.env.DATABASE_USERNAME,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_DATABASE,
-      entities: [__dirname + "/**/*.entity.*"],
+      entities: [__dirname + "/*/*.entity.*"],
       synchronize: true,
       logging: true,
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
-      url: "redis://my-redis:6379",
+      url: "redis://team-redis:6379",
       isGlobal: true,
     }),
+    AuthsModule,
     UsersModule,
     BoardsModule,
     KeywordsModule,

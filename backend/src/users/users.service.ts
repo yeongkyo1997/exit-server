@@ -26,6 +26,7 @@ export class UsersService {
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>
   ) {}
+
   async create({ password, createUserInput }) {
     const { email, userImage, tags, boards, keywords, ...rest } =
       createUserInput;
@@ -92,7 +93,15 @@ export class UsersService {
     return findUsers;
   }
 
-  async findOne({ userId }) {
+  async findOneWithEmail({ email }) {
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+      relations: ["userImage", "boards", "tags", "keywords"],
+    });
+    return findUser;
+  }
+
+  async findOneWithUserId({ userId }) {
     const findUser = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["userImage", "boards", "tags", "keywords"],
@@ -134,7 +143,7 @@ export class UsersService {
     return updateUser;
   }
 
-  // 삭세된 유저 복구
+  // 삭제된 유저 복구
   async restore({ email }) {
     const isValid = await this.userRepository.findOne({ where: { email } });
 
