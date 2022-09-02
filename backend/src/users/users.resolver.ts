@@ -4,12 +4,16 @@ import { User } from "./entities/user.entity";
 import { CreateUserInput } from "./dto/create-user.input";
 import { UpdateUserInput } from "./dto/update-user.input";
 import * as bcrypt from "bcrypt";
-import { UseGuards } from "@nestjs/common";
+import { CACHE_MANAGER, Inject, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { Cache } from "cache-manager";
 
 @Resolver(() => User)
 export class UsersResolver {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService, //
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache //
+  ) {}
 
   @Mutation(() => User)
   async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
@@ -44,6 +48,12 @@ export class UsersResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => User)
   fetchLoginedUser(@Context() context: any) {
+    const validToken = context.req.headers["authorization"].split(" ")[1];
+    // redis에서 로그아웃 상태확인하기
+    if (this.cacheManager.get(validToken)) {
+      throw new UnauthorizedException("로그인하지 않았습니다.");
+    }
+
     return context.req.user;
   }
 

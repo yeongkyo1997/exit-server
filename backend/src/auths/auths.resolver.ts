@@ -5,10 +5,12 @@ import { UsersService } from "src/users/users.service";
 import {
   CACHE_MANAGER,
   Inject,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { IContext } from "src/commons/type/context";
+import * as jwt from "jsonwebtoken";
 
 @Resolver()
 export class AuthsResolver {
@@ -43,5 +45,42 @@ export class AuthsResolver {
 
     // 5. 토큰 발급
     return this.authsService.getAccessToken({ user });
+  }
+
+  /**
+   *
+   * verifyToken은 인증이 되어있는지 확인하는 것이기 때문에
+   * 가드를 사용하지 않아도 된다.
+   */
+  @Mutation(() => String)
+  async logout(@Context() context: IContext) {
+    const accessToken = context.req.headers["authorization"].split(" ")[1];
+    const refreshToken = context.req.headers["cookie"].split("=")[1];
+
+    /**
+     * 인증이 되었는지 확인하는 로직
+     */
+    try {
+      jwt.verify(accessToken, "myAccessKey");
+      jwt.verify(refreshToken, "myRefreshKey");
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    /**
+     * 캐시에서 토큰을 삭제하는 로직
+     * 토큰의 유효시간에 맞게 ttl을 설정해줬다.
+     */
+    await this.cacheManager.set(`accessToken:${accessToken}`, "accessToken", {
+      ttl: 60 * 60, // 1시간
+    });
+    await this.cacheManager.set(
+      `refreshToken:${refreshToken}`,
+      "refreshToken",
+      {
+        ttl: 60 * 60 * 24 * 7 * 2, // 2주
+      }
+    );
+    return "로그아웃에 성공했습니다.";
   }
 }
