@@ -18,6 +18,7 @@ import { SubCommentsModule } from "./sub-comments/sub-comments.module";
 import * as redisStore from "cache-manager-redis-store";
 import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
 import { RedisClientOptions } from "redis";
+import { AuthsModule } from "./auths/auths.module";
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RedisClientOptions } from "redis";
       url: "redis://team-redis:6379",
       isGlobal: true,
     }),
+    AuthsModule,
     UsersModule,
     BoardsModule,
     KeywordsModule,

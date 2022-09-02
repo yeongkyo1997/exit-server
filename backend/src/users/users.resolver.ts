@@ -13,7 +13,7 @@ export class UsersResolver {
 
   @Mutation(() => User)
   async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
-    const { password, ...rest } = createUserInput;
+    const { password } = createUserInput;
 
     const hashedPassword = await bcrypt.hash(password, 10.2);
 
@@ -28,13 +28,36 @@ export class UsersResolver {
     return this.usersService.findAll();
   }
 
+  // 유저 email로 유저 찾기
   @Query(() => User)
-  fetchUser(@Args("userId", { type: () => String }) userId: string) {
-    return this.usersService.findOne({ userId });
+  fetchUserWithEmail(@Args("email", { type: () => String }) email: string) {
+    return this.usersService.findOneWithEmail({ email });
   }
 
-  @Mutation(() => User)
+  // 유저 id로 유저 찾기
+  @Query(() => User)
+  fetchUserWithUserId(@Args("userId", { type: () => String }) userId: string) {
+    return this.usersService.findOneWithUserId({ userId });
+  }
+
+  // 로그인한 유저 정보 확인하기
+  @UseGuards(GqlAuthAccessGuard)
+  @Query(() => User)
+  fetchLoginedUser(@Context() context: any) {
+    return context.req.user;
+  }
+
+  // 로그인안한 user 삭제
+  @Mutation(() => Boolean)
   removeUser(@Args("email", { type: () => String }) email: string) {
+    return this.usersService.remove({ email });
+  }
+
+  // 로그인한 user 삭제
+  @UseGuards(GqlAuthAccessGuard)
+  @Mutation(() => Boolean)
+  async removeLoginUser(@Context() context: any) {
+    const email = context.req.user.email;
     return this.usersService.remove({ email });
   }
 
@@ -47,5 +70,11 @@ export class UsersResolver {
   ) {
     const email = context.req.user.email;
     return this.usersService.update({ email, updateUserInput });
+  }
+
+  // 삭제된 user 복구
+  @Mutation(() => Boolean)
+  restoreUser(@Args("email", { type: () => String }) email: string) {
+    return this.usersService.restore({ email });
   }
 }
