@@ -6,9 +6,11 @@ import {
   CACHE_MANAGER,
   Inject,
   UnprocessableEntityException,
+  UseGuards,
 } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { IContext } from "src/commons/type/context";
+import { GqlAuthRefreshGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver()
 export class AuthsResolver {
@@ -43,5 +45,14 @@ export class AuthsResolver {
 
     // 5. 토큰 발급
     return this.authsService.getAccessToken({ user });
+  }
+
+  // 리프레시 토큰 생성
+  @UseGuards(GqlAuthRefreshGuard)
+  @Mutation(() => String)
+  restoreAccessToken(
+    @Context() context: IContext //
+  ) {
+    return this.authsService.getAccessToken({ user: context.req.user });
   }
 }
