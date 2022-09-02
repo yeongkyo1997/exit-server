@@ -74,9 +74,9 @@ export class UsersService {
     }
     console.log(saveKeywords);
     const saveUser = await this.userRepository.save({
-      password,
-      email,
       ...rest,
+      email,
+      password,
       userImage: saveImage,
       tags: saveTags,
       boards: saveBoards,

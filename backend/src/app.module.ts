@@ -34,7 +34,7 @@ import { AuthsModule } from "./auths/auths.module";
       username: process.env.DATABASE_USERNAME,
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_DATABASE,
-      entities: [__dirname + "/*/*.entity.*"],
+      entities: [__dirname + "/**/*.entity.*"],
       synchronize: true,
       logging: true,
     }),

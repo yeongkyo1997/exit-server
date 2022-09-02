@@ -25,7 +25,9 @@ export class AuthsService {
   }
 
   async socialLogin(req, res) {
-    let user = await this.usersService.findOneWithEmail({ email: req.user.email });
+    let user = await this.usersService.findOneWithEmail({
+      email: req.user.email,
+    });
 
     if (!user) {
       user = await this.usersService.create({ ...req.user });
