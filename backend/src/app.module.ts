@@ -1,5 +1,5 @@
 import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
-import { Module } from "@nestjs/common";
+import { CacheModule, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import "dotenv/config";
 import { GraphQLModule } from "@nestjs/graphql";
@@ -15,8 +15,14 @@ import { UserImagesModule } from "./user-images/user-images.module";
 import { BoardImagesModule } from "./board-images/board-images.module";
 import { CommentsModule } from "./comments/comments.module";
 import { SubCommentsModule } from "./sub-comments/sub-comments.module";
-import { PaymentHistoriesModule } from './payment-histories/payment-histories.module';
-
+import * as redisStore from "cache-manager-redis-store";
+import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
+import { RedisClientOptions } from "redis";
+import { AuthsModule } from "./auths/auths.module";
+import { EmailService } from "./email/email.service";
+import { EmailModule } from "./email/email.module";
+import { MailerModule } from "@nestjs-modules/mailer";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -35,11 +41,19 @@ import { PaymentHistoriesModule } from './payment-histories/payment-histories.mo
       synchronize: true,
       logging: true,
     }),
-    // CacheModule.register<RedisClientOptions>({
-    //   store: redisStore,
-    //   url: "redis://my-redis:6379",
-    //   isGlobal: true,
-    // }),
+    //     MailerModule.forRoot({
+    //       transport: `smtps://${process.env.EMAIL_AUTH_EMAIL}:${process.env.EMAIL_AUTH_PASSWORD}@${process.env.EMAIL_HOST}`,
+    //       defaults: {
+    //         from: `"nest-modules" <
+    // ${process.env.EMAIL_AUTH_EMAIL}>`,
+    //       },
+    //     }),
+    CacheModule.register<RedisClientOptions>({
+      store: redisStore,
+      url: "redis://team-redis:6379",
+      isGlobal: true,
+    }),
+    AuthsModule,
     UsersModule,
     BoardsModule,
     KeywordsModule,
@@ -53,6 +67,8 @@ import { PaymentHistoriesModule } from './payment-histories/payment-histories.mo
     CommentsModule,
     SubCommentsModule,
     PaymentHistoriesModule,
+    EmailModule,
   ],
+  providers: [],
 })
 export class AppModule {}

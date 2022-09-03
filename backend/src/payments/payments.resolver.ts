@@ -1,42 +1,69 @@
-import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
+import { UseGuards, UnprocessableEntityException } from "@nestjs/common";
+import { Args, Mutation, Resolver, Int, Context } from "@nestjs/graphql";
 import { PaymentsService } from "./payments.service";
 import { Payment } from "./entities/payment.entity";
-import { CreatePaymentInput } from "./dto/create-payment.input";
-import { UpdatePaymentInput } from "./dto/update-payment.input";
+import { IamportService } from "../iamport/iamport.service";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { IContext } from "src/commons/type/context";
 
-@Resolver(() => Payment)
+@Resolver()
 export class PaymentsResolver {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    private readonly paymentsService: PaymentsService, //
+    private readonly iamportService: IamportService
+  ) {}
 
+  ////////////////////////////QUERY//////////////////////////////
+
+  ///////////////////////MUTATION////////////////////////////////
+
+  // 결제 내역 생성
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Payment)
-  createPayment(
-    @Args("createPaymentInput") createPaymentInput: CreatePaymentInput
+  async createPayment(
+    @Args("impUid") impUid: string,
+    @Args({ name: "amount", type: () => Int }) amount: number,
+    @Context() context: IContext
   ) {
-    return this.paymentsService.create(createPaymentInput);
+    const user = context.req.user;
+
+    const accessToken = await this.iamportService.getToken();
+
+    const importData = await this.iamportService.verifyToken({
+      impUid,
+      accessToken,
+    });
+
+    if (importData.status !== "paid") {
+      throw new UnprocessableEntityException("결제가 완료되지 않았습니다.");
+    }
+
+    if (importData.amount !== amount) {
+      throw new UnprocessableEntityException("결제 금액이 일치하지 않습니다.");
+    }
+
+    await this.paymentsService.checkPaid({ user, impUid });
+
+    return await this.paymentsService.create({
+      user,
+      amount,
+      impUid,
+    });
   }
 
-  @Query(() => [Payment], { name: "payments" })
-  findAll() {
-    return this.paymentsService.findAll();
-  }
-
-  @Query(() => Payment, { name: "payment" })
-  findOne(@Args("id", { type: () => String }) id: string) {
-    return this.paymentsService.findOne(id);
-  }
-
+  // 결제 취소
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Payment)
-  updatePayment(
-    @Args("updatePaymentInput") updatePaymentInput: UpdatePaymentInput
+  async cancelPayment(
+    @Args("impUid") impUid: string,
+    @Context() context: IContext
   ) {
-    return this.paymentsService.update(
-      updatePaymentInput.id,
-      updatePaymentInput
-    );
-  }
+    const user = context.req.user;
 
-  @Mutation(() => Payment)
-  removePayment(@Args("id", { type: () => String }) id: string) {
-    return this.paymentsService.remove(id);
+    const accessToken = await this.iamportService.getToken();
+
+    const result = await this.paymentsService.cancel({ user, impUid });
+    await this.iamportService.cancel({ impUid, accessToken });
+    return result;
   }
 }
