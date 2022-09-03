@@ -4,7 +4,12 @@ import { User } from "./entities/user.entity";
 import { CreateUserInput } from "./dto/create-user.input";
 import { UpdateUserInput } from "./dto/update-user.input";
 import * as bcrypt from "bcrypt";
-import { CACHE_MANAGER, Inject, UnauthorizedException, UseGuards } from "@nestjs/common";
+import {
+  CACHE_MANAGER,
+  Inject,
+  UnauthorizedException,
+  UseGuards,
+} from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 
@@ -16,7 +21,15 @@ export class UsersResolver {
   ) {}
 
   @Mutation(() => User)
-  async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
+  async createUser(
+    @Args("createUserInput") createUserInput: CreateUserInput,
+    @Args("emailToken") emailToken: string
+  ) {
+    // 이메일 토큰 확인하기
+    const validToken = await this.cacheManager.get(createUserInput.email);
+    if (validToken !== emailToken)
+      throw new UnauthorizedException("이메일 인증번호를 확인해주세요.");
+
     const { password } = createUserInput;
 
     const hashedPassword = await bcrypt.hash(password, 10.2);

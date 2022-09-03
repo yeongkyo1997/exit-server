@@ -19,7 +19,10 @@ import * as redisStore from "cache-manager-redis-store";
 import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
 import { RedisClientOptions } from "redis";
 import { AuthsModule } from "./auths/auths.module";
-
+import { EmailService } from "./email/email.service";
+import { EmailModule } from "./email/email.module";
+import { MailerModule } from "@nestjs-modules/mailer";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -38,6 +41,13 @@ import { AuthsModule } from "./auths/auths.module";
       synchronize: true,
       logging: true,
     }),
+    //     MailerModule.forRoot({
+    //       transport: `smtps://${process.env.EMAIL_AUTH_EMAIL}:${process.env.EMAIL_AUTH_PASSWORD}@${process.env.EMAIL_HOST}`,
+    //       defaults: {
+    //         from: `"nest-modules" <
+    // ${process.env.EMAIL_AUTH_EMAIL}>`,
+    //       },
+    //     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
       url: "redis://team-redis:6379",
@@ -57,6 +67,8 @@ import { AuthsModule } from "./auths/auths.module";
     CommentsModule,
     SubCommentsModule,
     PaymentHistoriesModule,
+    EmailModule,
   ],
+  providers: [],
 })
 export class AppModule {}

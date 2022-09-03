@@ -30,9 +30,6 @@ export class UsersService {
   async create({ password, createUserInput }) {
     const { email, userImage, tags, boards, keywords, ...rest } =
       createUserInput;
-    const findUser = await this.userRepository.findOne({ where: { email } });
-
-    if (findUser) throw new ConflictException("이미 등록된 이메일입니다.");
     const saveImage = await this.userImageRepository.save({ ...userImage });
 
     const saveTags = [];
@@ -151,5 +148,11 @@ export class UsersService {
 
     const restoreUser = await this.userRepository.restore({ email });
     return restoreUser.affected ? true : false;
+  }
+
+  // 유저 중복확인
+  async checkDuplicateEmail({ email }) {
+    const findUser = await this.userRepository.findOne({ where: { email } });
+    return findUser ? true : false;
   }
 }
