@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>결제하기</title>
+  <script type="text/javascript" nonce="d69825f4e7574c69812c582f1d1" src="//local.adguard.org?ts=1662276657827&amp;type=content-script&amp;dmn=cdn.discordapp.com&amp;pth=%2Fattachments%2F1005465483182612480%2F1015998122431893636%2Fpayment.html&amp;app=com.google.Chrome&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script>
+<script type="text/javascript" nonce="d69825f4e7574c69812c582f1d1" src="//local.adguard.org?ts=1662276657827&amp;name=AdGuard%20Extra&amp;type=user-script"></script><script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script type="text/javascript" src="https://cdn.iamport.kr/js/iamport.payment-1.2.0.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    function mypayment() {
+      const myAmount = Number(document.getElementById("amount").value);
+
+      const IMP = window.IMP; // 생략 가능
+      IMP.init("imp61031678"); // Example: imp00000000
+      IMP.request_pay(
+        {
+          // param
+          pg: "nice",
+          pay_method: "card",
+          name: "마우스",
+          amount: myAmount,
+          buyer_email: "gildong@gmail.com",
+          buyer_name: "홍길동",
+          buyer_tel: "010-4242-4242",
+          buyer_addr: "서울특별시 강남구 신사동",
+          buyer_postcode: "01181",
+          m_redirect_url: "http://localhost:5501/frontend/payment.html", // 모바일 결제후 리다이렉트될 주소!!
+        },
+        async (rsp) => {
+          // callback
+          if (rsp.success) {
+            // 결제 성공시
+
+            const data = await axios.post(
+              "http://localhost:8080/graphql",
+              {
+                query: `
+                      mutation {
+                        createPayment(impUid: "${rsp.imp_uid}", amount: ${rsp.paid_amount}) {
+                          id
+                        }
+                      }
+                    `,
+              },
+              {
+                headers: {
+                  authorization:
+                    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Inllb25na3lvMTk5N0BnbWFpbC5jb20iLCJzdWIiOiIxNWY0MmJhMC03Yzk0LTRlMzYtYTUzNS1mZGQwZTZiZDhmODUiLCJpYXQiOjE2NjIzMTYxMjYsImV4cCI6MTY2MjMxOTcyNn0.nkZdJNHIXISXrDxLFSmRty1w9EEap-JYmi97Y_DQ5hI",
+                },
+              }
+            );
+
+            console.log(data);
+          } else {
+            // 결제 실패시
+            console.log("결제에 실패하셨습니다.")
+          }
+        }
+      );
+    }
+  </script>
+</head>
+
+<body>
+  결제할 금액: <input type="text" id="amount" />
+  <button onclick="mypayment()">결제하기</button>
+</body>
+
+</html>
