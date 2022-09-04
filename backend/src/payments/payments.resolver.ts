@@ -34,8 +34,8 @@ export class PaymentsResolver {
       accessToken,
     });
 
-    if (importData.status !== "paid") {
-      throw new UnprocessableEntityException("결제가 완료되지 않았습니다.");
+    if (importData.status === "paid") {
+      throw new UnprocessableEntityException("결제가 이미 처리되었습니다.");
     }
 
     if (importData.amount !== amount) {
@@ -62,7 +62,11 @@ export class PaymentsResolver {
 
     const accessToken = await this.iamportService.getToken();
 
-    const result = await this.paymentsService.cancel({ user, impUid });
+    const result = await this.paymentsService.cancel({
+      user,
+      impUid,
+      accessToken,
+    });
     await this.iamportService.cancel({ impUid, accessToken });
     return result;
   }

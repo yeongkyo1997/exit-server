@@ -26,14 +26,14 @@ export class Payment {
     type: "int",
     default: 0,
   })
-  @Field((type) => Int, {
+  @Field(() => Int, {
     defaultValue: 0,
   })
   amount: number;
 
-  @Column()
-  @Field(() => String)
-  method: string;
+  // @Column()
+  // @Field(() => String)
+  // method: string;
 
   @Column({ type: "enum", enum: PAYMENT_TRANSACTION_STATUS_ENUM })
   @Field(() => PAYMENT_TRANSACTION_STATUS_ENUM)
