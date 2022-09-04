@@ -11,8 +11,11 @@ export class BoardsResolver {
   ) {}
 
   @Query(() => [Board])
-  fetchBoards() {
-    return this.boardsService.findAll();
+  fetchBoards(
+    @Args("isSuccess", { nullable: true }) isSuccess: boolean,
+    @Args("status", { nullable: true }) status: boolean
+  ) {
+    return this.boardsService.findAll({ isSuccess, status });
   }
 
   @Query(() => Board)
