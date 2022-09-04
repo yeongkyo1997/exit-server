@@ -1,26 +1,58 @@
 import { Injectable } from "@nestjs/common";
-import { CreateLikeInput } from "./dto/create-like.input";
-import { UpdateLikeInput } from "./dto/update-like.input";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Board } from "src/boards/entities/board.entity";
+import { Repository } from "typeorm";
+import { Like } from "./entities/like.entity";
 
 @Injectable()
 export class LikesService {
-  create(createLikeInput: CreateLikeInput) {
-    return "This action adds a new like";
+  constructor(
+    @InjectRepository(Like)
+    private readonly likeRepository: Repository<Like>,
+    @InjectRepository(Board)
+    private readonly boardRepository: Repository<Board>
+  ) {}
+  async findAll({ userId, boardId }) {
+    return await this.likeRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
+    });
   }
 
-  findAll() {
-    return `This action returns all likes`;
-  }
+  async create({ createLikeInput }) {
+    const { userId, boardId } = createLikeInput;
+    const isValid = await this.likeRepository.findOne({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
+    });
 
-  findOne(id: string) {
-    return `This action returns a #${id} like`;
-  }
+    const boardInfo = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
 
-  update(updateLikeInput: UpdateLikeInput) {
-    return;
-  }
+    if (isValid) {
+      await this.boardRepository.update(
+        { id: boardId },
+        { countLike: boardInfo.countLike - 1 }
+      );
+      await this.likeRepository.delete({ id: isValid.id });
+      return "찜 취소";
+    }
 
-  remove(id: string) {
-    return `This action removes a #${id} like`;
+    await this.boardRepository.update(
+      { id: boardId },
+      { countLike: boardInfo.countLike + 1 }
+    );
+    await this.likeRepository.save({
+      user: createLikeInput.userId,
+      board: createLikeInput.boardId,
+    });
+    return "찜 등록";
   }
 }

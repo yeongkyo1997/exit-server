@@ -19,14 +19,6 @@ export class UserBoardResolver {
     return this.userBoardService.findAll({ userId, boardId, isAccepted });
   }
 
-  // @Query(() => UserBoard)
-  // fetchUserBoard(
-  //   @Args("userId", { nullable: true }) userId: string, //
-  //   @Args("boardId", { nullable: true }) boardId: string
-  // ) {
-  //   return this.userBoardService.findOne({ userId, boardId });
-  // }
-
   @Mutation(() => UserBoard)
   createUserBoard(
     @Args("createUserBoardInput") createUserBoardInput: CreateUserBoardInput
