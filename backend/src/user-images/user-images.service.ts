@@ -36,8 +36,9 @@ export class UserImagesService {
           el.createReadStream()
             .pipe(storage.file(el.filename).createWriteStream())
             .on("finish", async () => {
-              const url = `https://storage.googleapis.com/${bucket}/${el.filename}`;
-              resolve(`${bucket}/${el.filename}`);
+              resolve(
+                `https://storage.googleapis.com/${bucket}/${el.filename}`
+              );
             })
             .on("error", (error) => {
               reject(`Unable to upload image`);
