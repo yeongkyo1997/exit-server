@@ -25,7 +25,7 @@ export class LikesResolver {
 
   @Mutation(() => Like)
   updateLike(@Args("updateLikeInput") updateLikeInput: UpdateLikeInput) {
-    return this.likesService.update(updateLikeInput.id, updateLikeInput);
+    return this.likesService.update(updateLikeInput);
   }
 
   @Mutation(() => Like)

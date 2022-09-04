@@ -13,7 +13,6 @@ import { User } from "src/users/entities/user.entity";
       Board, //
       Tag,
       Keyword,
-      User,
     ]),
   ],
   providers: [

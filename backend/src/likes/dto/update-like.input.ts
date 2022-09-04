@@ -1,8 +1,5 @@
 import { CreateLikeInput } from "./create-like.input";
-import { InputType, Field, PartialType } from "@nestjs/graphql";
+import { InputType, PartialType } from "@nestjs/graphql";
 
 @InputType()
-export class UpdateLikeInput extends PartialType(CreateLikeInput) {
-  @Field(() => String)
-  id: string;
-}
+export class UpdateLikeInput extends PartialType(CreateLikeInput) {}

@@ -23,7 +23,7 @@ export class User {
   @Field(() => String)
   id: string;
 
-  @Column()
+  @Column({ unique: true })
   @Field(() => String)
   email: string;
 
@@ -37,10 +37,6 @@ export class User {
   @Column()
   @Field(() => String)
   description: string;
-
-  @Column({ default: false })
-  @Field(() => Boolean)
-  isRemote: boolean;
 
   @Column({ default: 0 })
   @Field(() => Int)
@@ -59,10 +55,6 @@ export class User {
   @OneToOne(() => UserImage)
   @Field(() => UserImage)
   userImage: UserImage;
-
-  @ManyToMany(() => Board, (boards) => boards.users)
-  @Field(() => [Board])
-  boards: Board[];
 
   @JoinTable()
   @ManyToMany(() => Tag, (tags) => tags.users)
