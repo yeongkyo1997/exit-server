@@ -21,8 +21,6 @@ import { AuthsModule } from "./auths/auths.module";
 import { EmailModule } from "./email/email.module";
 import { IamportService } from "./iamport/iamport.service";
 import { ChatModule } from "./chat/chat.module";
-// import { MailerModule } from "@nestjs-modules/mailer";
-import { ConfigModule, ConfigService } from "@nestjs/config";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
 

@@ -8,7 +8,6 @@ import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { MailerService } from "@nestjs-modules/mailer";
 
 @Module({
   imports: [
@@ -24,7 +23,6 @@ import { MailerService } from "@nestjs-modules/mailer";
     EmailResolver, //
     EmailService,
     UsersService,
-    // MailerService,
   ],
 })
 export class EmailModule {}
