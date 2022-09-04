@@ -1,26 +1,67 @@
 import { Injectable } from "@nestjs/common";
-import { CreateSubCommentInput } from "./dto/create-sub-comment.input";
-import { UpdateSubCommentInput } from "./dto/update-sub-comment.input";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { SubComment } from "./entities/sub-comment.entity";
 
 @Injectable()
 export class SubCommentsService {
-  create(createSubCommentInput: CreateSubCommentInput) {
-    return "This action adds a new subComment";
+  constructor(
+    @InjectRepository(SubComment)
+    private readonly subCommentRepository: Repository<SubComment>
+  ) {}
+
+  async findAll({ userId, commentId }) {
+    return await this.subCommentRepository.find({
+      where: {
+        user: { id: userId },
+        comment: { id: commentId },
+      },
+      relations: ["comment", "user"],
+      order: { createdAt: "ASC" },
+    });
   }
 
-  findAll() {
-    return `This action returns all subComments`;
+  async create({ createSubCommentInput }) {
+    const { subComment, userId, commentId } = createSubCommentInput;
+    return await this.subCommentRepository.save({
+      subComment,
+      user: userId,
+      comment: commentId,
+    });
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} subComment`;
+  async update({ updateSubCommentInput }) {
+    const { subComment, userId, commentId } = updateSubCommentInput;
+    await this.subCommentRepository.update(
+      {
+        user: { id: userId },
+        comment: { id: commentId },
+      },
+      { subComment }
+    );
+    return "대댓글 업데이트 완료!";
   }
 
-  update(id: string, updateSubCommentInput: UpdateSubCommentInput) {
-    return `This action updates a #${id} subComment`;
-  }
+  async remove({ userId, commentId }) {
+    const deleteData = await this.subCommentRepository.find({
+      where: {
+        user: { id: userId },
+        comment: { id: commentId },
+      },
+      relations: ["comment", "user"],
+    });
 
-  remove(id: string) {
-    return `This action removes a #${id} subComment`;
+    const showResult = [];
+    for (let i = 0; i < deleteData.length; i++) {
+      const result = await this.subCommentRepository.softDelete({
+        id: deleteData[i].id,
+      });
+      showResult.push(
+        result.affected
+          ? `${deleteData[i].id} deleted`
+          : `${deleteData[i].id} delete fail`
+      );
+    }
+    return showResult;
   }
 }

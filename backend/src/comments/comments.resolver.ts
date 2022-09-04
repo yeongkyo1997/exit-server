@@ -8,35 +8,33 @@ import { UpdateCommentInput } from "./dto/update-comment.input";
 export class CommentsResolver {
   constructor(private readonly commentsService: CommentsService) {}
 
-  @Query(() => [Comment], { name: "comments" })
-  findAll() {
-    return this.commentsService.findAll();
-  }
-
-  @Query(() => Comment, { name: "comment" })
-  findOne(@Args("id", { type: () => String }) id: string) {
-    return this.commentsService.findOne(id);
+  @Query(() => [Comment])
+  fetchComments(
+    @Args("userId", { nullable: true }) userId: string, //
+    @Args("boardId", { nullable: true }) boardId: string
+  ) {
+    return this.commentsService.findAll({ userId, boardId });
   }
 
   @Mutation(() => Comment)
   createComment(
     @Args("createCommentInput") createCommentInput: CreateCommentInput
   ) {
-    return this.commentsService.create(createCommentInput);
+    return this.commentsService.create({ createCommentInput });
   }
 
-  @Mutation(() => Comment)
+  @Mutation(() => String)
   updateComment(
     @Args("updateCommentInput") updateCommentInput: UpdateCommentInput
   ) {
-    return this.commentsService.update(
-      updateCommentInput.id,
-      updateCommentInput
-    );
+    return this.commentsService.update({ updateCommentInput });
   }
 
-  @Mutation(() => Comment)
-  removeComment(@Args("id", { type: () => String }) id: string) {
-    return this.commentsService.remove(id);
+  @Mutation(() => [String])
+  removeComment(
+    @Args("userId", { nullable: true }) userId: string, //
+    @Args("boardId", { nullable: true }) boardId: string
+  ) {
+    return this.commentsService.remove({ userId, boardId });
   }
 }

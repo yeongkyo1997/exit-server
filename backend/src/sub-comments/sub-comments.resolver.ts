@@ -6,37 +6,37 @@ import { UpdateSubCommentInput } from "./dto/update-sub-comment.input";
 
 @Resolver(() => SubComment)
 export class SubCommentsResolver {
-  constructor(private readonly subCommentsService: SubCommentsService) {}
+  constructor(
+    private readonly subCommentsService: SubCommentsService //
+  ) {}
+
+  @Query(() => [SubComment])
+  fetchSubComments(
+    @Args("userId", { nullable: true }) userId: string, //
+    @Args("commentId", { nullable: true }) commentId: string
+  ) {
+    return this.subCommentsService.findAll({ userId, commentId });
+  }
 
   @Mutation(() => SubComment)
   createSubComment(
     @Args("createSubCommentInput") createSubCommentInput: CreateSubCommentInput
   ) {
-    return this.subCommentsService.create(createSubCommentInput);
+    return this.subCommentsService.create({ createSubCommentInput });
   }
 
-  @Query(() => [SubComment], { name: "subComments" })
-  findAll() {
-    return this.subCommentsService.findAll();
-  }
-
-  @Query(() => SubComment, { name: "subComment" })
-  findOne(@Args("id", { type: () => Int }) id: string) {
-    return this.subCommentsService.findOne(id);
-  }
-
-  @Mutation(() => SubComment)
+  @Mutation(() => String)
   updateSubComment(
     @Args("updateSubCommentInput") updateSubCommentInput: UpdateSubCommentInput
   ) {
-    return this.subCommentsService.update(
-      updateSubCommentInput.id,
-      updateSubCommentInput
-    );
+    return this.subCommentsService.update({ updateSubCommentInput });
   }
 
-  @Mutation(() => SubComment)
-  removeSubComment(@Args("id", { type: () => Int }) id: string) {
-    return this.subCommentsService.remove(id);
+  @Mutation(() => [String])
+  removeSubComment(
+    @Args("userId", { nullable: true }) userId: string, //
+    @Args("commentId", { nullable: true }) commentId: string
+  ) {
+    return this.subCommentsService.remove({ userId, commentId });
   }
 }
