@@ -1,26 +1,77 @@
 import { Injectable } from "@nestjs/common";
-import { CreateCommentInput } from "./dto/create-comment.input";
-import { UpdateCommentInput } from "./dto/update-comment.input";
+import { InjectRepository } from "@nestjs/typeorm";
+import { SubCommentsService } from "src/sub-comments/sub-comments.service";
+import { Repository } from "typeorm";
+import { Comment } from "./entities/comment.entity";
 
 @Injectable()
 export class CommentsService {
-  create(createCommentInput: CreateCommentInput) {
-    return "This action adds a new comment";
+  constructor(
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
+    private readonly subCommentsService: SubCommentsService
+  ) {}
+
+  async findAll({ userId, boardId }) {
+    return await this.commentRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
+      order: { createdAt: "ASC" },
+    });
   }
 
-  findAll() {
-    return `This action returns all comments`;
+  async create({ createCommentInput }) {
+    const { comment, userId, boardId } = createCommentInput;
+    return await this.commentRepository.save({
+      comment,
+      user: userId,
+      board: boardId,
+    });
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} comment`;
+  async update({ updateCommentInput }) {
+    const { comment, userId, boardId } = updateCommentInput;
+    await this.commentRepository.update(
+      {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      { comment }
+    );
+    return "댓글 업데이트 완료!";
   }
 
-  update(id: string, updateCommentInput: UpdateCommentInput) {
-    return `This action updates a #${id} comment`;
-  }
+  async remove({ userId, boardId }) {
+    const deleteData = await this.commentRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
+    });
 
-  remove(id: string) {
-    return `This action removes a #${id} comment`;
+    // 관련 subComment도 다 지워준 뒤 comment 지우기
+    const showResult = [];
+    for (let i = 0; i < deleteData.length; i++) {
+      await this.subCommentsService.remove({
+        userId,
+        commentId: deleteData[i].id,
+      });
+
+      const result = await this.commentRepository.softDelete({
+        id: deleteData[i].id,
+      });
+
+      showResult.push(
+        result.affected
+          ? `${deleteData[i].id} deleted`
+          : `${deleteData[i].id} delete fail`
+      );
+    }
+
+    return showResult;
   }
 }

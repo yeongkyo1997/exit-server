@@ -74,8 +74,8 @@ export class UserBoardService {
       });
       showResult.push(
         result.affected
-          ? `userId ${userBoardData[i].id} deleted`
-          : `userId ${userBoardData[i].id} delete failed`
+          ? `${userBoardData[i].id} deleted`
+          : `${userBoardData[i].id} delete failed`
       );
     }
 

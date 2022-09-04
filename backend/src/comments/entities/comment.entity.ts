@@ -3,9 +3,12 @@ import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
 import {
   Column,
+  CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
 
 @Entity()
@@ -19,11 +22,20 @@ export class Comment {
   @Field(() => String)
   comment: string;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+
   @ManyToOne(() => Board)
-  @Field(() => [Board])
-  board: Board[];
+  @Field(() => Board)
+  board: Board;
 
   @ManyToOne(() => User)
-  @Field(() => [User])
-  user: User[];
+  @Field(() => User)
+  user: User;
 }
