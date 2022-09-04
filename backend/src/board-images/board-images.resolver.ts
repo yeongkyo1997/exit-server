@@ -1,42 +1,43 @@
 import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { BoardImagesService } from "./board-images.service";
 import { BoardImage } from "./entities/board-image.entity";
-import { CreateBoardImageInput } from "./dto/create-board-image.input";
-import { UpdateBoardImageInput } from "./dto/update-board-image.input";
+import { FileUpload, GraphQLUpload } from "graphql-upload";
 
 @Resolver(() => BoardImage)
 export class BoardImagesResolver {
   constructor(private readonly boardImagesService: BoardImagesService) {}
 
   @Mutation(() => BoardImage)
-  createBoardImage(
-    @Args("createBoardImageInput") createBoardImageInput: CreateBoardImageInput
+  async uploadImage(
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return this.boardImagesService.create(createBoardImageInput);
+    return await this.boardImagesService.create({ image });
   }
 
-  @Query(() => [BoardImage], { name: "boardImages" })
-  findAll() {
+  @Query(() => BoardImage)
+  fetchImage(
+    @Args("boardImageId") boardImageId: string //
+  ) {
+    return this.boardImagesService.findOne({ boardImageId });
+  }
+
+  @Query(() => [BoardImage])
+  fetchImages() {
     return this.boardImagesService.findAll();
   }
 
-  @Query(() => BoardImage, { name: "boardImage" })
-  findOne(@Args("id", { type: () => String }) id: string) {
-    return this.boardImagesService.findOne(id);
-  }
-
   @Mutation(() => BoardImage)
-  updateBoardImage(
-    @Args("updateBoardImageInput") updateBoardImageInput: UpdateBoardImageInput
+  updateImage(
+    @Args("boardImageId") boardImageId: string, //
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return this.boardImagesService.update(
-      updateBoardImageInput.id,
-      updateBoardImageInput
-    );
+    return this.boardImagesService.update({ boardImageId, image });
   }
 
-  @Mutation(() => BoardImage)
-  removeBoardImage(@Args("id", { type: () => String }) id: string) {
-    return this.boardImagesService.remove(id);
+  @Mutation(() => Boolean)
+  removeImage(
+    @Args({ name: "boardImageId", type: () => String }) boardImageId: string //
+  ) {
+    return this.boardImagesService.delete({ boardImageId });
   }
 }

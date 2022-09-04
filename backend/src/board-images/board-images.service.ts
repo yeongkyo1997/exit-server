@@ -1,26 +1,86 @@
 import { Injectable } from "@nestjs/common";
-import { CreateBoardImageInput } from "./dto/create-board-image.input";
-import { UpdateBoardImageInput } from "./dto/update-board-image.input";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { BoardImage } from "./entities/board-image.entity";
+import { Storage } from "@google-cloud/storage";
 
 @Injectable()
 export class BoardImagesService {
-  create(createBoardImageInput: CreateBoardImageInput) {
-    return "This action adds a new boardImage";
+  constructor(
+    @InjectRepository(BoardImage)
+    private readonly boardImageRepository: Repository<BoardImage>
+  ) {}
+
+  async create({ image }) {
+    const bucket = process.env.BUCKET_NAME;
+
+    const storage = new Storage({
+      projectId: process.env.PROJECT_ID,
+      keyFilename: process.env.KEY_FILE_NAME,
+    }).bucket(bucket);
+
+    const url = await new Promise((resolve, reject) => {
+      image
+        .createReadStream()
+        .pipe(storage.file(image.filename).createWriteStream())
+        .on("finish", async () => {
+          resolve(`https://storage.googleapis.com/${bucket}/${image.filename}`);
+        })
+        .on("error", (error) => {
+          reject(`Unable to upload image`);
+          return error;
+        });
+    });
+
+    const result = await this.boardImageRepository.save({
+      url: url.toString(),
+    });
+    return result;
   }
 
-  findAll() {
-    return `This action returns all boardImages`;
+  async findOne({ boardImageId }) {
+    await this.boardImageRepository.findOne({
+      where: { id: boardImageId },
+    });
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} boardImage`;
+  async findAll() {
+    await this.boardImageRepository.find({});
   }
 
-  update(id: string, updateBoardImageInput: UpdateBoardImageInput) {
-    return `This action updates a #${id} boardImage`;
+  async update({ boardImageId, image }) {
+    await this.boardImageRepository.softDelete({ id: boardImageId });
+
+    const bucket = process.env.BUCKET_NAME;
+
+    const storage = new Storage({
+      projectId: process.env.PROJECT_ID,
+      keyFilename: process.env.KEY_FILE_NAME,
+    }).bucket(bucket);
+
+    const url = await new Promise((resolve, reject) => {
+      image
+        .createReadStream()
+        .pipe(storage.file(image.filename).createWriteStream())
+        .on("finish", async () => {
+          resolve(`https://storage.googleapis.com/${bucket}/${image.filename}`);
+        })
+        .on("error", (error) => {
+          reject(`Unable to upload image`);
+          return error;
+        });
+    });
+
+    const result = await this.boardImageRepository.save({
+      url: url.toString(),
+    });
+    return result;
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} boardImage`;
+  async delete({ boardImageId }) {
+    const result = await this.boardImageRepository.softDelete({
+      id: boardImageId,
+    });
+    return result.affected ? true : false;
   }
 }
