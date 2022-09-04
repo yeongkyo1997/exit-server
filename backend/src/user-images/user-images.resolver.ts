@@ -12,36 +12,37 @@ export class UserImagesResolver {
     private readonly userImagesService: UserImagesService //
   ) {}
 
-  @Mutation(() => [UserImage])
+  @Mutation(() => UserImage)
   async uploadImage(
-    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return await this.userImagesService.create({ images });
+    return await this.userImagesService.create({ image });
   }
 
   @Query(() => UserImage)
   fetchImage(
-    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
+    @Args("userImageId") userImageId: string //
   ) {
-    return this.userImagesService.findOne({ image });
+    return this.userImagesService.findOne({ userImageId });
   }
 
   @Query(() => [UserImage])
-  fetchImages(
-    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
-  ) {
-    return this.userImagesService.findAll({ images });
+  fetchImages() {
+    return this.userImagesService.findAll();
   }
 
+  @Mutation(() => UserImage)
   updateImage(
-    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+    @Args("userImageId") userImageId: string, //
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return this.userImagesService.update({ images });
+    return this.userImagesService.update({ userImageId, image });
   }
 
+  @Mutation(() => Boolean)
   removeImage(
-    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+    @Args({ name: "userImageId", type: () => String }) userImageId: string //
   ) {
-    return this.userImagesService.delete({ images });
+    return this.userImagesService.delete({ userImageId });
   }
 }
