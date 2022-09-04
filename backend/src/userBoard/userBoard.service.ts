@@ -14,47 +14,14 @@ export class UserBoardService {
   ) {}
 
   async findAll({ userId, boardId, isAccepted }) {
-    const Infos = await this.userBoardRepository.find({
+    return await this.userBoardRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+        isAccepted,
+      },
       relations: ["board", "user"],
     });
-    let result;
-    if (isAccepted != undefined) {
-      if (userId != undefined && boardId != undefined) {
-        result = Infos.filter((ele) => {
-          return (
-            ele.board.id == boardId &&
-            ele.user.id == userId &&
-            ele.isAccepted == isAccepted
-          );
-        });
-      } else if (userId != undefined && boardId == undefined) {
-        result = Infos.filter((ele) => {
-          return ele.user.id == userId && ele.isAccepted == isAccepted;
-        });
-      } else if (userId == undefined && boardId != undefined) {
-        result = Infos.filter((ele) => {
-          return ele.board.id == boardId && ele.isAccepted == isAccepted;
-        });
-      } else {
-        result = Infos.filter((ele) => ele.isAccepted == isAccepted);
-      }
-    } else {
-      if (userId != undefined && boardId != undefined) {
-        result = Infos.filter((ele) => {
-          return ele.board.id == boardId && ele.user.id == userId;
-        });
-      } else if (userId != undefined && boardId == undefined) {
-        result = Infos.filter((ele) => {
-          return ele.user.id == userId;
-        });
-      } else if (userId == undefined && boardId != undefined) {
-        result = Infos.filter((ele) => {
-          return ele.board.id == boardId;
-        });
-      } else return Infos;
-    }
-
-    return result;
   }
 
   //findOne({ userId, boardId }) {}
@@ -68,10 +35,12 @@ export class UserBoardService {
 
   async update({ updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
-    const getId = await this.findAll({
-      boardId,
-      userId,
-      isAccepted: undefined,
+    const getId = await this.userBoardRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
     });
 
     const boardInfo = await this.boardRepository.findOne({
@@ -87,39 +56,31 @@ export class UserBoardService {
 
     return await this.userBoardRepository.save({
       id: getId[0].id,
-      board: boardId,
-      user: userId,
       isAccepted,
     });
   }
 
   async removeAll({ userId, boardId }) {
-    if (userId != undefined) {
-      const getUserList = await this.findAll({
-        userId,
-        boardId,
-        isAccepted: undefined,
-      });
+    const userBoardData = await this.userBoardRepository.find({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+      },
+      relations: ["board", "user"],
+    });
 
-      for (let i = 0; i < getUserList.length; i++) {
-        await this.userBoardRepository.softDelete({
-          id: getUserList[i].id,
-        });
-      }
-      return true;
-    } else {
-      const getBoardList = await this.findAll({
-        userId,
-        boardId,
-        isAccepted: undefined,
+    const showResult = [];
+    for (let i = 0; i < userBoardData.length; i++) {
+      const result = await this.userBoardRepository.softDelete({
+        id: userBoardData[i].id,
       });
-
-      for (let i = 0; i < getBoardList.length; i++) {
-        await this.userBoardRepository.softDelete({
-          id: getBoardList[i].id,
-        });
-      }
-      return true;
+      showResult.push(
+        result.affected
+          ? `userId ${userBoardData[i].id} deleted`
+          : `userId ${userBoardData[i].id} delete failed`
+      );
     }
+
+    return showResult;
   }
 }

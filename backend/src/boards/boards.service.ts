@@ -15,30 +15,12 @@ export class BoardsService {
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>
   ) {}
+
   findAll({ isSuccess, status }) {
-    if (isSuccess != undefined && status != undefined) {
-      return this.boardRepository.find({
-        relations: ["boardImage", "tags", "keywords"],
-        where: {
-          isSuccess: isSuccess,
-          status: status,
-        },
-      });
-    } else if (isSuccess != undefined) {
-      return this.boardRepository.find({
-        relations: ["boardImage", "tags", "keywords"],
-        where: { isSuccess: isSuccess },
-      });
-    } else if (status != undefined) {
-      return this.boardRepository.find({
-        relations: ["boardImage", "tags", "keywords"],
-        where: { status: status },
-      });
-    } else {
-      return this.boardRepository.find({
-        relations: ["boardImage", "tags", "keywords"],
-      });
-    }
+    return this.boardRepository.find({
+      where: { isSuccess, status },
+      relations: ["boardImage", "tags", "keywords"],
+    });
   }
 
   findOne({ boardId }) {
