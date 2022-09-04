@@ -1,142 +1,129 @@
-import {
-  Injectable,
-  ConflictException,
-  UnprocessableEntityException,
-} from "@nestjs/common";
-import { Connection } from "typeorm";
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Connection, DataSource, Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
-import "dotenv/config";
-import { IamportService } from "../iamport/iamport.service";
-import {
-  Payment,
-  PAYMENT_TRANSACTION_STATUS_ENUM,
-} from "./entities/payment.entity";
+import { Payment, PAYMENT_TRANSACTION_STATUS_ENUM } from "./entities/payment.entity";
 
 @Injectable()
 export class PaymentsService {
   constructor(
-    private readonly iamportService: IamportService,
+    @InjectRepository(Payment)
+    private readonly paymentsRepository: Repository<Payment>,
 
-    private readonly connection: Connection
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+
+    private readonly datasource: DataSource
   ) {}
 
-  // 결제 내역 생성
-  async create({ user: _user, amount, impUid }) {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect(); // 연결
+  async create({ impUid, amount, user: _user }) {
+    const queryRunner = this.datasource.createQueryRunner();
+    await queryRunner.connect();
 
-    await queryRunner.startTransaction("SERIALIZABLE"); // 트랜잭션 시작
+    // ================================== transaction 시작 ==========================
+    await queryRunner.startTransaction("SERIALIZABLE");
+    // =============================================================================
+
     try {
-      const payment = queryRunner.manager.create(Payment, {
+      // 1. payment 테이블에 거래 기록 한 줄 생성
+      const payment = this.paymentsRepository.create({
         impUid,
         amount,
         user: _user,
         status: PAYMENT_TRANSACTION_STATUS_ENUM.PAYMENT,
       });
 
+      // await this.paymentsRepository.save(payment);
       await queryRunner.manager.save(payment);
+      // queryRunner를 통해서 save를 사용해서 디비에 저장을 해 줘야 됨
+      // queryRunner랑 관련이 있게 하려면 다 쿼리러너를 통해서 가야 됨
 
+      // 2. 유저의 돈 찾아오기
+      // const user = await this.usersRepository.findOne({
+      //   where: { id: _user.id },
+      // });
       const user = await queryRunner.manager.findOne(User, {
         where: { id: _user.id },
         lock: { mode: "pessimistic_write" },
       });
 
-      const updateUser = queryRunner.manager.create(User, {
+      // 3. 유저의 돈 업데이트
+      // await this.usersRepository.update(
+      //   { id: _user.id },
+      //   { point: user.point + paymentAmount },
+      // );
+
+      const updatedUser = this.usersRepository.create({
         ...user,
         point: user.point + amount,
       });
+      await queryRunner.manager.save(updatedUser);
 
-      await queryRunner.manager.save(updateUser); // 업데이트
+      // ================================ commit 성공 확정 ==========================
+      await queryRunner.commitTransaction();
+      // ==========================================================================
 
-      await queryRunner.commitTransaction(); // 트랜잭션 커밋
-
+      // 4. 최종 결과 프론트엔드에 돌려주기
       return payment;
-    } catch (err) {
-      await queryRunner.rollbackTransaction(); // 트랜잭션 롤백
-      throw err;
+    } catch (error) {
+      // ================================== rollback 되돌리기 =======================
+      await queryRunner.rollbackTransaction();
+      // ==========================================================================
     } finally {
-      await queryRunner.release(); // 연결 해제
+      // ================================== 연결 해제 ===============================
+      await queryRunner.release();
+      // ==========================================================================
     }
   }
 
-  // 결제 취소
-  async cancel({ impUid, user, accessToken }) {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect(); // 연결
-    await queryRunner.startTransaction("SERIALIZABLE"); // 트랜잭션 시작
+  async createCancel({ impUid, amount, user: _user }) {
+    const queryRunner = this.datasource.createQueryRunner();
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
 
     try {
-      const payment = await queryRunner.manager.findOne(Payment, {
-        where: { impUid, user: user.id },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      // const accessToken = await this.iamportService.getToken();
-      const checkPayment = await this.iamportService.verifyToken({
+      const payment = this.paymentsRepository.create({
         impUid,
-        accessToken,
-      });
-
-      if (checkPayment.status === "cancelled") {
-        throw new UnprocessableEntityException("이미 취소된 거래입니다.");
-      }
-
-      const { id, ...rest } = { ...payment };
-
-      const updatePayment = queryRunner.manager.create(Payment, {
-        ...rest,
+        amount: -amount,
+        user: _user,
         status: PAYMENT_TRANSACTION_STATUS_ENUM.CANCELLED,
-        amount: -payment.amount,
-        user,
       });
-      await queryRunner.manager.save(updatePayment); // 업데이트
 
-      const _user = await queryRunner.manager.findOne(User, {
-        where: { id: user.id },
+      await queryRunner.manager.save(payment);
+
+      // const user = await this.usersRepository.findOne({
+      //   where: { id: _user.id },
+      // });
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: _user.id },
         lock: { mode: "pessimistic_write" },
       });
 
-      const point = _user.point - payment.amount;
+      await this.usersRepository.update(
+        { id: _user.id },
+        { point: user.point - amount }
+      );
 
-      const updateUser = queryRunner.manager.create(User, {
-        ..._user,
-        point,
+      const updatedUser = this.usersRepository.create({
+        ...user,
+        point: user.point - amount,
       });
-      await queryRunner.manager.save(updateUser); // 업데이트
+      await queryRunner.manager.save(updatedUser);
 
-      await this.iamportService.cancel({ impUid, accessToken });
+      await queryRunner.commitTransaction();
 
-      await queryRunner.commitTransaction(); // 트랜잭션 커밋
       return payment;
-    } catch (err) {
-      await queryRunner.rollbackTransaction(); // 트랜잭션 롤백
-      throw new UnprocessableEntityException("결제 취소에 실패했습니다.");
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
     } finally {
-      await queryRunner.release(); // 연결 해제
+      await queryRunner.release();
     }
   }
 
-  // 결제 완료 체크
-  async checkPaid({ user, impUid }) {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect(); // 연결
-    try {
-      const checkPayment = await queryRunner.manager.findOne(Payment, {
-        where: { user, impUid },
-      });
-
-      if (checkPayment) {
-        throw new ConflictException("이미 결제된 거래입니다.");
-      }
-
-      queryRunner.commitTransaction();
-
-      return true;
-    } catch (err) {
-      await queryRunner.rollbackTransaction(); // 트랜잭션 롤백
-      throw err;
-    } finally {
-      await queryRunner.release(); // 연결 해제
-    }
+  async findStatus({ impUid }) {
+    return await this.paymentsRepository.findOne({
+      where: { impUid },
+    });
   }
 }
