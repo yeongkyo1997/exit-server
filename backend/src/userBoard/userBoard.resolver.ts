@@ -41,7 +41,7 @@ export class UserBoardResolver {
     return this.userBoardService.update({ updateUserBoardInput });
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => [String])
   removeUserBoards(
     @Args("userId", { nullable: true }) userId: string, //
     @Args("boardId", { nullable: true }) boardId: string //
