@@ -3,41 +3,45 @@ import { UserImagesService } from "./user-images.service";
 import { UserImage } from "./entities/user-image.entity";
 import { CreateUserImageInput } from "./dto/create-user-image.input";
 import { UpdateUserImageInput } from "./dto/update-user-image.input";
+import { FileUpload, GraphQLUpload } from "graphql-upload";
+import { isReadable } from "stream";
 
 @Resolver(() => UserImage)
 export class UserImagesResolver {
-  constructor(private readonly userImagesService: UserImagesService) {}
+  constructor(
+    private readonly userImagesService: UserImagesService //
+  ) {}
 
-  @Mutation(() => UserImage)
-  createUserImage(
-    @Args("createUserImageInput") createUserImageInput: CreateUserImageInput
+  @Mutation(() => [UserImage])
+  async uploadImage(
+    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
   ) {
-    return this.userImagesService.create(createUserImageInput);
-  }
-
-  @Query(() => [UserImage])
-  findAll() {
-    return this.userImagesService.findAll();
+    return await this.userImagesService.create({ images });
   }
 
   @Query(() => UserImage)
-  findOne(@Args("id", { type: () => String }) id: string) {
-    return this.userImagesService.findOne(id);
-  }
-
-  @Mutation(() => UserImage)
-  updateUserImage(
-    @Args("userId") userId: string,
-    @Args("updateUserImageInput") updateUserImageInput: UpdateUserImageInput
+  fetchImage(
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return this.userImagesService.update(
-      userId,
-      updateUserImageInput
-    );
+    return this.userImagesService.findOne({ image });
   }
 
-  @Mutation(() => UserImage)
-  removeUserImage(@Args("id", { type: () => String }) id: string) {
-    return this.userImagesService.remove(id);
+  @Query(() => [UserImage])
+  fetchImages(
+    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+  ) {
+    return this.userImagesService.findAll({ images });
+  }
+
+  updateImage(
+    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+  ) {
+    return this.userImagesService.update({ images });
+  }
+
+  removeImage(
+    @Args({ name: "images", type: () => [GraphQLUpload] }) images: FileUpload[]
+  ) {
+    return this.userImagesService.delete({ images });
   }
 }

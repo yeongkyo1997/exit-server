@@ -1,26 +1,72 @@
-import { Injectable } from "@nestjs/common";
+import {
+  ConsoleLogger,
+  Injectable,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 import { CreateUserImageInput } from "./dto/create-user-image.input";
 import { UpdateUserImageInput } from "./dto/update-user-image.input";
+import { Storage } from "@google-cloud/storage";
+import { InjectRepository } from "@nestjs/typeorm";
+import { User } from "src/users/entities/user.entity";
+import { Repository } from "typeorm";
+import { Board } from "src/boards/entities/board.entity";
+import { UserImage } from "./entities/user-image.entity";
 
 @Injectable()
 export class UserImagesService {
-  create(createUserImageInput: CreateUserImageInput) {
-    return "This action adds a new userImage";
+  constructor(
+    @InjectRepository(UserImage)
+    private readonly userImageRepository: Repository<UserImage>
+  ) {}
+
+  async create({ images }) {
+    const waitedImages = await Promise.all(images);
+
+    const bucket = process.env.BUCKET_NAME;
+
+    const storage = new Storage({
+      projectId: process.env.PROJECT_ID,
+      keyFilename: process.env.KEY_FILE_NAME,
+    }).bucket(bucket);
+
+    const results = [];
+    await Promise.all(
+      waitedImages.map(async (el) => {
+        const url = await new Promise((resolve, reject) => {
+          el.createReadStream()
+            .pipe(storage.file(el.filename).createWriteStream())
+            .on("finish", async () => {
+              resolve(
+                `https://storage.googleapis.com/${bucket}/${el.filename}`
+              );
+            })
+            .on("error", (error) => {
+              reject(`Unable to upload image`);
+              return error;
+            });
+        });
+        const result = await this.userImageRepository.save({
+          url: url.toString(),
+        });
+        await results.push(result);
+      })
+    );
+    return results;
   }
 
-  findAll() {
-    return `This action returns all userImages`;
+  async findOne({ image }) {
+    //
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} userImage`;
+  async findAll({ images }) {
+    //
   }
 
-  update(id: string, updateUserImageInput: UpdateUserImageInput) {
-    return `This action updates a #${id} userImage`;
+  async update({ images }) {
+    //
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} userImage`;
+  async delete({ images }) {
+    //
   }
 }
