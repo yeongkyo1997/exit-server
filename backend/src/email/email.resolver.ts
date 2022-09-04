@@ -21,7 +21,7 @@ export class EmailResolver {
 
     // 6자리 이메일 토큰 생성
     const emailToken = Math.random().toString().substring(2, 8);
-    await this.cacheManager.set(email, emailToken, { ttl: 180 });
+    await this.cacheManager.set(email, emailToken, { ttl: 0 });
     this.cacheManager.get(email).then((res) => console.log(res));
     this.emailService.sendEmailToken({ email, emailToken });
     return "이메일을 보냈습니다.";

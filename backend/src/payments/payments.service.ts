@@ -3,7 +3,7 @@ import {
   ConflictException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { Connection, Repository } from "typeorm";
+import { Connection } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import "dotenv/config";
 import { IamportService } from "../iamport/iamport.service";
@@ -11,17 +11,10 @@ import {
   Payment,
   PAYMENT_TRANSACTION_STATUS_ENUM,
 } from "./entities/payment.entity";
-import { InjectRepository } from "@nestjs/typeorm";
 
 @Injectable()
 export class PaymentsService {
   constructor(
-    @InjectRepository(Payment)
-    private readonly paymentRepository: Repository<Payment>,
-
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-
     private readonly iamportService: IamportService,
 
     private readonly connection: Connection
@@ -34,7 +27,7 @@ export class PaymentsService {
 
     await queryRunner.startTransaction("SERIALIZABLE"); // 트랜잭션 시작
     try {
-      const payment = this.paymentRepository.create({
+      const payment = queryRunner.manager.create(Payment, {
         impUid,
         amount,
         user: _user,
@@ -48,7 +41,7 @@ export class PaymentsService {
         lock: { mode: "pessimistic_write" },
       });
 
-      const updateUser = this.userRepository.create({
+      const updateUser = queryRunner.manager.create(User, {
         ...user,
         point: user.point + amount,
       });
@@ -67,7 +60,7 @@ export class PaymentsService {
   }
 
   // 결제 취소
-  async cancel({ impUid, user }) {
+  async cancel({ impUid, user, accessToken }) {
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect(); // 연결
     await queryRunner.startTransaction("SERIALIZABLE"); // 트랜잭션 시작
@@ -78,7 +71,7 @@ export class PaymentsService {
         lock: { mode: "pessimistic_write" },
       });
 
-      const accessToken = await this.iamportService.getToken();
+      // const accessToken = await this.iamportService.getToken();
       const checkPayment = await this.iamportService.verifyToken({
         impUid,
         accessToken,
@@ -90,11 +83,11 @@ export class PaymentsService {
 
       const { id, ...rest } = { ...payment };
 
-      const updatePayment = this.paymentRepository.create({
+      const updatePayment = queryRunner.manager.create(Payment, {
         ...rest,
         status: PAYMENT_TRANSACTION_STATUS_ENUM.CANCELLED,
         amount: -payment.amount,
-        user: user,
+        user,
       });
       await queryRunner.manager.save(updatePayment); // 업데이트
 
@@ -105,7 +98,7 @@ export class PaymentsService {
 
       const point = _user.point - payment.amount;
 
-      const updateUser = this.userRepository.create({
+      const updateUser = queryRunner.manager.create(User, {
         ..._user,
         point,
       });
@@ -129,14 +122,14 @@ export class PaymentsService {
     await queryRunner.connect(); // 연결
     try {
       const checkPayment = await queryRunner.manager.findOne(Payment, {
-        where: { user: user, impUid },
+        where: { user, impUid },
       });
 
       if (checkPayment) {
         throw new ConflictException("이미 결제된 거래입니다.");
       }
 
-      await queryRunner.commitTransaction();
+      queryRunner.commitTransaction();
 
       return true;
     } catch (err) {
