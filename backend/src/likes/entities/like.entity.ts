@@ -11,10 +11,10 @@ export class Like {
   id: string;
 
   @ManyToOne(() => Board)
-  @Field(() => [Board])
-  boards: Board[];
+  @Field(() => Board)
+  board: Board;
 
   @ManyToOne(() => User)
-  @Field(() => [User])
-  users: User[];
+  @Field(() => User)
+  user: User;
 }

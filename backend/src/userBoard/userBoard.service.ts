@@ -24,8 +24,6 @@ export class UserBoardService {
     });
   }
 
-  //findOne({ userId, boardId }) {}
-
   async create({ createUserBoardInput }) {
     return await this.userBoardRepository.save({
       user: createUserBoardInput.userId,
@@ -35,7 +33,7 @@ export class UserBoardService {
 
   async update({ updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
-    const getId = await this.userBoardRepository.find({
+    const getId = await this.userBoardRepository.findOne({
       where: {
         user: { id: userId },
         board: { id: boardId },
@@ -55,7 +53,7 @@ export class UserBoardService {
     }
 
     return await this.userBoardRepository.save({
-      id: getId[0].id,
+      id: getId.id,
       isAccepted,
     });
   }

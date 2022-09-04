@@ -6,5 +6,5 @@ export class CreateLikeInput {
   userId: string;
 
   @Field(() => String)
-  BoardId: string;
+  boardId: string;
 }

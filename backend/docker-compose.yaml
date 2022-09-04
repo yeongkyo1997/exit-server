@@ -15,7 +15,7 @@ services:
       - TZ=Asia/Seoul
 
   team-database:
-    platform: linux/x86_64
+    # platform: linux/x86_64
     image: mysql:latest
     environment:
       MYSQL_DATABASE: "teamdocker"
