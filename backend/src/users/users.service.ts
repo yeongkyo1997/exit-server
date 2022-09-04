@@ -1,6 +1,5 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
@@ -20,16 +19,12 @@ export class UsersService {
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
 
-    @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>,
-
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>
   ) {}
 
   async create({ password, createUserInput }) {
-    const { email, userImage, tags, boards, keywords, ...rest } =
-      createUserInput;
+    const { email, userImage, tags, keywords, ...rest } = createUserInput;
     const saveImage = await this.userImageRepository.save({ ...userImage });
 
     const saveTags = [];
@@ -38,6 +33,7 @@ export class UsersService {
       const findTag = await this.tagRepository.findOne({
         where: { name: tag },
       });
+
       if (findTag) {
         saveTags.push(findTag);
       } else {
@@ -46,12 +42,6 @@ export class UsersService {
         });
         saveTags.push(newTag);
       }
-    }
-
-    const saveBoards = [];
-    for (let j = 0; j < boards.length; j++) {
-      const board = boards[j];
-      saveBoards.push(board);
     }
 
     const saveKeywords = [];
@@ -76,7 +66,6 @@ export class UsersService {
       password,
       userImage: saveImage,
       tags: saveTags,
-      boards: saveBoards,
       keywords: saveKeywords,
     });
 
@@ -85,7 +74,7 @@ export class UsersService {
 
   async findAll() {
     const findUsers = await this.userRepository.find({
-      relations: ["userImage", "boards", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords"],
     });
     return findUsers;
   }
@@ -93,7 +82,7 @@ export class UsersService {
   async findOneWithEmail({ email }) {
     const findUser = await this.userRepository.findOne({
       where: { email },
-      relations: ["userImage", "boards", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords"],
     });
     return findUser;
   }
@@ -101,7 +90,7 @@ export class UsersService {
   async findOneWithUserId({ userId }) {
     const findUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ["userImage", "boards", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords"],
     });
     return findUser;
   }

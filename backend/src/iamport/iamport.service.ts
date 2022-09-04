@@ -2,28 +2,30 @@ import {
   HttpException,
   Injectable,
   UnprocessableEntityException,
-} from '@nestjs/common';
-import axios from 'axios';
+} from "@nestjs/common";
+import axios from "axios";
 
 @Injectable()
 export class IamportService {
+  // 인증 토큰 발급 받기
   async getToken() {
     try {
       const result = await axios({
-        url: 'https://api.iamport.kr/users/getToken',
-        method: 'post', // POST method
-        headers: { 'Content-Type': 'application/json' }, // "Content-Type": "application/json"
+        url: "https://api.iamport.kr/users/getToken",
+        method: "post", // POST method
+        headers: { "Content-Type": "application/json" }, // "Content-Type": "application/json"
         data: {
           imp_key: process.env.IMP_KEY, // REST API키
           imp_secret: process.env.IMP_SECRET, // REST API Secret
         },
       });
+
       const { access_token } = result.data.response;
       return access_token;
     } catch (error) {
       throw new HttpException(
         error.response.data.message,
-        error.response.status,
+        error.response.status
       );
     }
   }
@@ -33,9 +35,9 @@ export class IamportService {
     try {
       const result = await axios({
         url: `https://api.iamport.kr/payments/${impUid}`,
-        method: 'get', // GET method
+        method: "get", // GET method
         headers: {
-          'Content-Type': 'application/json', // "Content-Type": "application/json"
+          "Content-Type": "application/json", // "Content-Type": "application/json"
           Authorization: `Bearer ${accessToken}`, // 발행된 액세스 토큰
         },
       });
@@ -49,7 +51,7 @@ export class IamportService {
     try {
       await axios({
         url: `https://api.iamport.kr/payments/cancel`,
-        method: 'post', // POST method
+        method: "post", // POST method
         headers: { Authorization: accessToken }, // 인증 토큰 Authorization headerd 추가
         data: {
           imp_uid: impUid,
@@ -58,7 +60,7 @@ export class IamportService {
     } catch (error) {
       throw new HttpException(
         error.response.data.message,
-        error.response.status,
+        error.response.status
       );
     }
   }

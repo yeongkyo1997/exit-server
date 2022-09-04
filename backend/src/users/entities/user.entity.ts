@@ -1,5 +1,4 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
-import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
