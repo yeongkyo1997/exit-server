@@ -47,7 +47,7 @@ export class IamportService {
     }
   }
 
-  async cancel({ accessToken, impUid }) {
+  async cancelPayment({ accessToken, impUid }) {
     try {
       await axios({
         url: `https://api.iamport.kr/payments/cancel`,
