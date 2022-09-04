@@ -30,6 +30,18 @@ import { AppController } from "./app.controller";
       driver: ApolloDriver,
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
+      cors: {
+        Credential: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        allowedHeaders: [
+          'Access-Control-Allow-Headers',
+          'Authorization',
+          'X-Requested-With',
+          'Content-Type',
+          'Accept',
+        ],
+        origin: true,
+      },
     }),
     TypeOrmModule.forRoot({
       type: process.env.DATABASE_TYPE as "mysql",
