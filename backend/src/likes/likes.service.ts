@@ -16,8 +16,8 @@ export class LikesService {
     return `This action returns a #${id} like`;
   }
 
-  update(id: string, updateLikeInput: UpdateLikeInput) {
-    return `This action updates a #${id} like`;
+  update(updateLikeInput: UpdateLikeInput) {
+    return;
   }
 
   remove(id: string) {

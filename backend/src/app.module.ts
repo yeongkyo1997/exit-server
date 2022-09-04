@@ -16,13 +16,14 @@ import { BoardImagesModule } from "./board-images/board-images.module";
 import { CommentsModule } from "./comments/comments.module";
 import { SubCommentsModule } from "./sub-comments/sub-comments.module";
 import * as redisStore from "cache-manager-redis-store";
-import { PaymentHistoriesModule } from "./payment-histories/payment-histories.module";
 import { RedisClientOptions } from "redis";
 import { AuthsModule } from "./auths/auths.module";
 import { EmailService } from "./email/email.service";
 import { EmailModule } from "./email/email.module";
-import { MailerModule } from "@nestjs-modules/mailer";
+// import { MailerModule } from "@nestjs-modules/mailer";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { UserBoardModule } from "./userBoard/userBoard.module";
+
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -66,8 +67,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
     BoardImagesModule,
     CommentsModule,
     SubCommentsModule,
-    PaymentHistoriesModule,
     EmailModule,
+    UserBoardModule,
   ],
   providers: [],
 })

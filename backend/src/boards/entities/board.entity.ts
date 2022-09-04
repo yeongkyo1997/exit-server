@@ -2,7 +2,6 @@ import { ObjectType, Field, Int } from "@nestjs/graphql";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
-import { User } from "src/users/entities/user.entity";
 import {
   Column,
   CreateDateColumn,
@@ -33,7 +32,15 @@ export class Board {
 
   @Column()
   @Field(() => Int)
-  num: number;
+  totalMember: number;
+
+  @Column({ default: 1 })
+  @Field(() => Int)
+  countMember: number;
+
+  @Column({ default: 0 })
+  @Field(() => Int)
+  countLike: number;
 
   @Column()
   @Field(() => String)
@@ -43,9 +50,25 @@ export class Board {
   @Field(() => String)
   leader: string;
 
-  @Column({ default: 0 })
+  @Column()
   @Field(() => Int)
-  price: number;
+  bail: number;
+
+  @Column({ default: false })
+  @Field(() => Boolean)
+  status: boolean;
+
+  @Column({ default: false })
+  @Field(() => Boolean)
+  isSuccess: boolean;
+
+  @Column()
+  @Field(() => String)
+  projectUrl: string;
+
+  @Column()
+  @Field(() => String)
+  address: string;
 
   @Column()
   @Field(() => Date)
@@ -73,11 +96,6 @@ export class Board {
   @ManyToMany(() => Tag, (tags) => tags.boards)
   @Field(() => [Tag])
   tags: Tag[];
-
-  @JoinTable()
-  @ManyToMany(() => User, (users) => users.boards)
-  @Field(() => [User])
-  users: User[];
 
   @JoinTable()
   @ManyToMany(() => Keyword, (keywords) => keywords.boards)

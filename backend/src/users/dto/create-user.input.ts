@@ -15,20 +15,14 @@ export class CreateUserInput {
   @Field(() => String)
   description: string;
 
-  @Field(() => Boolean)
-  isRemote: boolean;
-
-  @Field(() => Int)
+  @Field(() => Int, { nullable: true })
   point: number;
 
-  @Field(() => CreateUserImageInput)
+  @Field(() => CreateUserImageInput, { nullable: true })
   userImage: CreateUserImageInput;
 
   @Field(() => [String])
   tags: string[];
-
-  @Field(() => [String])
-  boards: string[];
 
   @Field(() => [String])
   keywords: string[];
