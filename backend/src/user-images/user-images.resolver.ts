@@ -1,10 +1,7 @@
 import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { UserImagesService } from "./user-images.service";
 import { UserImage } from "./entities/user-image.entity";
-import { CreateUserImageInput } from "./dto/create-user-image.input";
-import { UpdateUserImageInput } from "./dto/update-user-image.input";
 import { FileUpload, GraphQLUpload } from "graphql-upload";
-import { isReadable } from "stream";
 
 @Resolver(() => UserImage)
 export class UserImagesResolver {
