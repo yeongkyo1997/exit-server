@@ -51,7 +51,6 @@ export class UserImagesService {
         await results.push(result);
       })
     );
-    console.log("results=", results);
     return results;
   }
 
