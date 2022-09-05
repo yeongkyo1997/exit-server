@@ -24,12 +24,12 @@ services:
     ports:
       - 3306:3306
 
-  team-redis:
-    image: redis:latest
-    ports:
-      - 6379:6379
-    environment:
-      TZ: Asia/Seoul
+  # team-redis:
+  #   image: redis:latest
+  #   ports:
+  #     - 6379:6379
+  #   environment:
+  #     TZ: Asia/Seoul
 
   # elasticsearch:
   #   image: elasticsearch:7.17.0
