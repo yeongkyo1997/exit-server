@@ -15,7 +15,7 @@ export class CreateUserInput {
   @Field(() => Int, { nullable: true })
   point: number;
 
-  @Field(() => CreateUserImageInput, { nullable: true })
+  @Field(() => CreateUserImageInput, { defaultValue: { url: "" } })
   userImage: CreateUserImageInput;
 
   @Field(() => [String], { nullable: true })
