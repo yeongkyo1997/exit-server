@@ -24,11 +24,14 @@ export class TagsService {
   }
 
   findAll() {
-    return this.tagsRepository.find();
+    return this.tagsRepository.find({ relations: ["users", "boards"] });
   }
 
   findOne(id: string) {
-    return this.tagsRepository.findOne({ where: { id } });
+    return this.tagsRepository.findOne({
+      where: { id },
+      relations: ["users", "boards"],
+    });
   }
 
   update(id: string, updateTagInput) {

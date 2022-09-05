@@ -25,7 +25,7 @@ export class CreateBoardInput {
   bail: number;
 
   @Field(() => String, { nullable: true })
-  projectUrl: string;
+  projectUrl?: string;
 
   @Field(() => Boolean, { nullable: true })
   status: boolean;
@@ -50,4 +50,7 @@ export class CreateBoardInput {
 
   @Field(() => [String], { nullable: true })
   keywords?: string[];
+
+  @Field(() => [String], { nullable: true })
+  categories?: string[];
 }

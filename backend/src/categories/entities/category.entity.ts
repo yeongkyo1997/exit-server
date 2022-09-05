@@ -1,5 +1,6 @@
 import { ObjectType, Field } from "@nestjs/graphql";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Board } from "src/boards/entities/board.entity";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 @ObjectType()
@@ -11,4 +12,8 @@ export class Category {
   @Column({ unique: true })
   @Field(() => String)
   name: string;
+
+  @ManyToMany(() => Board, (boards) => boards.categories)
+  @Field(() => [Board])
+  boards: Board[];
 }

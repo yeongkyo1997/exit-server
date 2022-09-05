@@ -1,13 +1,11 @@
-import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { ObjectType, Field } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
-import { Category } from "src/categories/entities/category.entity";
 import { User } from "src/users/entities/user.entity";
 import {
   Column,
   DeleteDateColumn,
   Entity,
   ManyToMany,
-  ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
 
@@ -24,10 +22,6 @@ export class Tag {
 
   @DeleteDateColumn()
   deleteAt: Date;
-
-  @ManyToOne(() => Category)
-  @Field(() => Category)
-  CategoryId: Category;
 
   @ManyToMany(() => User, (users) => users.tags)
   @Field(() => [User])

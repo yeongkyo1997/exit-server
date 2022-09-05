@@ -1,5 +1,6 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
+import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import {
@@ -62,7 +63,7 @@ export class Board {
   @Field(() => Boolean)
   isSuccess: boolean;
 
-  @Column()
+  @Column({ default: "" })
   @Field(() => String)
   projectUrl: string;
 
@@ -101,4 +102,9 @@ export class Board {
   @ManyToMany(() => Keyword, (keywords) => keywords.boards)
   @Field(() => [Keyword])
   keywords: Keyword[];
+
+  @JoinTable()
+  @ManyToMany(() => Category, (categories) => categories.boards)
+  @Field(() => [Category])
+  categories: Category[];
 }
