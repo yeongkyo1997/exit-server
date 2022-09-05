@@ -56,9 +56,9 @@ import { AppController } from "./app.controller";
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
-      url: "redis://team-redis:6379",
+      url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
       isGlobal: true,
-    }),
+    }), 
     AuthsModule,
     UsersModule,
     BoardsModule,
