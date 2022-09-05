@@ -27,8 +27,11 @@ export class UsersService {
     const { email, userImage, tags, keywords, ...rest } = createUserInput;
     const saveImage = await this.userImageRepository.save({ ...userImage });
 
+    const findUser = await this.userRepository.findOne({ where: { email } });
+    if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
+
     const saveTags = [];
-    for (let i = 0; i < tags.length; i++) {
+    for (let i = 0; i < tags.length && !tags; i++) {
       const tag = tags[i];
       const findTag = await this.tagRepository.findOne({
         where: { name: tag },
@@ -45,8 +48,8 @@ export class UsersService {
     }
 
     const saveKeywords = [];
-    for (let k = 0; k < keywords.length; k++) {
-      const keyword = keywords[k];
+    for (let i = 0; i < keywords.length && !keywords; i++) {
+      const keyword = keywords[i];
       const findKeyword = await this.keywordRepository.findOne({
         where: { name: keyword },
       });
