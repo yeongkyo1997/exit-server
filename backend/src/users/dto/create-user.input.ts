@@ -1,7 +1,26 @@
-import { InputType, Int, Field } from '@nestjs/graphql';
+import { InputType, Field, Int } from "@nestjs/graphql";
+import { CreateUserImageInput } from "src/user-images/dto/create-user-image.input";
 
 @InputType()
 export class CreateUserInput {
-  @Field(() => Int, { description: 'Example field (placeholder)' })
-  exampleField: number;
+  @Field(() => String)
+  email: string;
+
+  @Field(() => String)
+  password: string;
+
+  @Field(() => String)
+  nickname: string;
+
+  @Field(() => Int, { nullable: true })
+  point: number;
+
+  @Field(() => CreateUserImageInput, { nullable: true })
+  userImage: CreateUserImageInput;
+
+  @Field(() => [String], { nullable: true })
+  tags: string[];
+
+  @Field(() => [String], { nullable: true })
+  keywords: string[];
 }
