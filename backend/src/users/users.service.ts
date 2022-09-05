@@ -31,7 +31,7 @@ export class UsersService {
     if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
 
     const saveTags = [];
-    for (let i = 0; i < tags.length && !tags; i++) {
+    for (let i = 0; tags && i < tags.length; i++) {
       const tag = tags[i];
       const findTag = await this.tagRepository.findOne({
         where: { name: tag },
@@ -48,7 +48,7 @@ export class UsersService {
     }
 
     const saveKeywords = [];
-    for (let i = 0; i < keywords.length && !keywords; i++) {
+    for (let i = 0; keywords && i < keywords.length; i++) {
       const keyword = keywords[i];
       const findKeyword = await this.keywordRepository.findOne({
         where: { name: keyword },
