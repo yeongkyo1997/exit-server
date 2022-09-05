@@ -72,7 +72,11 @@ export class UsersResolver {
       throw new UnauthorizedException("로그인하지 않았습니다.");
     }
 
-    return context.req.user;
+    const result = await this.usersService.findOneWithUserId({
+      userId: context.req.user.userId,
+    });
+
+    return result;
   }
 
   // 로그인안한 user 삭제
