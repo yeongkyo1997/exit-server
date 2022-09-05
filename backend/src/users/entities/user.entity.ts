@@ -33,10 +33,6 @@ export class User {
   @Field(() => String)
   nickname: string;
 
-  @Column()
-  @Field(() => String)
-  description: string;
-
   @Column({ default: 0 })
   @Field(() => Int)
   point: number;

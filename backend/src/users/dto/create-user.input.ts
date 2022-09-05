@@ -12,18 +12,15 @@ export class CreateUserInput {
   @Field(() => String)
   nickname: string;
 
-  @Field(() => String)
-  description: string;
-
   @Field(() => Int, { nullable: true })
   point: number;
 
   @Field(() => CreateUserImageInput, { nullable: true })
   userImage: CreateUserImageInput;
 
-  @Field(() => [String])
+  @Field(() => [String], { nullable: true })
   tags: string[];
 
-  @Field(() => [String])
+  @Field(() => [String], { nullable: true })
   keywords: string[];
 }
