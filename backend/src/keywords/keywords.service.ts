@@ -10,6 +10,17 @@ export class KeywordsService {
     private keywordsRepository: Repository<Keyword>
   ) {}
 
+  findAll() {
+    return this.keywordsRepository.find({ relations: ["boards", "users"] });
+  }
+
+  findOne(id: string) {
+    return this.keywordsRepository.findOne({
+      where: { id },
+      relations: ["boards", "users"],
+    });
+  }
+
   create(createKeywordInput) {
     const checkKeyword = this.keywordsRepository.findOne({
       where: { name: createKeywordInput.name },
@@ -21,14 +32,6 @@ export class KeywordsService {
     }
 
     return this.keywordsRepository.save(createKeywordInput);
-  }
-
-  findAll() {
-    return this.keywordsRepository.find();
-  }
-
-  findOne(id: string) {
-    return this.keywordsRepository.findOne({ where: { id } });
   }
 
   async update(id: string, updateKeywordInput) {

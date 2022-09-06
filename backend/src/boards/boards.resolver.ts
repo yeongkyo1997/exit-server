@@ -18,6 +18,11 @@ export class BoardsResolver {
     return this.boardsService.findAll({ isSuccess, status });
   }
 
+  @Query(() => [Board])
+  fetchBoardsByLikes() {
+    return this.boardsService.findAllByLikes();
+  }
+
   @Query(() => Board)
   fetchBoard(
     @Args("boardId") boardId: string //
