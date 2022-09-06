@@ -23,7 +23,8 @@ import { IamportService } from "./iamport/iamport.service";
 import { ChatModule } from "./chat/chat.module";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
-import { TagImagesModule } from './tag-images/tag-images.module';
+import { FileUploadsModule } from "./fileUpload/fileUpload.module";
+import { TagImagesModule } from "./tag-images/tag-images.module";
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { TagImagesModule } from './tag-images/tag-images.module';
     ChatModule,
     UserBoardModule,
     TagImagesModule,
+    FileUploadsModule,
   ],
   providers: [IamportService],
   controllers: [AppController],
