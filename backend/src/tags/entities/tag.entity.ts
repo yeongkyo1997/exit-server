@@ -6,6 +6,7 @@ import {
   DeleteDateColumn,
   Entity,
   ManyToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
 

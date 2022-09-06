@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { UserBoard } from "./entities/userBoard.entity";
 
@@ -10,7 +11,9 @@ export class UserBoardService {
     @InjectRepository(UserBoard)
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>
+    private readonly boardRepository: Repository<Board>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
 
   async findAll({ userId, boardId, isAccepted }) {
@@ -25,9 +28,30 @@ export class UserBoardService {
   }
 
   async create({ createUserBoardInput }) {
+    const checkDuplication = await this.userBoardRepository.findOne({
+      where: {
+        user: { id: createUserBoardInput.userId },
+        board: { id: createUserBoardInput.boardId },
+      },
+    });
+
+    if (checkDuplication) {
+      return new Error("이미 신청한 프로젝트입니다.");
+    }
+
+    const user = await this.userRepository.findOne({
+      where: {
+        id: createUserBoardInput.userId,
+      },
+    });
+    const board = await this.boardRepository.findOne({
+      where: {
+        id: createUserBoardInput.boardId,
+      },
+    });
     return await this.userBoardRepository.save({
-      user: createUserBoardInput.userId,
-      board: createUserBoardInput.boardId,
+      user,
+      board,
     });
   }
 

@@ -1,4 +1,5 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
@@ -60,4 +61,9 @@ export class User {
   @ManyToMany(() => Keyword, (keywords) => keywords.users)
   @Field(() => [Keyword])
   keywords: Keyword[];
+
+  @JoinTable()
+  @ManyToMany(() => Category, (categories) => categories.users)
+  @Field(() => [Category])
+  categories: Category[];
 }

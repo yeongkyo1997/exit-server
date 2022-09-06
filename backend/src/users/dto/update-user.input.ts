@@ -15,4 +15,7 @@ export class UpdateUserInput extends PartialType(CreateUserInput) {
 
   @Field(() => [String], { nullable: true })
   keywords: string[];
+
+  @Field(() => [String], { nullable: true })
+  categories: string[];
 }
