@@ -1,24 +1,24 @@
-import { UnauthorizedException, CACHE_MANAGER, Inject } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { Cache } from 'cache-manager';
-import { Strategy, ExtractJwt } from 'passport-jwt';
+import { UnauthorizedException, CACHE_MANAGER, Inject } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { Cache } from "cache-manager";
+import { Strategy, ExtractJwt } from "passport-jwt";
 
-export class JwtAccessStrategy extends PassportStrategy(Strategy, 'access') {
+export class JwtAccessStrategy extends PassportStrategy(Strategy, "access") {
   constructor(
     @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache, //
+    private readonly cacheManager: Cache //
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: 'myAccessKey',
+      secretOrKey: "myAccessKey",
       passReqToCallback: true,
     });
   }
 
   async validate(req, payload) {
-    const accessToken = req.headers['authorization'].split(' ')[1];
+    const accessToken = req.headers["authorization"].split(" ")[1];
     const validation = await this.cacheManager.get(
-      `accessToken:${accessToken}`,
+      `accessToken:${accessToken}`
     );
 
     if (validation) throw new UnauthorizedException();

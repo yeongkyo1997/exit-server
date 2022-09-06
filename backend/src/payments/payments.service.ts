@@ -2,7 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Connection, DataSource, Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
-import { Payment, PAYMENT_TRANSACTION_STATUS_ENUM } from "./entities/payment.entity";
+import {
+  Payment,
+  PAYMENT_TRANSACTION_STATUS_ENUM,
+} from "./entities/payment.entity";
 
 @Injectable()
 export class PaymentsService {
