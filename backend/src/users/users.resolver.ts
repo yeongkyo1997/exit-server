@@ -34,10 +34,15 @@ export class UsersResolver {
 
     const hashedPassword = await bcrypt.hash(password, 10.2);
 
-    return this.usersService.create({
+    const result = this.usersService.create({
       createUserInput,
       password: hashedPassword,
     });
+
+    // redis에서 이메일 토큰 삭제하기
+    await this.cacheManager.del(createUserInput.email);
+
+    return result;
   }
 
   @Query(() => [User])
@@ -60,14 +65,18 @@ export class UsersResolver {
   // 로그인한 유저 정보 확인하기
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => User)
-  fetchLoginedUser(@Context() context: any) {
+  async fetchLoginedUser(@Context() context: any) {
     const validToken = context.req.headers["authorization"].split(" ")[1];
     // redis에서 로그아웃 상태확인하기
-    if (this.cacheManager.get(validToken)) {
+    if (await this.cacheManager.get(validToken)) {
       throw new UnauthorizedException("로그인하지 않았습니다.");
     }
 
-    return context.req.user;
+    const result = await this.usersService.findOneWithUserId({
+      userId: context.req.user.userId,
+    });
+
+    return result;
   }
 
   // 로그인안한 user 삭제

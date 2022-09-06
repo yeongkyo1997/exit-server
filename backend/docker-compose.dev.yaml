@@ -14,22 +14,22 @@ services:
     environment:
       - TZ=Asia/Seoul
 
-  team-database:
-    # platform: linux/x86_64
-    image: mysql:latest
-    environment:
-      MYSQL_DATABASE: "teamdocker"
-      MYSQL_ROOT_PASSWORD: "root"
-      TZ: Asia/Seoul
-    ports:
-      - 3306:3306
+  # team-database:
+  #   # platform: linux/x86_64
+  #   image: mysql:latest
+  #   environment:
+  #     MYSQL_DATABASE: "teamdocker"
+  #     MYSQL_ROOT_PASSWORD: "root"
+  #     TZ: Asia/Seoul
+  #   ports:
+  #     - 3306:3306
 
-  team-redis:
-    image: redis:latest
-    ports:
-      - 6379:6379
-    environment:
-      TZ: Asia/Seoul
+  # team-redis:
+  #   image: redis:latest
+  #   ports:
+  #     - 6379:6379
+  #   environment:
+  #     TZ: Asia/Seoul
 
   # elasticsearch:
   #   image: elasticsearch:7.17.0
