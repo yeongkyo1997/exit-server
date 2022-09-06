@@ -29,7 +29,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ unique: true })
+  @Column()
   @Field(() => String)
   nickname: string;
 
