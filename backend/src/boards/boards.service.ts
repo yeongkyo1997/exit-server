@@ -1,5 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
@@ -19,7 +20,9 @@ export class BoardsService {
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(UserBoard)
-    private readonly userBoardRepository: Repository<UserBoard>
+    private readonly userBoardRepository: Repository<UserBoard>,
+    @InjectRepository(BoardImage)
+    private readonly boardImageRepository: Repository<BoardImage>
   ) {}
 
   findAll({ isSuccess, status }) {
@@ -43,10 +46,13 @@ export class BoardsService {
   }
 
   async create({ leader, createBoardInput }) {
-    const { image, tags, keywords, categories, ...board } = createBoardInput;
+    const { boardImage, tags, keywords, categories, ...board } =
+      createBoardInput;
 
     // 썸네일 저장 후 이미지DB에 저장하는 로직
-    // await ...
+    const boardImageResult = await this.boardImageRepository.save({
+      url: boardImage.url,
+    });
 
     // 다대다 확인 후 등록 로직
     const tagsResult = [];
@@ -96,8 +102,8 @@ export class BoardsService {
 
     const savedInfo = await this.boardRepository.save({
       ...board,
-      leader,
-      boardImage: image,
+      leader: leader.id,
+      boardImage: boardImageResult,
       tags: tagsResult,
       keywords: keywordsResult,
       categories: categoriesResult,
@@ -125,12 +131,24 @@ export class BoardsService {
       categories: originCategories,
     } = originBoard;
 
-    const { image, tags, keywords, categories, ...updateBoard } =
+    const { boardImage, tags, keywords, categories, ...updateBoard } =
       updateBoardInput;
 
     const tagsResult = [];
     const keywordsResult = [];
     const categoriesResult = [];
+
+    // 이미지가 있을 경우
+    if (boardImage) {
+      await this.boardImageRepository.update(
+        {
+          id: originBoard.boardImage.id,
+        },
+        {
+          url: boardImage.url,
+        }
+      );
+    }
 
     for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({
@@ -181,7 +199,7 @@ export class BoardsService {
     const updatedInfo = this.boardRepository.save({
       ...originBoard,
       ...updateBoard,
-      boardImage: image,
+      boardImage: boardImage,
       tags: originTags,
       keywords: originKeywords,
       categories: originCategories,
