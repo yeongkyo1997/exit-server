@@ -6,6 +6,7 @@ import { UserImage } from "src/user-images/entities/user-image.entity";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
+import { Category } from "src/categories/entities/category.entity";
 
 @Injectable()
 export class UsersService {
@@ -20,7 +21,9 @@ export class UsersService {
     private readonly tagRepository: Repository<Tag>,
 
     @InjectRepository(Keyword)
-    private readonly keywordRepository: Repository<Keyword>
+    private readonly keywordRepository: Repository<Keyword>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>
   ) {}
 
   async create({ password, createUserInput }) {
@@ -47,7 +50,7 @@ export class UsersService {
 
   async findAll() {
     const findUsers = await this.userRepository.find({
-      relations: ["userImage", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords", "categories"],
     });
     return findUsers;
   }
@@ -55,7 +58,7 @@ export class UsersService {
   async findOneWithEmail({ email }) {
     const findUser = await this.userRepository.findOne({
       where: { email },
-      relations: ["userImage", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords", "categories"],
     });
     return findUser;
   }
@@ -63,7 +66,7 @@ export class UsersService {
   async findOneWithUserId({ userId }) {
     const findUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ["userImage", "tags", "keywords"],
+      relations: ["userImage", "tags", "keywords", "categories"],
     });
     return findUser;
   }
@@ -72,12 +75,16 @@ export class UsersService {
   async update({ email, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
       where: { email },
-      relations: ["tags", "keywords"],
+      relations: ["tags", "keywords", "categories"],
     });
 
-    const { tags: originTags, keywords: originKeywords } = originUser;
+    const {
+      tags: originTags,
+      keywords: originKeywords,
+      categories: originCategories,
+    } = originUser;
 
-    const { tags, keywords, ...updateUser } = updateUserInput;
+    const { tags, keywords, categories, ...updateUser } = updateUserInput;
 
     const saveTags = [];
     for (let i = 0; tags && i < tags.length; i++) {
@@ -112,14 +119,32 @@ export class UsersService {
       }
     }
 
+    const saveCategories = [];
+    for (let i = 0; categories && i < categories.length; i++) {
+      const category = categories[i];
+      const findCategory = await this.categoryRepository.findOne({
+        where: { name: category },
+      });
+      if (findCategory) {
+        saveCategories.push(findCategory);
+      } else {
+        const newCategory = await this.categoryRepository.save({
+          name: category,
+        });
+        saveCategories.push(newCategory);
+      }
+    }
+
     originTags.push(...saveTags);
     originKeywords.push(...saveKeywords);
+    originCategories.push(...saveCategories);
 
     const updatedUser = this.userRepository.save({
       ...originUser,
       ...updateUser,
       tags: originTags,
       keywords: originKeywords,
+      categories: originCategories,
     });
     return updatedUser;
   }

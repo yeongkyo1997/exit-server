@@ -34,7 +34,7 @@ export class UsersResolver {
 
     const hashedPassword = await bcrypt.hash(password, 10.2);
 
-    const result = this.usersService.create({
+    const result = await this.usersService.create({
       createUserInput,
       password: hashedPassword,
     });

@@ -13,13 +13,13 @@ export class CategoriesService {
   ) {}
 
   findAll() {
-    return this.categoryRepository.find({ relations: ["boards"] });
+    return this.categoryRepository.find({ relations: ["boards", "users"] });
   }
 
   findOne(id: string) {
     return this.categoryRepository.findOne({
       where: { id },
-      relations: ["boards"],
+      relations: ["boards", "users"],
     });
   }
 
