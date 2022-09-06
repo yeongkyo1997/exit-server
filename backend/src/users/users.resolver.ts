@@ -73,7 +73,7 @@ export class UsersResolver {
     }
 
     const result = await this.usersService.findOneWithUserId({
-      userId: context.req.user.userId,
+      userId: context.req.user.id,
     });
 
     return result;

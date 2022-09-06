@@ -17,9 +17,6 @@ export class CreateBoardInput {
   @Field(() => String)
   description: string;
 
-  @Field(() => String)
-  leader: string;
-
   @Min(50000)
   @Field(() => Int)
   bail: number;
@@ -45,8 +42,8 @@ export class CreateBoardInput {
   @Field(() => CreateBoardImageInput, { nullable: true })
   image?: CreateBoardImageInput;
 
-  @Field(() => [String])
-  tags: string[];
+  @Field(() => [String], { nullable: true })
+  tags?: string[];
 
   @Field(() => [String], { nullable: true })
   keywords?: string[];
