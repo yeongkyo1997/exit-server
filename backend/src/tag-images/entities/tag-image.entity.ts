@@ -1,7 +1,14 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { ObjectType, Field } from "@nestjs/graphql";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+@Entity()
 @ObjectType()
 export class TagImage {
-  @Field(() => Int, { description: 'Example field (placeholder)' })
-  exampleField: number;
+  @PrimaryGeneratedColumn("uuid")
+  @Field(() => String)
+  id: string;
+
+  @Column()
+  @Field(() => String)
+  url: string;
 }
