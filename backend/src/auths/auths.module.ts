@@ -11,6 +11,7 @@ import { UserImage } from "src/user-images/entities/user-image.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
+import { Category } from "src/categories/entities/category.entity";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
       Tag,
       Board,
       Keyword,
+      Category,
     ]),
   ],
   providers: [
