@@ -3,8 +3,8 @@ import { Storage } from "@google-cloud/storage";
 
 @Injectable()
 export class FileUploadsService {
-  async upload({ files }) {
-    const waitedImages = await Promise.all(files);
+  async upload({ file }) {
+    const waitedImages = await Promise.all(file);
 
     const bucket = process.env.BUCKET_NAME;
 

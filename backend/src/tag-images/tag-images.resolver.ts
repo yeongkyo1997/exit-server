@@ -1,35 +1,45 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
-import { TagImagesService } from './tag-images.service';
-import { TagImage } from './entities/tag-image.entity';
-import { CreateTagImageInput } from './dto/create-tag-image.input';
-import { UpdateTagImageInput } from './dto/update-tag-image.input';
+import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
+import { FileUpload, GraphQLUpload } from "graphql-upload";
+import { TagImage } from "./entities/tag-image.entity";
+import { TagImagesService } from "./tag-images.service";
 
 @Resolver(() => TagImage)
 export class TagImagesResolver {
-  constructor(private readonly tagImagesService: TagImagesService) {}
+  constructor(
+    private readonly tagImagesService: TagImagesService //
+  ) {}
 
   @Mutation(() => TagImage)
-  createTagImage(@Args('createTagImageInput') createTagImageInput: CreateTagImageInput) {
-    return this.tagImagesService.create(createTagImageInput);
+  async uploadImage(
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
+  ) {
+    return await this.tagImagesService.create({ image });
   }
 
-  @Query(() => [TagImage], { name: 'tagImages' })
-  findAll() {
+  @Query(() => TagImage)
+  fetchImage(
+    @Args("tagImageId") tagImageId: string //
+  ) {
+    return this.tagImagesService.findOne({ tagImageId });
+  }
+
+  @Query(() => [TagImage])
+  fetchImages() {
     return this.tagImagesService.findAll();
   }
 
-  @Query(() => TagImage, { name: 'tagImage' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.tagImagesService.findOne(id);
+  @Mutation(() => TagImage)
+  updateImage(
+    @Args("tagImageId") tagImageId: string, //
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
+  ) {
+    return this.tagImagesService.update({ tagImageId, image });
   }
 
-  @Mutation(() => TagImage)
-  updateTagImage(@Args('updateTagImageInput') updateTagImageInput: UpdateTagImageInput) {
-    return this.tagImagesService.update(updateTagImageInput.id, updateTagImageInput);
-  }
-
-  @Mutation(() => TagImage)
-  removeTagImage(@Args('id', { type: () => Int }) id: number) {
-    return this.tagImagesService.remove(id);
+  @Mutation(() => Boolean)
+  removeImage(
+    @Args({ name: "tagImageId", type: () => String }) tagImageId: string //
+  ) {
+    return this.tagImagesService.delete({ tagImageId });
   }
 }

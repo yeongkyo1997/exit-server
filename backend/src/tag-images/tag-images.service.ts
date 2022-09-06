@@ -1,26 +1,89 @@
-import { Injectable } from '@nestjs/common';
-import { CreateTagImageInput } from './dto/create-tag-image.input';
-import { UpdateTagImageInput } from './dto/update-tag-image.input';
+import { Injectable } from "@nestjs/common";
+//import { Storage } from "@google-cloud/storage";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { FileUploadsService } from "src/fileUpload/fileUpload.service";
+import { TagImage } from "./entities/tag-image.entity";
 
 @Injectable()
 export class TagImagesService {
-  create(createTagImageInput: CreateTagImageInput) {
-    return 'This action adds a new tagImage';
+  constructor(
+    @InjectRepository(TagImage)
+    private readonly tagImageRepository: Repository<TagImage>,
+
+    private readonly fileUploadsService: FileUploadsService
+  ) {}
+
+  async create({ image }) {
+    // const bucket = process.env.BUCKET_NAME;
+
+    // const storage = new Storage({
+    //   projectId: process.env.PROJECT_ID,
+    //   keyFilename: process.env.KEY_FILE_NAME,
+    // }).bucket(bucket);
+
+    // const url = await new Promise((resolve, reject) => {
+    //   image
+    //     .createReadStream()
+    //     .pipe(storage.file(image.filename).createWriteStream())
+    //     .on("finish", async () => {
+    //       resolve(`https://storage.googleapis.com/${bucket}/${image.filename}`);
+    //     })
+    //     .on("error", (error) => {
+    //       reject(`Unable to upload image`);
+    //       return error;
+    //     });
+    // });
+
+    const url = await this.fileUploadsService.upload({ file: image });
+
+    const result = await this.tagImageRepository.save({ url: url.toString() });
+    return result;
   }
 
-  findAll() {
-    return `This action returns all tagImages`;
+  async findOne({ tagImageId }) {
+    await this.tagImageRepository.findOne({
+      where: { id: tagImageId },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} tagImage`;
+  async findAll() {
+    await this.tagImageRepository.find({});
   }
 
-  update(id: number, updateTagImageInput: UpdateTagImageInput) {
-    return `This action updates a #${id} tagImage`;
+  async update({ tagImageId, image }) {
+    await this.tagImageRepository.softDelete({ id: tagImageId });
+
+    // const bucket = process.env.BUCKET_NAME;
+
+    // const storage = new Storage({
+    //   projectId: process.env.PROJECT_ID,
+    //   keyFilename: process.env.KEY_FILE_NAME,
+    // }).bucket(bucket);
+
+    // const url = await new Promise((resolve, reject) => {
+    //   image
+    //     .createReadStream()
+    //     .pipe(storage.file(image.filename).createWriteStream())
+    //     .on("finish", async () => {
+    //       resolve(`https://storage.googleapis.com/${bucket}/${image.filename}`);
+    //     })
+    //     .on("error", (error) => {
+    //       reject(`Unable to upload image`);
+    //       return error;
+    //     });
+    // });
+
+    const url = await this.fileUploadsService.upload({ file: image });
+
+    const result = await this.tagImageRepository.save({ url: url.toString() });
+    return result;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} tagImage`;
+  async delete({ tagImageId }) {
+    const result = await this.tagImageRepository.softDelete({
+      id: tagImageId,
+    });
+    return result.affected ? true : false;
   }
 }

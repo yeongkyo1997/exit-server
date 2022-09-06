@@ -79,6 +79,7 @@ import { TagImagesModule } from "./tag-images/tag-images.module";
     UserBoardModule,
     TagImagesModule,
     FileUploadsModule,
+    TagImagesModule,
   ],
   providers: [IamportService],
   controllers: [AppController],

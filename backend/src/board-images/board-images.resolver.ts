@@ -5,11 +5,13 @@ import { FileUpload, GraphQLUpload } from "graphql-upload";
 
 @Resolver(() => BoardImage)
 export class BoardImagesResolver {
-  constructor(private readonly boardImagesService: BoardImagesService) {}
+  constructor(
+    private readonly boardImagesService: BoardImagesService //
+  ) {}
 
   @Mutation(() => BoardImage)
   async uploadImage(
-    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
+    @Args({ name: "images", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
     return await this.boardImagesService.create({ image });
   }

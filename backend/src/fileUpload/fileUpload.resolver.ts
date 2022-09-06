@@ -10,8 +10,8 @@ export class FileUploadsResolver {
 
   @Mutation(() => [String])
   async uploadFiles(
-    @Args({ name: "files", type: () => [GraphQLUpload] }) files: FileUpload[]
+    @Args({ name: "file", type: () => [GraphQLUpload] }) file: FileUpload[]
   ) {
-    return await this.fileUploadsService.upload({ files });
+    return await this.fileUploadsService.upload({ file });
   }
 }
