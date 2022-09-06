@@ -6,6 +6,7 @@ import { Board } from "./entities/board.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Category } from "src/categories/entities/category.entity";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { Category } from "src/categories/entities/category.entity";
       Tag,
       Keyword,
       Category,
+      UserBoard,
     ]),
   ],
   providers: [

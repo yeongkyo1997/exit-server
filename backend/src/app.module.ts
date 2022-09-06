@@ -23,6 +23,7 @@ import { IamportService } from "./iamport/iamport.service";
 import { ChatModule } from "./chat/chat.module";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
+import { GpsModule } from './gps/gps.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { AppController } from "./app.controller";
     EmailModule,
     ChatModule,
     UserBoardModule,
+    GpsModule,
   ],
   providers: [IamportService],
   controllers: [AppController],

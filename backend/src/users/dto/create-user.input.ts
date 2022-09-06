@@ -12,9 +12,6 @@ export class CreateUserInput {
   @Field(() => String)
   nickname: string;
 
-  @Field(() => Int, { nullable: true })
-  point: number;
-
   @Field(() => CreateUserImageInput, { defaultValue: { url: "" } })
   userImage: CreateUserImageInput;
 

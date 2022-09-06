@@ -47,7 +47,7 @@ export class Board {
   @Field(() => String)
   description: string;
 
-  @Column()
+  // @Column()
   @Field(() => String)
   leader: string;
 

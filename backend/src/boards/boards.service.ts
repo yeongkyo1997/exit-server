@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
@@ -16,7 +17,9 @@ export class BoardsService {
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>,
     @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(UserBoard)
+    private readonly userBoardRepository: Repository<UserBoard>
   ) {}
 
   findAll({ isSuccess, status }) {
@@ -39,7 +42,7 @@ export class BoardsService {
     });
   }
 
-  async create({ createBoardInput }) {
+  async create({ leader, createBoardInput }) {
     const { image, tags, keywords, categories, ...board } = createBoardInput;
 
     // 썸네일 저장 후 이미지DB에 저장하는 로직
@@ -47,7 +50,7 @@ export class BoardsService {
 
     // 다대다 확인 후 등록 로직
     const tagsResult = [];
-    for (let i = 0; i < tags.length; i++) {
+    for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({
         where: { name: tags[i] },
       });
@@ -62,7 +65,7 @@ export class BoardsService {
     }
 
     const keywordsResult = [];
-    for (let i = 0; i < keywords.length; i++) {
+    for (let i = 0; keywords && i < keywords.length; i++) {
       const prevKeyword = await this.keywordRepository.findOne({
         where: { name: keywords[i] },
       });
@@ -77,7 +80,7 @@ export class BoardsService {
     }
 
     const categoriesResult = [];
-    for (let i = 0; i < categories.length; i++) {
+    for (let i = 0; categories && i < categories.length; i++) {
       const prevCategory = await this.categoryRepository.findOne({
         where: { name: categories[i] },
       });
@@ -93,10 +96,18 @@ export class BoardsService {
 
     const savedInfo = await this.boardRepository.save({
       ...board,
+      leader,
       boardImage: image,
       tags: tagsResult,
       keywords: keywordsResult,
       categories: categoriesResult,
+    });
+
+    // userBoard에도 저장
+    await this.userBoardRepository.save({
+      user: leader,
+      board: savedInfo.id,
+      isAccepted: true,
     });
 
     return savedInfo;
