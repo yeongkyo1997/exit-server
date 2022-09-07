@@ -1,26 +1,34 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { TagImage } from "src/tag-images/entities/tag-image.entity";
 import { Repository } from "typeorm";
-import { UpdateTagInput } from "./dto/update-tag.input";
 import { Tag } from "./entities/tag.entity";
 
 @Injectable()
 export class TagsService {
   constructor(
     @InjectRepository(Tag)
-    private tagsRepository: Repository<Tag>
+    private tagsRepository: Repository<Tag>,
+
+    @InjectRepository(TagImage)
+    private TagImageRepository: Repository<TagImage>
   ) {}
 
-  create(createTagInput) {
+  async create(createTagInput) {
+    const { name, ...tag } = createTagInput;
+
     const checkTag = this.tagsRepository.findOne({
-      where: { name: createTagInput.name },
+      where: { name },
     });
 
     // 같은 이름의 태그가 존재한다면 에러를 던진다.
     if (checkTag) {
       throw new Error("이미 존재하는 태그입니다.");
     }
-    return this.tagsRepository.save(createTagInput);
+    return this.tagsRepository.save({
+      name,
+      ...tag,
+    });
   }
 
   findAll() {
