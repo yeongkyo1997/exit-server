@@ -15,26 +15,6 @@ export class UserImagesService {
   ) {}
 
   async create({ image }) {
-    // const bucket = process.env.BUCKET_NAME;
-
-    // const storage = new Storage({
-    //   projectId: process.env.PROJECT_ID,
-    //   keyFilename: process.env.KEY_FILE_NAME,
-    // }).bucket(bucket);
-
-    // const url = await new Promise((resolve, reject) => {
-    //   image
-    //     .createReadStream()
-    //     .pipe(storage.file(image.filename).createWriteStream())
-    //     .on("finish", async () => {
-    //       resolve(`https://storage.googleapis.com/${bucket}/${image.filename}`);
-    //     })
-    //     .on("error", (error) => {
-    //       reject(`Unable to upload image`);
-    //       return error;
-    //     });
-    // });
-
     const url = await this.fileUploadsService.upload({ file: image });
 
     const result = await this.userImageRepository.save({ url: url.toString() });
