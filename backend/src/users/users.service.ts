@@ -27,21 +27,23 @@ export class UsersService {
   ) {}
 
   async create({ password, createUserInput }) {
-    const { email, nickname, ...user } = createUserInput;
 
-    const findUser = await this.userRepository.findOne({ where: { email } });
+    const { email, nickname } = createUserInput;
+    
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
 
     const findNickname = await this.userRepository.findOne({
       where: { nickname },
     });
+    
     if (findNickname)
       throw new ConflictException("이미 존재하는 닉네임입니다.");
 
-    const savedInfo = await this.userRepository.save({
-      ...user,
-      email,
-      nickname,
+    const saveUser = await this.userRepository.save({
+      ...createUserInput,
       password,
     });
 
