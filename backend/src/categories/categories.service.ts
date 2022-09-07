@@ -12,6 +12,17 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>
   ) {}
 
+  findAll() {
+    return this.categoryRepository.find({ relations: ["boards", "users"] });
+  }
+
+  findOne(id: string) {
+    return this.categoryRepository.findOne({
+      where: { id },
+      relations: ["boards", "users"],
+    });
+  }
+
   async create(createCategoryInput: CreateCategoryInput) {
     const checkCategory = await this.categoryRepository.findOne({
       where: { name: createCategoryInput.name },
@@ -24,14 +35,6 @@ export class CategoriesService {
 
     const newCategory = this.categoryRepository.create(createCategoryInput);
     return this.categoryRepository.save(newCategory);
-  }
-
-  findAll() {
-    return this.categoryRepository.find();
-  }
-
-  findOne(id: string) {
-    return this.categoryRepository.findOne({ where: { id } });
   }
 
   async update(id: string, updateCategoryInput: UpdateCategoryInput) {

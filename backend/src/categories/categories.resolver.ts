@@ -6,23 +6,27 @@ import { UpdateCategoryInput } from "./dto/update-category.input";
 
 @Resolver(() => Category)
 export class CategoriesResolver {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService //
+  ) {}
+
+  @Query(() => [Category])
+  fetchCategories() {
+    return this.categoriesService.findAll();
+  }
+
+  @Query(() => Category)
+  fetchCategory(
+    @Args("id", { type: () => String }) id: string //
+  ) {
+    return this.categoriesService.findOne(id);
+  }
 
   @Mutation(() => Category)
   createCategory(
     @Args("createCategoryInput") createCategoryInput: CreateCategoryInput
   ) {
     return this.categoriesService.create(createCategoryInput);
-  }
-
-  @Query(() => [Category], { name: "categories" })
-  fetchCategories() {
-    return this.categoriesService.findAll();
-  }
-
-  @Query(() => Category)
-  fetchCategory(@Args("id", { type: () => String }) id: string) {
-    return this.categoriesService.findOne(id);
   }
 
   @Mutation(() => Category)
@@ -36,12 +40,16 @@ export class CategoriesResolver {
   }
 
   @Mutation(() => Boolean)
-  removeCategory(@Args("id", { type: () => String }) id: string) {
+  removeCategory(
+    @Args("id", { type: () => String }) id: string //
+  ) {
     return this.categoriesService.remove(id);
   }
 
   @Mutation(() => Category)
-  restoreCategory(@Args("id", { type: () => String }) id: string) {
+  restoreCategory(
+    @Args("id", { type: () => String }) id: string //
+  ) {
     return this.categoriesService.restore(id);
   }
 }

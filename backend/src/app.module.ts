@@ -23,6 +23,8 @@ import { IamportService } from "./iamport/iamport.service";
 import { ChatModule } from "./chat/chat.module";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
+import { FileUploadsModule } from "./fileUpload/fileUpload.module";
+import { TagImagesModule } from "./tag-images/tag-images.module";
 
 @Module({
   imports: [
@@ -32,13 +34,13 @@ import { AppController } from "./app.controller";
       context: ({ req, res }) => ({ req, res }),
       cors: {
         Credential: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: [
-          'Access-Control-Allow-Headers',
-          'Authorization',
-          'X-Requested-With',
-          'Content-Type',
-          'Accept',
+          "Access-Control-Allow-Headers",
+          "Authorization",
+          "X-Requested-With",
+          "Content-Type",
+          "Accept",
         ],
         origin: true,
       },
@@ -56,15 +58,16 @@ import { AppController } from "./app.controller";
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
-      url: "redis://team-redis:6379",
+      url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
       isGlobal: true,
     }),
     AuthsModule,
     UsersModule,
     BoardsModule,
+    CategoriesModule,
+    ChatModule,
     KeywordsModule,
     TagsModule,
-    CategoriesModule,
     LikesModule,
     PaymentsModule,
     UserUrlsModule,
@@ -73,8 +76,10 @@ import { AppController } from "./app.controller";
     CommentsModule,
     SubCommentsModule,
     EmailModule,
-    ChatModule,
     UserBoardModule,
+    TagImagesModule,
+    FileUploadsModule,
+    TagImagesModule,
   ],
   providers: [IamportService],
   controllers: [AppController],

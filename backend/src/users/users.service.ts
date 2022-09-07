@@ -6,6 +6,7 @@ import { UserImage } from "src/user-images/entities/user-image.entity";
 import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
+import { Category } from "src/categories/entities/category.entity";
 
 @Injectable()
 export class UsersService {
@@ -20,15 +21,85 @@ export class UsersService {
     private readonly tagRepository: Repository<Tag>,
 
     @InjectRepository(Keyword)
-    private readonly keywordRepository: Repository<Keyword>
+    private readonly keywordRepository: Repository<Keyword>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>
   ) {}
 
   async create({ password, createUserInput }) {
-    const { email, userImage, tags, keywords, ...rest } = createUserInput;
-    const saveImage = await this.userImageRepository.save({ ...userImage });
+    const { email, nickname, ...user } = createUserInput;
+
+    const findUser = await this.userRepository.findOne({ where: { email } });
+    if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
+
+    const findNickname = await this.userRepository.findOne({
+      where: { nickname },
+    });
+    if (findNickname)
+      throw new ConflictException("이미 존재하는 닉네임입니다.");
+
+    const savedInfo = await this.userRepository.save({
+      ...user,
+      email,
+      nickname,
+      password,
+    });
+
+    return savedInfo;
+  }
+
+  async findAll() {
+    const findUsers = await this.userRepository.find({
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUsers;
+  }
+
+  async findOneWithEmail({ email }) {
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUser;
+  }
+
+  async findOneWithUserId({ userId }) {
+    const findUser = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUser;
+  }
+
+  // 로그인한 유저 수정
+  async update({ email, updateUserInput }) {
+    const originUser = await this.userRepository.findOne({
+      where: { email },
+      relations: ["tags", "keywords", "categories"],
+    });
+
+    const {
+      tags: originTags,
+      keywords: originKeywords,
+      categories: originCategories,
+    } = originUser;
+
+    const { userImage, tags, keywords, categories, ...updateUser } =
+      updateUserInput;
+
+    if (userImage) {
+      await this.userImageRepository.update(
+        {
+          id: originUser.userImage.id,
+        },
+        {
+          url: userImage.url,
+        }
+      );
+    }
 
     const saveTags = [];
-    for (let i = 0; i < tags.length; i++) {
+    for (let i = 0; tags && i < tags.length; i++) {
       const tag = tags[i];
       const findTag = await this.tagRepository.findOne({
         where: { name: tag },
@@ -45,8 +116,8 @@ export class UsersService {
     }
 
     const saveKeywords = [];
-    for (let k = 0; k < keywords.length; k++) {
-      const keyword = keywords[k];
+    for (let i = 0; keywords && i < keywords.length; i++) {
+      const keyword = keywords[i];
       const findKeyword = await this.keywordRepository.findOne({
         where: { name: keyword },
       });
@@ -59,53 +130,36 @@ export class UsersService {
         saveKeywords.push(newKeyword);
       }
     }
-    console.log(saveKeywords);
-    const saveUser = await this.userRepository.save({
-      ...rest,
-      email,
-      password,
-      userImage: saveImage,
-      tags: saveTags,
-      keywords: saveKeywords,
-    });
 
-    return saveUser;
-  }
+    const saveCategories = [];
+    for (let i = 0; categories && i < categories.length; i++) {
+      const category = categories[i];
+      const findCategory = await this.categoryRepository.findOne({
+        where: { name: category },
+      });
+      if (findCategory) {
+        saveCategories.push(findCategory);
+      } else {
+        const newCategory = await this.categoryRepository.save({
+          name: category,
+        });
+        saveCategories.push(newCategory);
+      }
+    }
 
-  async findAll() {
-    const findUsers = await this.userRepository.find({
-      relations: ["userImage", "tags", "keywords"],
-    });
-    return findUsers;
-  }
+    originTags.push(...saveTags);
+    originKeywords.push(...saveKeywords);
+    originCategories.push(...saveCategories);
 
-  async findOneWithEmail({ email }) {
-    const findUser = await this.userRepository.findOne({
-      where: { email },
-      relations: ["userImage", "tags", "keywords"],
+    const updatedUser = this.userRepository.save({
+      ...originUser,
+      ...updateUser,
+      userImage: userImage,
+      tags: originTags,
+      keywords: originKeywords,
+      categories: originCategories,
     });
-    return findUser;
-  }
-
-  async findOneWithUserId({ userId }) {
-    const findUser = await this.userRepository.findOne({
-      where: { id: userId },
-      relations: ["userImage", "tags", "keywords"],
-    });
-    return findUser;
-  }
-
-  // 로그인한 유저 수정
-  async update({ email, updateUserInput }) {
-    const findUser = await this.userRepository.findOne({
-      where: { email },
-    });
-    const updateUser = this.userRepository.save({
-      ...findUser,
-      email,
-      ...updateUserInput,
-    });
-    return updateUser;
+    return updatedUser;
   }
 
   // 로그인한 유저 삭제

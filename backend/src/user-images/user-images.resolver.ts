@@ -10,26 +10,26 @@ export class UserImagesResolver {
   ) {}
 
   @Mutation(() => UserImage)
-  async uploadImage(
+  async uploadUserImage(
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
     return await this.userImagesService.create({ image });
   }
 
   @Query(() => UserImage)
-  fetchImage(
+  fetchUserImage(
     @Args("userImageId") userImageId: string //
   ) {
     return this.userImagesService.findOne({ userImageId });
   }
 
   @Query(() => [UserImage])
-  fetchImages() {
+  fetchUserImages() {
     return this.userImagesService.findAll();
   }
 
   @Mutation(() => UserImage)
-  updateImage(
+  updateUserImage(
     @Args("userImageId") userImageId: string, //
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {

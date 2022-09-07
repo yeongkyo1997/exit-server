@@ -17,15 +17,12 @@ export class CreateBoardInput {
   @Field(() => String)
   description: string;
 
-  @Field(() => String)
-  leader: string;
-
   @Min(50000)
   @Field(() => Int)
   bail: number;
 
   @Field(() => String, { nullable: true })
-  projectUrl: string;
+  projectUrl?: string;
 
   @Field(() => Boolean, { nullable: true })
   status: boolean;
@@ -42,12 +39,15 @@ export class CreateBoardInput {
   @Field(() => Date)
   endAt: Date;
 
-  @Field(() => CreateBoardImageInput, { nullable: true })
-  image?: CreateBoardImageInput;
+  @Field(() => CreateBoardImageInput, { defaultValue: { url: "" } })
+  boardImage?: CreateBoardImageInput;
 
-  @Field(() => [String])
-  tags: string[];
+  @Field(() => [String], { nullable: true })
+  tags?: string[];
 
   @Field(() => [String], { nullable: true })
   keywords?: string[];
+
+  @Field(() => [String], { nullable: true })
+  categories?: string[];
 }

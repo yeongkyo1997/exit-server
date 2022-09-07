@@ -5,29 +5,31 @@ import { FileUpload, GraphQLUpload } from "graphql-upload";
 
 @Resolver(() => BoardImage)
 export class BoardImagesResolver {
-  constructor(private readonly boardImagesService: BoardImagesService) {}
+  constructor(
+    private readonly boardImagesService: BoardImagesService //
+  ) {}
 
   @Mutation(() => BoardImage)
-  async uploadImage(
-    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
+  async uploadBoardImage(
+    @Args({ name: "images", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
     return await this.boardImagesService.create({ image });
   }
 
   @Query(() => BoardImage)
-  fetchImage(
+  fetchBoardImage(
     @Args("boardImageId") boardImageId: string //
   ) {
     return this.boardImagesService.findOne({ boardImageId });
   }
 
   @Query(() => [BoardImage])
-  fetchImages() {
+  fetchBoardImages() {
     return this.boardImagesService.findAll();
   }
 
   @Mutation(() => BoardImage)
-  updateImage(
+  updateBoardImage(
     @Args("boardImageId") boardImageId: string, //
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
@@ -35,7 +37,7 @@ export class BoardImagesResolver {
   }
 
   @Mutation(() => Boolean)
-  removeImage(
+  removeBoardImage(
     @Args({ name: "boardImageId", type: () => String }) boardImageId: string //
   ) {
     return this.boardImagesService.delete({ boardImageId });

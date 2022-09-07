@@ -1,15 +1,15 @@
 import { Injectable } from "@nestjs/common";
+//import { Storage } from "@google-cloud/storage";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { BoardImage } from "./entities/board-image.entity";
-//import { Storage } from "@google-cloud/storage";
 import { FileUploadsService } from "src/fileUpload/fileUpload.service";
+import { TagImage } from "./entities/tag-image.entity";
 
 @Injectable()
-export class BoardImagesService {
+export class TagImagesService {
   constructor(
-    @InjectRepository(BoardImage)
-    private readonly boardImageRepository: Repository<BoardImage>,
+    @InjectRepository(TagImage)
+    private readonly tagImageRepository: Repository<TagImage>,
 
     private readonly fileUploadsService: FileUploadsService
   ) {}
@@ -37,24 +37,22 @@ export class BoardImagesService {
 
     const url = await this.fileUploadsService.upload({ file: image });
 
-    const result = await this.boardImageRepository.save({
-      url: url.toString(),
-    });
+    const result = await this.tagImageRepository.save({ url: url.toString() });
     return result;
   }
 
-  async findOne({ boardImageId }) {
-    await this.boardImageRepository.findOne({
-      where: { id: boardImageId },
+  async findOne({ tagImageId }) {
+    await this.tagImageRepository.findOne({
+      where: { id: tagImageId },
     });
   }
 
   async findAll() {
-    await this.boardImageRepository.find({});
+    await this.tagImageRepository.find({});
   }
 
-  async update({ boardImageId, image }) {
-    await this.boardImageRepository.softDelete({ id: boardImageId });
+  async update({ tagImageId, image }) {
+    await this.tagImageRepository.softDelete({ id: tagImageId });
 
     // const bucket = process.env.BUCKET_NAME;
 
@@ -78,15 +76,13 @@ export class BoardImagesService {
 
     const url = await this.fileUploadsService.upload({ file: image });
 
-    const result = await this.boardImageRepository.save({
-      url: url.toString(),
-    });
+    const result = await this.tagImageRepository.save({ url: url.toString() });
     return result;
   }
 
-  async delete({ boardImageId }) {
-    const result = await this.boardImageRepository.softDelete({
-      id: boardImageId,
+  async delete({ tagImageId }) {
+    const result = await this.tagImageRepository.softDelete({
+      id: tagImageId,
     });
     return result.affected ? true : false;
   }

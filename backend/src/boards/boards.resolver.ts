@@ -1,8 +1,10 @@
-import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
 import { BoardsService } from "./boards.service";
 import { Board } from "./entities/board.entity";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { UpdateBoardInput } from "./dto/update-board.input";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => Board)
 export class BoardsResolver {
@@ -18,6 +20,11 @@ export class BoardsResolver {
     return this.boardsService.findAll({ isSuccess, status });
   }
 
+  @Query(() => [Board])
+  fetchBoardsByLikes() {
+    return this.boardsService.findAllByLikes();
+  }
+
   @Query(() => Board)
   fetchBoard(
     @Args("boardId") boardId: string //
@@ -25,11 +32,14 @@ export class BoardsResolver {
     return this.boardsService.findOne({ boardId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Board)
   createBoard(
-    @Args("createBoardInput") createBoardInput: CreateBoardInput //
+    @Args("createBoardInput") createBoardInput: CreateBoardInput, //
+    @Context() context
   ) {
-    return this.boardsService.create({ createBoardInput });
+    const leader = context.req.user;
+    return this.boardsService.create({ leader, createBoardInput });
   }
 
   @Mutation(() => Board)
