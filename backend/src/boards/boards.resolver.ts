@@ -15,9 +15,10 @@ export class BoardsResolver {
   @Query(() => [Board])
   fetchBoards(
     @Args("isSuccess", { nullable: true }) isSuccess: boolean,
-    @Args("status", { nullable: true }) status: boolean
+    @Args("status", { nullable: true }) status: boolean,
+    @Args("page", { nullable: true }) page: number
   ) {
-    return this.boardsService.findAll({ isSuccess, status });
+    return this.boardsService.findAll({ isSuccess, status, page });
   }
 
   @Query(() => [Board])

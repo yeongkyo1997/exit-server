@@ -25,9 +25,11 @@ import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
 import { FileUploadsModule } from "./fileUpload/fileUpload.module";
 import { TagImagesModule } from "./tag-images/tag-images.module";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: "src/commons/graphql/schema.gql",
