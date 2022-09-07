@@ -4,6 +4,7 @@ import { CreateUserImageInput } from "src/user-images/dto/create-user-image.inpu
 
 @InputType()
 export class UpdateUserInput extends PartialType(CreateUserInput) {
+  //FE 실험용(나중에 최종 배포할 때는 없애야 함)
   @Field(() => Int, { nullable: true })
   point: number;
 

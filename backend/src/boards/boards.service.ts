@@ -25,10 +25,12 @@ export class BoardsService {
     private readonly boardImageRepository: Repository<BoardImage>
   ) {}
 
-  findAll({ isSuccess, status }) {
+  findAll({ isSuccess, status, page }) {
     return this.boardRepository.find({
       where: { isSuccess, status },
       relations: ["boardImage", "tags", "keywords", "categories"],
+      take: 10,
+      skip: page || 1,
     });
   }
 
