@@ -72,6 +72,10 @@ export class Board {
   address: string;
 
   @Column()
+  @Field(() => Int)
+  frequency: number;
+
+  @Column()
   @Field(() => Date)
   startAt: Date;
 
@@ -80,7 +84,12 @@ export class Board {
   endAt: Date;
 
   @CreateDateColumn()
+  @Field(() => Date)
   createdAt: Date;
+
+  @Column()
+  @Field(() => Date)
+  closedAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;

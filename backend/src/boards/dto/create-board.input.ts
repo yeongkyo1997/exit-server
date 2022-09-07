@@ -33,11 +33,17 @@ export class CreateBoardInput {
   @Field(() => String)
   address: string;
 
+  @Field(() => String)
+  frequency: string;
+
   @Field(() => Date)
   startAt: Date;
 
   @Field(() => Date)
   endAt: Date;
+
+  @Field(() => Date)
+  closedAt: Date;
 
   @Field(() => CreateBoardImageInput, { defaultValue: { url: "" } })
   boardImage?: CreateBoardImageInput;
