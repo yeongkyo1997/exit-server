@@ -10,26 +10,26 @@ export class TagImagesResolver {
   ) {}
 
   @Mutation(() => TagImage)
-  async uploadImage(
+  async uploadTagImage(
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
     return await this.tagImagesService.create({ image });
   }
 
   @Query(() => TagImage)
-  fetchImage(
+  fetchTagImage(
     @Args("tagImageId") tagImageId: string //
   ) {
     return this.tagImagesService.findOne({ tagImageId });
   }
 
   @Query(() => [TagImage])
-  fetchImages() {
+  fetchTagImages() {
     return this.tagImagesService.findAll();
   }
 
   @Mutation(() => TagImage)
-  updateImage(
+  updateTagImage(
     @Args("tagImageId") tagImageId: string, //
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
@@ -37,7 +37,7 @@ export class TagImagesResolver {
   }
 
   @Mutation(() => Boolean)
-  removeImage(
+  removeTagImage(
     @Args({ name: "tagImageId", type: () => String }) tagImageId: string //
   ) {
     return this.tagImagesService.delete({ tagImageId });

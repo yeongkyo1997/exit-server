@@ -1,10 +1,12 @@
 import { ObjectType, Field } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
+import { TagImage } from "src/tag-images/entities/tag-image.entity";
 import { User } from "src/users/entities/user.entity";
 import {
   Column,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -23,6 +25,11 @@ export class Tag {
 
   @DeleteDateColumn()
   deleteAt: Date;
+
+  @JoinColumn()
+  @OneToOne(() => TagImage)
+  @Field(() => TagImage)
+  tagImage: TagImage;
 
   @ManyToMany(() => User, (users) => users.tags)
   @Field(() => [User])
