@@ -10,7 +10,8 @@ async function bootstrap() {
   app.use(graphqlUploadExpress());
   app.enableCors({
     credentials: true,
-    origin: true,
+    origin: "*",
+    exposedHeaders: ["Authorization", "Set-Cookie", "Cookie"],
   });
   app.useStaticAssets(join(__dirname, "..", "static"));
   await app.listen(8080);
