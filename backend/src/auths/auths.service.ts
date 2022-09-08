@@ -33,7 +33,7 @@ export class AuthsService {
     );
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=teamserver05.shop; httpOnly; SameSite=None; Secure`
+      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; httpOnly; SameSite=None; Secure`
     );
   }
 
