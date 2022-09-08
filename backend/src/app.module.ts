@@ -35,7 +35,7 @@ import { ConfigModule } from "@nestjs/config";
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
       cors: {
-        Credential: true,
+        credential: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: [
           "Access-Control-Allow-Headers",
@@ -44,7 +44,8 @@ import { ConfigModule } from "@nestjs/config";
           "Content-Type",
           "Accept",
         ],
-        origin: true,
+        origin: ["http://localhost:3000/"],
+        exposedHeaders: ["Set-Cookie", "Cookie"],
       },
     }),
     TypeOrmModule.forRoot({
