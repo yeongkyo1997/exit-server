@@ -25,19 +25,41 @@ export class BoardsService {
     private readonly boardImageRepository: Repository<BoardImage>
   ) {}
 
-  findAll({ isSuccess, status, page }) {
+  findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
     return this.boardRepository.find({
-      where: { isSuccess, status },
+      where: {
+        isSuccess,
+        status,
+        tags: { name: tagName },
+        categories: { name: categoryName },
+        keywords: { name: keywordName },
+      },
       relations: ["boardImage", "tags", "keywords", "categories"],
       take: 10,
-      skip: page || 1,
+      skip: page || 0,
     });
   }
 
-  findAllByLikes() {
+  findAllByLikes({
+    isSuccess,
+    status,
+    page,
+    tagName,
+    categoryName,
+    keywordName,
+  }) {
     return this.boardRepository.find({
+      where: {
+        isSuccess,
+        status,
+        tags: { name: tagName },
+        categories: { name: categoryName },
+        keywords: { name: keywordName },
+      },
       order: { countLike: "DESC" },
       relations: ["boardImage", "tags", "keywords", "categories"],
+      take: 10,
+      skip: page || 0,
     });
   }
 
@@ -46,6 +68,10 @@ export class BoardsService {
       where: { id: boardId },
       relations: ["boardImage", "tags", "keywords", "categories"],
     });
+  }
+
+  findOneByCategory({ categoryName }) {
+    return this.boardRepository.createQueryBuilder("board");
   }
 
   async create({ leader, createBoardInput }) {
@@ -127,7 +153,7 @@ export class BoardsService {
       where: { id: boardId },
       relations: ["boardImage", "tags", "keywords", "categories"],
     });
-
+    console.log(originBoard);
     const {
       tags: originTags,
       keywords: originKeywords,
@@ -142,16 +168,16 @@ export class BoardsService {
     const categoriesResult = [];
 
     // 이미지가 있을 경우
-    if (boardImage) {
-      await this.boardImageRepository.update(
-        {
-          id: originBoard.boardImage.id,
-        },
-        {
-          url: boardImage.url,
-        }
-      );
-    }
+    // if (boardImage) {
+    //   await this.boardImageRepository.update(
+    //     {
+    //       id: originBoard.boardImage.id,
+    //     },
+    //     {
+    //       url: boardImage.url,
+    //     }
+    //   );
+    // }
 
     for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({
@@ -198,6 +224,12 @@ export class BoardsService {
     originTags.push(...tagsResult);
     originKeywords.push(...keywordsResult);
     originCategories.push(...categoriesResult);
+
+    if (updateBoard.isSuccess) {
+      const curr = new Date();
+      const KR_TIME = 9 * 60 * 60 * 1000;
+      updateBoard.endAt = new Date(curr.getTime() + KR_TIME);
+    }
 
     const updatedInfo = this.boardRepository.save({
       ...originBoard,

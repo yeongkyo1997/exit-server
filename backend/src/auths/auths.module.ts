@@ -14,6 +14,8 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { AuthController } from "./auth.controller";
 import { JwtGoogleStrategy } from "src/commons/auth/jwt-social-google-access.strategy";
+import { JwtNaverStrategy } from "src/commons/auth/jwt-social-naver-access.strategy";
+import { JwtKakaoStrategy } from "src/commons/auth/jwt-social-kakao-access.strategy";
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { JwtGoogleStrategy } from "src/commons/auth/jwt-social-google-access.str
     JwtAccessStrategy,
     JwtRefreshStrategy,
     JwtGoogleStrategy,
+    JwtNaverStrategy,
+    JwtKakaoStrategy,
   ],
   controllers: [
     AuthController, //

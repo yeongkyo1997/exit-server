@@ -32,6 +32,7 @@ export class UsersService {
     const findUser = await this.userRepository.findOne({
       where: { email },
     });
+
     if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
 
     const findNickname = await this.userRepository.findOne({

@@ -33,8 +33,8 @@ export class CreateBoardInput {
   @Field(() => String)
   address: string;
 
-  @Field(() => String)
-  frequency: string;
+  @Field(() => Int)
+  frequency: number;
 
   @Field(() => Date)
   startAt: Date;
