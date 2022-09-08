@@ -19,16 +19,21 @@ export class AuthsService {
     // res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
 
     // 배포환경 (팀프로젝트)
-    const whiteList = ["http://localhost:3000", "http://localhost:8080"];
-    const origin = req.headers.origin;
-    if (whiteList.includes(origin)) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-    }
+    // res.setHeader("Access-Control-Allow-Origin", "http://localhost:8080");
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
     res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "POST, GET");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
+    );
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/;  SameSite=None; httpOnly;`
+      `refreshToken=${refreshToken}; path=/; domain=teamserver.shop; httpOnly; SameSite=None; Secure`
     );
   }
 
