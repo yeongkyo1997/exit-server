@@ -20,8 +20,8 @@ export class AuthsService {
 
     // 배포환경 (팀프로젝트)
     await res.setHeader(
-      'Set-Cookie',
-      `refreshToken=${refreshToken}; path=/; Secure; httpOnly; SameSite=None;`,
+      "Set-Cookie",
+      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; Secure; httpOnly; SameSite=None;`
     );
   }
 
