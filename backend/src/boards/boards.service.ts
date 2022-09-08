@@ -37,6 +37,7 @@ export class BoardsService {
   findAllByLikes() {
     return this.boardRepository.find({
       order: { countLike: "DESC" },
+      relations: ["boardImage", "tags", "keywords", "categories"],
     });
   }
 
