@@ -43,7 +43,11 @@ export class AuthsResolver {
     }
 
     // 4. 일치하는 유저가 있고, 비밀번호가 일치하면?!
-    this.authsService.setRefreshToken({ user, res: context.res });
+    this.authsService.setRefreshToken({
+      user,
+      res: context.res,
+      req: context.req,
+    });
 
     // 5. 토큰 발급
     return this.authsService.getAccessToken({ user });

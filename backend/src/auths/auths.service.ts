@@ -10,18 +10,25 @@ export class AuthsService {
     private readonly jwtService: JwtService //
   ) {}
 
-  async setRefreshToken({ user, res }) {
+  async setRefreshToken({ user, res, req }) {
     const refreshToken = this.jwtService.sign(
       { email: user.email, sub: user.id, nickname: user.nickname },
       { secret: "myRefreshKey", expiresIn: "2w" }
     );
     // 개인개발환경
-    // res.setHeader('Set-Cookie', refreshToken=${refreshToken}; path=/;);
+    // res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
 
     // 배포환경 (팀프로젝트)
-    await res.setHeader(
+    const whiteList = ["http://localhost:3000", "http://localhost:8080"];
+    const origin = req.headers.origin;
+    if (whiteList.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET");
+    res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; Secure; httpOnly; SameSite=None;`
+      `refreshToken=${refreshToken}; path=/;  SameSite=None; httpOnly;`
     );
   }
 
@@ -45,7 +52,7 @@ export class AuthsService {
       });
     }
 
-    this.setRefreshToken({ user, res });
+    this.setRefreshToken({ user, res, req });
 
     res.redirect("http://localhost:3000");
   }
