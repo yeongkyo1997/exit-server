@@ -10,28 +10,31 @@ export class AuthsService {
     private readonly jwtService: JwtService //
   ) {}
 
-  setRefreshToken({ user, res }) {
+  async setRefreshToken({ user, res, req }) {
     const refreshToken = this.jwtService.sign(
       { email: user.email, sub: user.id, nickname: user.nickname },
       { secret: "myRefreshKey", expiresIn: "2w" }
     );
     // 개인개발환경
-    // res.setHeader('Set-Cookie', refreshToken=${refreshToken}; path=/;);
-    const options = {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      domain: "teamserver05.shop",
-      path: "/",
-    };
+    // res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
 
     // 배포환경 (팀프로젝트)
+    // res.setHeader("Access-Control-Allow-Origin", "http://localhost:8080");
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+    );
+
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
+    );
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; SameSite=Node; Secure; HttpOnly;`
+      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; httpOnly; SameSite=None; Secure`
     );
-    // 프론트 주소로
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   }
 
   getAccessToken({ user }) {
@@ -54,8 +57,8 @@ export class AuthsService {
       });
     }
 
-    this.setRefreshToken({ user, res });
+    this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://127.0.0.1:5501/frontend/login/index.html");
+    res.redirect("http://localhost:3000");
   }
 }
