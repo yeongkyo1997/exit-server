@@ -19,9 +19,9 @@ export class AuthsService {
     // res.setHeader('Set-Cookie', refreshToken=${refreshToken}; path=/;);
 
     // 배포환경 (팀프로젝트)
-    res.setHeader(
-      "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; SameSite=Node; Secure; HttpOnly;`
+    await res.setHeader(
+      'Set-Cookie',
+      `refreshToken=${refreshToken}; path=/; Secure; httpOnly; SameSite=None;`,
     );
   }
 
