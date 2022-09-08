@@ -153,7 +153,6 @@ export class BoardsService {
       where: { id: boardId },
       relations: ["boardImage", "tags", "keywords", "categories"],
     });
-    console.log(originBoard);
     const {
       tags: originTags,
       keywords: originKeywords,
