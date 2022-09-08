@@ -87,7 +87,7 @@ export class Board {
   @Field(() => Date)
   createdAt: Date;
 
-  @Column()
+  @Column({ nullable: true })
   @Field(() => Date)
   closedAt: Date;
 

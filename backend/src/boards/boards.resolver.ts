@@ -16,14 +16,38 @@ export class BoardsResolver {
   fetchBoards(
     @Args("isSuccess", { nullable: true }) isSuccess: boolean,
     @Args("status", { nullable: true }) status: boolean,
-    @Args("page", { nullable: true }) page: number
+    @Args("page", { nullable: true }) page: number,
+    @Args("tagName", { nullable: true }) tagName: string,
+    @Args("categoryName", { nullable: true }) categoryName: string,
+    @Args("keywordName", { nullable: true }) keywordName: string
   ) {
-    return this.boardsService.findAll({ isSuccess, status, page });
+    return this.boardsService.findAll({
+      isSuccess,
+      status,
+      page,
+      tagName,
+      categoryName,
+      keywordName,
+    });
   }
 
   @Query(() => [Board])
-  fetchBoardsByLikes() {
-    return this.boardsService.findAllByLikes();
+  fetchBoardsByLikes(
+    @Args("isSuccess", { nullable: true }) isSuccess: boolean,
+    @Args("status", { nullable: true }) status: boolean,
+    @Args("page", { nullable: true }) page: number,
+    @Args("tagName", { nullable: true }) tagName: string,
+    @Args("categoryName", { nullable: true }) categoryName: string,
+    @Args("keywordName", { nullable: true }) keywordName: string
+  ) {
+    return this.boardsService.findAllByLikes({
+      isSuccess,
+      status,
+      page,
+      tagName,
+      categoryName,
+      keywordName,
+    });
   }
 
   @Query(() => Board)
@@ -32,6 +56,13 @@ export class BoardsResolver {
   ) {
     return this.boardsService.findOne({ boardId });
   }
+
+  // @Query(() => Board)
+  // pickRandomBoardByCategory(
+  //   @Args("categoryName") categoryName: string //
+  // ) {
+  //   return this.boardsService.findOneByCategory({ categoryName });
+  // }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Board)
