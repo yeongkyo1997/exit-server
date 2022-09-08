@@ -10,7 +10,7 @@ export class AuthsService {
     private readonly jwtService: JwtService //
   ) {}
 
-  setRefreshToken({ user, res }) {
+  async setRefreshToken({ user, res }) {
     const refreshToken = this.jwtService.sign(
       { email: user.email, sub: user.id, nickname: user.nickname },
       { secret: "myRefreshKey", expiresIn: "2w" }
