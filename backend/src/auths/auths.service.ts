@@ -17,21 +17,12 @@ export class AuthsService {
     );
     // 개인개발환경
     // res.setHeader('Set-Cookie', refreshToken=${refreshToken}; path=/;);
-    const options = {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      domain: "teamserver05.shop",
-      path: "/",
-    };
 
     // 배포환경 (팀프로젝트)
     res.setHeader(
       "Set-Cookie",
       `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; SameSite=Node; Secure; HttpOnly;`
     );
-    // 프론트 주소로
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
   }
 
   getAccessToken({ user }) {
