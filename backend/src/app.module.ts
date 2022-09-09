@@ -35,7 +35,7 @@ import { ConfigModule } from "@nestjs/config";
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
       cors: {
-        origin: "*",
+        origin: ["http://localhost:3000"],
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         preflightContinue: false,
         optionsSuccessStatus: 204,
