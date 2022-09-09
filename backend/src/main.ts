@@ -9,8 +9,16 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.use(graphqlUploadExpress());
   app.enableCors({
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: [
+      "Access-Control-Allow-Headers",
+      "Authorization",
+      "X-Requested-With",
+      "Content-Type",
+      "Accept",
+    ],
     credentials: true,
-    origin: "*",
+    origin: ["http://localhost:3000"],
     exposedHeaders: ["Authorization", "Set-Cookie", "Cookie"],
   });
   app.useStaticAssets(join(__dirname, "..", "static"));

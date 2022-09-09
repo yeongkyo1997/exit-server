@@ -5,6 +5,7 @@ import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
@@ -22,7 +23,9 @@ export class BoardsService {
     @InjectRepository(UserBoard)
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(BoardImage)
-    private readonly boardImageRepository: Repository<BoardImage>
+    private readonly boardImageRepository: Repository<BoardImage>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
@@ -166,17 +169,16 @@ export class BoardsService {
     const keywordsResult = [];
     const categoriesResult = [];
 
-    // 이미지가 있을 경우
-    // if (boardImage) {
-    //   await this.boardImageRepository.update(
-    //     {
-    //       id: originBoard.boardImage.id,
-    //     },
-    //     {
-    //       url: boardImage.url,
-    //     }
-    //   );
-    // }
+    if (boardImage.url) {
+      await this.boardImageRepository.update(
+        {
+          id: originBoard.boardImage.id,
+        },
+        {
+          url: boardImage.url,
+        }
+      );
+    }
 
     for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({
@@ -245,5 +247,20 @@ export class BoardsService {
     // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
     const result = await this.boardRepository.softDelete({ id: boardId });
     return result.affected ? true : false;
+  }
+
+  async inputLeaderNickname() {
+    const boards = await this.boardRepository.find();
+    boards.map(async (board) => {
+      const user = await this.userRepository.findOne({
+        where: { id: board.leader },
+      });
+      await this.boardRepository.update(
+        { id: board.id },
+        { leaderNickname: user.nickname }
+      );
+    });
+
+    return true;
   }
 }

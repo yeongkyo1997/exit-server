@@ -52,6 +52,10 @@ export class Board {
   leader: string;
 
   @Column()
+  @Field(() => String)
+  leaderNickname: string;
+
+  @Column()
   @Field(() => Int)
   bail: number;
 
