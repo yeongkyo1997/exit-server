@@ -14,6 +14,6 @@ async function bootstrap() {
     exposedHeaders: ["Authorization", "Set-Cookie", "Cookie"],
   });
   app.useStaticAssets(join(__dirname, "..", "static"));
-  await app.listen(8080);
+  await app.listen(3000);
 }
 bootstrap();

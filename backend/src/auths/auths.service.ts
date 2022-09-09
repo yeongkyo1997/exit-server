@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersService } from "src/users/users.service";
 import * as bcrypt from "bcrypt";
@@ -55,6 +55,8 @@ export class AuthsService {
         password,
         createUserInput,
       });
+    } else {
+      throw new ConflictException("이미 존재하는 이메일입니다.");
     }
 
     this.setRefreshToken({ user, res, req });

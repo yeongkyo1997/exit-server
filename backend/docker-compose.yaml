@@ -8,14 +8,14 @@ services:
     volumes:
       - ./src:/teamfolder/src
     ports:
-      - 8080:8080
+      - 3000:3000
     env_file:
       - ./.env
     environment:
       - TZ=Asia/Seoul
 
   team-database:
-    platform: linux/x86_64
+    # platform: linux/x86_64
     image: mysql:latest
     environment:
       MYSQL_DATABASE: "teamdocker"

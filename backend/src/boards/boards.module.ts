@@ -17,7 +17,7 @@ import { BoardImage } from "src/board-images/entities/board-image.entity";
       Keyword,
       Category,
       UserBoard,
-      BoardImage
+      BoardImage,
     ]),
   ],
   providers: [
