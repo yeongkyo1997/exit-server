@@ -8,16 +8,18 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
+import { User } from "src/users/entities/user.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Board, //
+      Board,//
       Tag,
-      Keyword,
       Category,
+      Keyword,
       UserBoard,
-      BoardImage
+      BoardImage,
+      User,
     ]),
   ],
   providers: [
