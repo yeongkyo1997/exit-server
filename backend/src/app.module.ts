@@ -26,6 +26,7 @@ import { AppController } from "./app.controller";
 import { FileUploadsModule } from "./fileUpload/fileUpload.module";
 import { TagImagesModule } from "./tag-images/tag-images.module";
 import { ConfigModule } from "@nestjs/config";
+import { AttendanceModule } from "./attendance/attendance.module";
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { ConfigModule } from "@nestjs/config";
     TagImagesModule,
     FileUploadsModule,
     TagImagesModule,
+    AttendanceModule,
   ],
   providers: [IamportService],
   controllers: [AppController],
