@@ -88,9 +88,4 @@ export class BoardsResolver {
   ) {
     return this.boardsService.remove({ boardId });
   }
-
-  @Mutation(() => Boolean)
-  input() {
-    return this.boardsService.inputLeaderNickname();
-  }
 }

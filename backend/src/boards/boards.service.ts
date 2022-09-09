@@ -24,8 +24,6 @@ export class BoardsService {
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(BoardImage)
     private readonly boardImageRepository: Repository<BoardImage>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>
   ) {}
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
@@ -247,20 +245,5 @@ export class BoardsService {
     // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
     const result = await this.boardRepository.softDelete({ id: boardId });
     return result.affected ? true : false;
-  }
-
-  async inputLeaderNickname() {
-    const boards = await this.boardRepository.find();
-    boards.map(async (board) => {
-      const user = await this.userRepository.findOne({
-        where: { id: board.leader },
-      });
-      await this.boardRepository.update(
-        { id: board.id },
-        { leaderNickname: user.nickname }
-      );
-    });
-
-    return true;
   }
 }
