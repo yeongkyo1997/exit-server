@@ -230,4 +230,13 @@ export class UsersService {
     });
     return updateUser;
   }
+
+  // 유저 랜덤 추천
+  async fetchUserRandom() {
+    const findUser = await this.userRepository.find({
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    const randomUser = findUser[Math.floor(Math.random() * findUser.length)];
+    return randomUser;
+  }
 }

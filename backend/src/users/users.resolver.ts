@@ -151,4 +151,10 @@ export class UsersResolver {
 
     return true;
   }
+
+  // userRandom 추천
+  @Query(() => User)
+  async fetchUserRandom() {
+    return this.usersService.fetchUserRandom();
+  }
 }
