@@ -9,6 +9,7 @@ import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { JwtAccessStrategy } from "src/commons/auth/jwt-access.strategy";
 import { Category } from "src/categories/entities/category.entity";
+import { EmailService } from "src/email/email.service";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Category } from "src/categories/entities/category.entity";
     UsersResolver, //
     UsersService,
     JwtAccessStrategy,
+    EmailService,
   ],
 })
 export class UsersModule {}
