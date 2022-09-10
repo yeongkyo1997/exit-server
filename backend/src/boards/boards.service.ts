@@ -5,7 +5,6 @@ import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
-import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
@@ -23,7 +22,7 @@ export class BoardsService {
     @InjectRepository(UserBoard)
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(BoardImage)
-    private readonly boardImageRepository: Repository<BoardImage>,
+    private readonly boardImageRepository: Repository<BoardImage>
   ) {}
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
@@ -133,6 +132,7 @@ export class BoardsService {
     const savedInfo = await this.boardRepository.save({
       ...board,
       leader: leader.id,
+      leaderNickname: leader.nickname,
       boardImage: boardImageResult,
       tags: tagsResult,
       keywords: keywordsResult,
