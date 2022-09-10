@@ -132,6 +132,7 @@ export class BoardsService {
     const savedInfo = await this.boardRepository.save({
       ...board,
       leader: leader.id,
+      leaderNickname: leader.nickname,
       boardImage: boardImageResult,
       tags: tagsResult,
       keywords: keywordsResult,
@@ -166,17 +167,16 @@ export class BoardsService {
     const keywordsResult = [];
     const categoriesResult = [];
 
-    // 이미지가 있을 경우
-    // if (boardImage) {
-    //   await this.boardImageRepository.update(
-    //     {
-    //       id: originBoard.boardImage.id,
-    //     },
-    //     {
-    //       url: boardImage.url,
-    //     }
-    //   );
-    // }
+    if (boardImage.url) {
+      await this.boardImageRepository.update(
+        {
+          id: originBoard.boardImage.id,
+        },
+        {
+          url: boardImage.url,
+        }
+      );
+    }
 
     for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({

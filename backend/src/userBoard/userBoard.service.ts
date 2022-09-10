@@ -57,6 +57,20 @@ export class UserBoardService {
 
   async update({ updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
+    // 이미 참석한 프로젝트인지 확인
+    const checkAccepted = await this.userBoardRepository.findOne({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+        isAccepted: true,
+      },
+    });
+
+    // 이미 참석한 프로젝트라면 에러
+    if (checkAccepted) {
+      return new Error("이미 참석한 프로젝트입니다.");
+    }
+
     const getId = await this.userBoardRepository.findOne({
       where: {
         user: { id: userId },
@@ -78,6 +92,8 @@ export class UserBoardService {
 
     return await this.userBoardRepository.save({
       id: getId.id,
+      board: boardInfo,
+      user: await this.userRepository.findOne({ where: { id: userId } }),
       isAccepted,
     });
   }

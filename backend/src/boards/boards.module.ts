@@ -12,10 +12,10 @@ import { BoardImage } from "src/board-images/entities/board-image.entity";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Board, //
+      Board,//
       Tag,
-      Keyword,
       Category,
+      Keyword,
       UserBoard,
       BoardImage,
     ]),

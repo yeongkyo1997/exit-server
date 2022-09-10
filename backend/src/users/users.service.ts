@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
@@ -7,6 +11,7 @@ import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
 import { Category } from "src/categories/entities/category.entity";
+import { EmailService } from "src/email/email.service";
 
 @Injectable()
 export class UsersService {
@@ -22,8 +27,11 @@ export class UsersService {
 
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>,
+
     @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>
+    private readonly categoryRepository: Repository<Category>,
+
+    private readonly emailService: EmailService
   ) {}
 
   async create({ password, createUserInput }) {
@@ -198,6 +206,37 @@ export class UsersService {
   // 유저 중복확인
   async checkDuplicateEmail({ email }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
+    // 중복된 이메일이 있으면 에러
+    if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
     return findUser ? true : false;
+  }
+
+  // 가입된 유저인지 확인하고 토큰 전송
+  async isRegisteredEmail({ email, emailToken }) {
+    const findUser = await this.userRepository.findOne({ where: { email } });
+    if (!findUser)
+      throw new UnauthorizedException("가입되지 않은 이메일입니다.");
+
+    await this.emailService.checkEmail({ email, emailToken });
+  }
+
+  // 비밀번호 변경하기
+  async updatePassword({ email, password }) {
+    const findUser = await this.userRepository.findOne({ where: { email } });
+
+    const updateUser = await this.userRepository.save({
+      ...findUser,
+      password,
+    });
+    return updateUser;
+  }
+
+  // 유저 랜덤 추천
+  async fetchUserRandom() {
+    const findUser = await this.userRepository.find({
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    const randomUser = findUser[Math.floor(Math.random() * findUser.length)];
+    return randomUser;
   }
 }
