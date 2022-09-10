@@ -109,4 +109,46 @@ export class UsersResolver {
   restoreUser(@Args("email", { type: () => String }) email: string) {
     return this.usersService.restore({ email });
   }
+
+  // 비밀번호 변경을 위한 이메일 토큰 생성
+  @Mutation(() => Boolean)
+  async createEmailTokenForPassword(
+    @Args("email", { type: () => String }) email: string
+  ) {
+    // 이메일 토큰 생성하기 문자 6자리
+    const emailToken = Math.random().toString(36).substring(2, 8);
+    console.log(
+      "🚀 ~ file: users.resolver.ts ~ line 120 ~ UsersResolver ~ emailToken",
+      emailToken
+    );
+
+    // 5분동안 유효한 이메일 토큰 생성
+    await this.cacheManager.set(email, emailToken, { ttl: 300 });
+
+    // 이메일 토큰 전송하기
+    await this.usersService.isRegisteredEmail({ email, emailToken });
+    return true;
+  }
+
+  // 비밀번호 변경
+  @Mutation(() => Boolean)
+  async updatePassword(
+    @Args("email", { type: () => String }) email: string,
+    @Args("password", { type: () => String }) password: string,
+    @Args("emailToken") emailToken: string
+  ) {
+    // 이메일 토큰 확인하기
+    const validToken = await this.cacheManager.get(email);
+    if (validToken !== emailToken)
+      throw new UnauthorizedException("이메일 인증번호를 확인해주세요.");
+
+    const hashedPassword = await bcrypt.hash(password, 10.2);
+
+    await this.usersService.updatePassword({ email, password: hashedPassword });
+
+    // redis에서 이메일 토큰 삭제하기
+    await this.cacheManager.del(email);
+
+    return true;
+  }
 }
