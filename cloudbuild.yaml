@@ -9,13 +9,13 @@ steps:
       - -f
       - backend/docker-compose.prod.yaml
       - push
-  - name: "kubectl"
+  - name: "asia.gcr.io/galvanic-cirrus-360400/team-backend"
     args:
       [
         "set",
         "image",
         "deployment/backendserver-nestjs",
-        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.3",
+        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.32",
       ]
     env:
       - CLOUDSDK_COMPUTE_ZONE=asia-northeast3
