@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Connection, DataSource, Repository } from "typeorm";
+import { IamportService } from "src/iamport/iamport.service";
+import { DataSource, Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import {
   Payment,
@@ -16,7 +17,9 @@ export class PaymentsService {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
 
-    private readonly datasource: DataSource
+    private readonly datasource: DataSource,
+
+    private readonly iamportService: IamportService
   ) {}
 
   async create({ impUid, amount, user: _user }) {
@@ -36,32 +39,29 @@ export class PaymentsService {
         status: PAYMENT_TRANSACTION_STATUS_ENUM.PAYMENT,
       });
 
-      // await this.paymentsRepository.save(payment);
       await queryRunner.manager.save(payment);
       // queryRunner를 통해서 save를 사용해서 디비에 저장을 해 줘야 됨
       // queryRunner랑 관련이 있게 하려면 다 쿼리러너를 통해서 가야 됨
 
       // 2. 유저의 돈 찾아오기
-      // const user = await this.usersRepository.findOne({
-      //   where: { id: _user.id },
-      // });
       const user = await queryRunner.manager.findOne(User, {
         where: { id: _user.id },
         lock: { mode: "pessimistic_write" },
       });
 
       // 3. 유저의 돈 업데이트
-      // await this.usersRepository.update(
-      //   { id: _user.id },
-      //   { point: user.point + paymentAmount },
-      // );
-
       const updatedUser = this.usersRepository.create({
         ...user,
         point: user.point + amount,
       });
       await queryRunner.manager.save(updatedUser);
 
+      const access_Token = await this.iamportService.getToken();
+
+      await this.iamportService.verifyToken({
+        accessToken: access_Token,
+        impUid,
+      });
       // ================================ commit 성공 확정 ==========================
       await queryRunner.commitTransaction();
       // ==========================================================================
@@ -92,28 +92,37 @@ export class PaymentsService {
         user: _user,
         status: PAYMENT_TRANSACTION_STATUS_ENUM.CANCELLED,
       });
-
       await queryRunner.manager.save(payment);
 
-      // const user = await this.usersRepository.findOne({
-      //   where: { id: _user.id },
-      // });
       const user = await queryRunner.manager.findOne(User, {
         where: { id: _user.id },
         lock: { mode: "pessimistic_write" },
       });
 
-      await this.usersRepository.update(
-        { id: _user.id },
-        { point: user.point - amount }
-      );
+      // user의 point - amount가 0보다 작으면 에러
+      if (user.point - amount < 0) {
+        throw new ConflictException("잔액이 부족합니다.");
+      }
 
       const updatedUser = this.usersRepository.create({
         ...user,
         point: user.point - amount,
       });
-      await queryRunner.manager.save(updatedUser);
 
+      await queryRunner.manager.save(updatedUser);
+      const accessToken = await this.iamportService.getToken();
+
+      const validCancel = await this.iamportService.verifyToken({
+        accessToken,
+        impUid,
+      });
+      if (validCancel.status === "cancelled")
+        throw new ConflictException("이미 결제가 취소되었습니다.");
+
+      await this.iamportService.cancelPayment({
+        accessToken,
+        impUid,
+      });
       await queryRunner.commitTransaction();
 
       return payment;

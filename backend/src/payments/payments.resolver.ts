@@ -6,15 +6,13 @@ import {
 import { Args, Context, Int, Mutation, Resolver } from "@nestjs/graphql";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { IContext } from "src/commons/type/context";
-import { IamportService } from "../iamport/iamport.service";
 import { Payment } from "./entities/payment.entity";
 import { PaymentsService } from "./payments.service";
 
 @Resolver()
 export class PaymentsResolver {
   constructor(
-    private readonly paymentsService: PaymentsService, //
-    private readonly iamportService: IamportService
+    private readonly paymentsService: PaymentsService //
   ) {}
 
   @UseGuards(GqlAuthAccessGuard)
@@ -25,13 +23,6 @@ export class PaymentsResolver {
     @Context() context: IContext
   ) {
     const user = context.req.user;
-
-    const access_Token = await this.iamportService.getToken();
-
-    await this.iamportService.verifyToken({
-      accessToken: access_Token,
-      impUid,
-    });
 
     const validPayment = await this.paymentsService.findStatus({ impUid });
     if (validPayment) throw new ConflictException("이미 추가된 결제건입니다.");
@@ -44,26 +35,12 @@ export class PaymentsResolver {
   async createCancel(
     @Args("impUid") impUid: string,
     @Args({ name: "amount", type: () => Int }) amount: number,
-    @Args("user") user: string
+    @Context() context
   ) {
+    const user = context.req.user;
     const paymentInf = await this.paymentsService.findStatus({ impUid });
     if (!paymentInf)
       throw new UnprocessableEntityException("취소할 결제 내역이 없습니다.");
-
-    const accessToken = await this.iamportService.getToken();
-
-    const validCancel = await this.iamportService.verifyToken({
-      accessToken,
-      impUid,
-    });
-
-    if (validCancel.data.response.status === "cancelled")
-      throw new ConflictException("이미 결제가 취소되었습니다.");
-
-    await this.iamportService.cancelPayment({
-      accessToken,
-      impUid,
-    });
 
     return this.paymentsService.createCancel({
       impUid,

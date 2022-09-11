@@ -35,12 +35,12 @@ import { AttendanceModule } from "./attendance/attendance.module";
       driver: ApolloDriver,
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
-      cors: {
-        origin: ["http://localhost:3000"],
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
-      },
+      // cors: {
+      //   origin: ["http://localhost:3000"],
+      //   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      //   preflightContinue: false,
+      //   optionsSuccessStatus: 204,
+      // },
     }),
     TypeOrmModule.forRoot({
       type: process.env.DATABASE_TYPE as "mysql",
