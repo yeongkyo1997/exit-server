@@ -2,12 +2,12 @@ steps:
   - name: docker/compose:1.29.0
     args:
       - -f
-      - backend/docker-compose.prod.yaml
+      - docker-compose.prod.yaml
       - build
   - name: docker/compose:1.29.0
     args:
       - -f
-      - backend/docker-compose.prod.yaml
+      - docker-compose.prod.yaml
       - push
   - name: "gcr.io/cloud-builders/kubectl"
     args:
@@ -15,7 +15,7 @@ steps:
         "set",
         "image",
         "deployment/teambackend",
-        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.2",
+        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.3",
       ]
     env:
       - CLOUDSDK_COMPUTE_ZONE=asia-northeast3
