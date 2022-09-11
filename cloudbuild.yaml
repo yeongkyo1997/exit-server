@@ -9,7 +9,7 @@ steps:
       - -f
       - backend/docker-compose.prod.yaml
       - push
-  - name: "gcr.io/cloud-builders/kubectl"
+  - name: "kubectl"
     args:
       [
         "set",

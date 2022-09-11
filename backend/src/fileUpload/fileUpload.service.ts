@@ -10,7 +10,9 @@ export class FileUploadsService {
 
     const storage = new Storage({
       projectId: process.env.PROJECT_ID,
-      keyFilename: process.env.KEY_FILE_NAME,
+      keyFilename:
+        process.env.KEY_FILE_NAME ||
+        "/team-secret/gcp-file-storage.json",
     }).bucket(bucket);
 
     const results = [];
