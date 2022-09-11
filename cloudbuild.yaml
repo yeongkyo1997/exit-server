@@ -14,8 +14,8 @@ steps:
       [
         "set",
         "image",
-        "deployment/backendserver-nestjs",
-        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.32",
+        "deployment/teambackend",
+        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.2",
       ]
     env:
       - CLOUDSDK_COMPUTE_ZONE=asia-northeast3
