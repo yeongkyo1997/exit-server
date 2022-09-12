@@ -70,11 +70,6 @@ export class BoardsResolver {
 
     // redis에 검색어와 검색결과를 저장한다.
     await this.cacheManger.set(search, result, { ttl: 60 });
-
-    console.log(
-      "🚀 ~ file: boards.resolver.ts ~ line 76 ~ BoardsResolver ~ result",
-      result
-    );
     return result;
   }
 
