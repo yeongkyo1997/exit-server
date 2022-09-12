@@ -29,7 +29,7 @@ export class AuthsResolver {
     @Context() context: IContext
   ) {
     // 1. email로 유저 찾기
-    const user = await this.usersService.findOneWithEmail({ email });
+    const user = await this.usersService.findOneByEmail({ email });
 
     // 2. 일치하는 유저가 없으면 에러
     if (!user) {

@@ -75,6 +75,14 @@ export class UsersService {
     return findUser;
   }
 
+  async findOneByEmail({ email }) {
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUser;
+  }
+
   async update({ userId, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
       where: { id: userId },
