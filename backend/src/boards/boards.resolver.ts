@@ -23,7 +23,7 @@ export class BoardsResolver {
   async fetchBoards(
     @Args("isSuccess", { nullable: true }) isSuccess: boolean,
     @Args("status", { nullable: true }) status: boolean,
-    @Args("page", { nullable: true }) page: number,
+    @Args("page", { defaultValue: 1 }) page: number,
     @Args("tagName", { nullable: true }) tagName: string,
     @Args("categoryName", { nullable: true }) categoryName: string,
     @Args("keywordName", { nullable: true }) keywordName: string,
@@ -71,7 +71,10 @@ export class BoardsResolver {
     // redis에 검색어와 검색결과를 저장한다.
     await this.cacheManger.set(search, result, { ttl: 60 });
 
-    console.log("🚀 ~ file: boards.resolver.ts ~ line 76 ~ BoardsResolver ~ result", result)
+    console.log(
+      "🚀 ~ file: boards.resolver.ts ~ line 76 ~ BoardsResolver ~ result",
+      result
+    );
     return result;
   }
 
