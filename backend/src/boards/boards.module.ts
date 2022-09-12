@@ -8,17 +8,21 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
+import { ElasticsearchModule } from "@nestjs/elasticsearch";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Board,//
+      Board, //
       Tag,
       Category,
       Keyword,
       UserBoard,
       BoardImage,
     ]),
+    ElasticsearchModule.register({
+      node: "http://elasticsearch:9200",
+    }),
   ],
   providers: [
     BoardsResolver, //
