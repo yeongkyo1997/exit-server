@@ -27,6 +27,7 @@ import { FileUploadsModule } from "./fileUpload/fileUpload.module";
 import { TagImagesModule } from "./tag-images/tag-images.module";
 import { ConfigModule } from "@nestjs/config";
 import { AttendanceModule } from "./attendance/attendance.module";
+import { TempModule } from "./temp/temp.module";
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { AttendanceModule } from "./attendance/attendance.module";
     FileUploadsModule,
     TagImagesModule,
     AttendanceModule,
+    TempModule,
   ],
   providers: [IamportService],
   controllers: [AppController],
