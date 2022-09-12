@@ -52,6 +52,7 @@ import { AttendanceModule } from "./attendance/attendance.module";
       entities: [__dirname + "/**/*.entity.*"],
       synchronize: true,
       logging: true,
+      timezone: "Z",
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,

@@ -6,8 +6,5 @@ export class CreateSubCommentInput {
   subComment: string;
 
   @Field(() => String)
-  userId: string;
-
-  @Field(() => String)
   commentId: string;
 }
