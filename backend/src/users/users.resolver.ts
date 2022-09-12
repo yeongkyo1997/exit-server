@@ -45,7 +45,6 @@ export class UsersResolver {
     return result;
   }
 
-  @UseGuards(GqlAuthAccessGuard)
   @Query(() => [User])
   fetchUsers() {
     return this.usersService.findAll();
