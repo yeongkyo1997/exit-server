@@ -27,18 +27,21 @@ export class BoardsService {
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
     return this.boardRepository.find({
-      where: {
-        isSuccess,
-        status,
-        tags: { name: tagName },
-        categories: { name: categoryName },
-        keywords: { name: keywordName },
-      },
-      order: { createdAt: "ASC" },
       relations: ["boardImage", "tags", "keywords", "categories"],
-      take: 10,
-      skip: (page - 1) * 10 || 0,
     });
+    // return this.boardRepository.find({
+    //   where: {
+    //     isSuccess,
+    //     status,
+    //     tags: { name: tagName },
+    //     categories: { name: categoryName },
+    //     keywords: { name: keywordName },
+    //   },
+    //   order: { createdAt: "ASC" },
+    //   relations: ["boardImage", "tags", "keywords", "categories"],
+    //   take: 10,
+    //   skip: (page - 1) * 10 || 0,
+    // });
   }
 
   findAllByLikes({

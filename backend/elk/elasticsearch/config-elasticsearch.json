@@ -1,41 +1,55 @@
 {
-  "template": "product-*",
+  "template": "board-*",
   "index_patterns": ["*"],
   "settings": {
-    "analysis": {
-      "analyzer": {
-        "my_analyzer": {
-          "tokenizer": "my_tokenizer",
-          "filter": ["lowercase", "unique", "my_filter", "lowercase"]
-        }
-      },
-      "tokenizer": {
-        "my_tokenizer": {
-          "type": "nGram",
-          "min_gram": "1",
-          "max_gram": "10"
-        }
-      },
-      "filter": {
-        "my_filter": {
-          "type": "stop",
-          "ignore_case": true,
-          "stopwrods_path": "/usr/share/logstash/stopword.txt",
-          "stopwords": ["_english_", "_cjk_"]
+    "index": {
+      "analysis": {
+        "filter": {
+          "suggest_filter": {
+            "type": "edge_ngram",
+            "min_gram": 1,
+            "max_gram": 50
+          }
+        },
+        "tokenizer": {
+          "jaso_search_tokenizer": {
+            "type": "jaso_tokenizer",
+            "mistype": true,
+            "chosung": false
+          },
+          "jaso_index_tokenizer": {
+            "type": "jaso_tokenizer",
+            "mistype": true,
+            "chosung": true
+          }
+        },
+        "analyzer": {
+          "suggest_search_analyzer": {
+            "type": "custom",
+            "tokenizer": "jaso_search_tokenizer"
+          },
+          "suggest_index_analyzer": {
+            "type": "custom",
+            "tokenizer": "jaso_index_tokenizer",
+            "filter": ["suggest_filter"]
+          }
         }
       }
-    },
-    "max_ngram_diff": "10"
+    }
   },
   "mappings": {
     "properties": {
-      "name": {
+      "title": {
         "type": "text",
-        "analyzer": "my_analyzer"
+        "store": true,
+        "analyzer": "suggest_index_analyzer",
+        "search_analyzer": "suggest_search_analyzer"
       },
       "description": {
         "type": "text",
-        "analyzer": "my_analyzer"
+        "store": true,
+        "analyzer": "suggest_index_analyzer",
+        "search_analyzer": "suggest_search_analyzer"
       }
     }
   }
