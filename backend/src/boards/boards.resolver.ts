@@ -82,6 +82,7 @@ export class BoardsResolver {
     @Args("categoryName", { nullable: true }) categoryName: string,
     @Args("keywordName", { nullable: true }) keywordName: string
   ) {
+    if (!page) page = 1;
     return this.boardsService.findAllByLikes({
       isSuccess,
       status,
@@ -116,18 +117,24 @@ export class BoardsResolver {
     return this.boardsService.create({ leader, createBoardInput });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Board)
   async updateBoard(
     @Args("boardId") boardId: string,
-    @Args("updateBoardInput") updateBoardInput: UpdateBoardInput //
+    @Args("updateBoardInput") updateBoardInput: UpdateBoardInput, //
+    @Context() context
   ) {
-    return this.boardsService.update({ boardId, updateBoardInput });
+    const leader = context.req.user;
+    return this.boardsService.update({ leader, boardId, updateBoardInput });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   removeBoard(
-    @Args("boardId") boardId: string //
+    @Args("boardId") boardId: string, //
+    @Context() context
   ) {
-    return this.boardsService.remove({ boardId });
+    const leader = context.req.user;
+    return this.boardsService.remove({ leader, boardId });
   }
 }
