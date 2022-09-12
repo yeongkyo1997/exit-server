@@ -34,7 +34,7 @@ export class BoardsService {
         categories: { name: categoryName },
         keywords: { name: keywordName },
       },
-      order: { createdAt: "ASC" },
+      order: { createdAt: "DESC" },
       relations: ["boardImage", "tags", "keywords", "categories"],
       take: 10,
       skip: (page - 1) * 10 || 0,
@@ -150,11 +150,14 @@ export class BoardsService {
     return savedInfo;
   }
 
-  async update({ boardId, updateBoardInput }) {
+  async update({ leader, boardId, updateBoardInput }) {
     const originBoard = await this.boardRepository.findOne({
       where: { id: boardId },
       relations: ["boardImage", "tags", "keywords", "categories"],
     });
+
+    if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
+
     const {
       tags: originTags,
       keywords: originKeywords,
@@ -242,7 +245,14 @@ export class BoardsService {
     return updatedInfo;
   }
 
-  async remove({ boardId }) {
+  async remove({ leader, boardId }) {
+    const originBoard = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+
+    if (originBoard.leader != leader.id)
+      throw Error("작성자만 지울 수 있습니다.");
+
     // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
     const result = await this.boardRepository.softDelete({ id: boardId });
     return result.affected ? true : false;
