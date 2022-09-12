@@ -45,7 +45,7 @@ export class AuthsService {
   }
 
   async socialLogin({ req, res }) {
-    let user = await this.usersService.findOneWithEmail({
+    let user = await this.usersService.findOneByEmail({
       email: req.user.email,
     });
     const password = await bcrypt.hash(req.user.password, 10.2);
