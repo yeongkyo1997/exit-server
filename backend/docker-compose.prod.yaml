@@ -7,3 +7,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
+
+  elasticsearch:
+    build:
+      context: ./elk/elasticsearch
+      dockerfile: Dockerfile.elasticsearch
+
+    environment:
+      discovery.type: single-node
+      TZ: Asia/Seoul
+    ports:
+      - 9200:9200
+
+  logstash:
+    image: logstash:7.16.2
+    volumes:
+      - ./elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
+      - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
+      - ./elk/elasticsearch/stopword.txt:/usr/share/logstash/stopword.txt
+    environment:
+      TZ: Asia/Seoul
