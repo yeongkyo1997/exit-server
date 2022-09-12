@@ -34,9 +34,10 @@ export class BoardsService {
         categories: { name: categoryName },
         keywords: { name: keywordName },
       },
+      order: { createdAt: "ASC" },
       relations: ["boardImage", "tags", "keywords", "categories"],
       take: 10,
-      skip: page || 0,
+      skip: (page - 1) * 10 || 0,
     });
   }
 
@@ -59,7 +60,7 @@ export class BoardsService {
       order: { countLike: "DESC" },
       relations: ["boardImage", "tags", "keywords", "categories"],
       take: 10,
-      skip: page || 0,
+      skip: (page - 1) * 10 || 0,
     });
   }
 

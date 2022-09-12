@@ -23,8 +23,8 @@ export class CommentsService {
     });
   }
 
-  async create({ createCommentInput }) {
-    const { comment, userId, boardId } = createCommentInput;
+  async create({ userId, createCommentInput }) {
+    const { comment, boardId } = createCommentInput;
     return await this.commentRepository.save({
       comment,
       user: userId,
@@ -32,10 +32,11 @@ export class CommentsService {
     });
   }
 
-  async update({ updateCommentInput }) {
-    const { comment, userId, boardId } = updateCommentInput;
+  async update({ userId, updateCommentInput }) {
+    const { comment, commentId, boardId } = updateCommentInput;
     await this.commentRepository.update(
       {
+        id: commentId,
         user: { id: userId },
         board: { id: boardId },
       },
@@ -44,34 +45,17 @@ export class CommentsService {
     return "댓글 업데이트 완료!";
   }
 
-  async remove({ userId, boardId }) {
-    const deleteData = await this.commentRepository.find({
-      where: {
-        user: { id: userId },
-        board: { id: boardId },
-      },
-      relations: ["board", "user"],
+  async remove({ commentId, userId }) {
+    // 관련 subComment도 다 지워준 뒤 comment 지우기
+    await this.subCommentsService.removeAll({ commentId });
+
+    const result = await this.commentRepository.softDelete({
+      id: commentId,
+      user: { id: userId },
     });
 
-    // 관련 subComment도 다 지워준 뒤 comment 지우기
-    const showResult = [];
-    for (let i = 0; i < deleteData.length; i++) {
-      await this.subCommentsService.remove({
-        userId,
-        commentId: deleteData[i].id,
-      });
-
-      const result = await this.commentRepository.softDelete({
-        id: deleteData[i].id,
-      });
-
-      showResult.push(
-        result.affected
-          ? `${deleteData[i].id} deleted`
-          : `${deleteData[i].id} delete fail`
-      );
-    }
-
-    return showResult;
+    return result.affected
+      ? `${commentId} deleted`
+      : `${commentId} delete fail`;
   }
 }
