@@ -1,8 +1,10 @@
-import { Resolver, Query, Mutation, Args, Int } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Int, Context } from "@nestjs/graphql";
 import { SubCommentsService } from "./sub-comments.service";
 import { SubComment } from "./entities/sub-comment.entity";
 import { CreateSubCommentInput } from "./dto/create-sub-comment.input";
 import { UpdateSubCommentInput } from "./dto/update-sub-comment.input";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => SubComment)
 export class SubCommentsResolver {
@@ -18,25 +20,34 @@ export class SubCommentsResolver {
     return this.subCommentsService.findAll({ userId, commentId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => SubComment)
   createSubComment(
-    @Args("createSubCommentInput") createSubCommentInput: CreateSubCommentInput
+    @Args("createSubCommentInput") createSubCommentInput: CreateSubCommentInput,
+    @Context() context
   ) {
-    return this.subCommentsService.create({ createSubCommentInput });
+    const userId = context.req.user.id;
+    return this.subCommentsService.create({ userId, createSubCommentInput });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   updateSubComment(
-    @Args("updateSubCommentInput") updateSubCommentInput: UpdateSubCommentInput
+    @Args("updateSubCommentInput") updateSubCommentInput: UpdateSubCommentInput,
+    @Context() context
   ) {
-    return this.subCommentsService.update({ updateSubCommentInput });
+    const userId = context.req.user.id;
+    return this.subCommentsService.update({ userId, updateSubCommentInput });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => [String])
   removeSubComment(
-    @Args("userId", { nullable: true }) userId: string, //
-    @Args("commentId", { nullable: true }) commentId: string
+    @Args("subCommentId", { nullable: true }) subCommentId: string,
+    @Args("commentId", { nullable: true }) commentId: string, //
+    @Context() context
   ) {
-    return this.subCommentsService.remove({ userId, commentId });
+    const userId = context.req.user.id;
+    return this.subCommentsService.remove({ userId, commentId, subCommentId });
   }
 }

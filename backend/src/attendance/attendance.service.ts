@@ -72,13 +72,16 @@ export class AttendanceService {
   async effectiveUser({ user }) {
     const currentUser = await this.userBoardRepository.findOne({
       where: {
-        user: user.id,
+        user: user,
+        isAccepted: true,
       },
+      relations: ["user", "board"],
     });
 
-    if (!currentUser.isAccepted) {
-      throw new Error("승인 되지 않은 유저입니다.");
+    if (!currentUser || !currentUser.isAccepted) {
+      return false;
     }
+    return true;
   }
 
   async getAttendanceCount({ boardId }) {
@@ -129,6 +132,7 @@ export class AttendanceService {
       },
       relations: ["board"],
     });
+
     const leaderAttendance = await this.attendanceRepository.findOne({
       where: {
         userId: board.board.leader,
@@ -137,6 +141,7 @@ export class AttendanceService {
         attendedAt: "DESC",
       },
     });
+
     // leader의 출석기록을 기준으로 10분 이내에 출석한 유저인지 확인
     const attendance = await this.dataSource.manager
       .createQueryBuilder(Attendance, "attendance")
