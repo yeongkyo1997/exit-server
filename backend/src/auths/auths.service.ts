@@ -16,25 +16,25 @@ export class AuthsService {
       { secret: "myRefreshKey", expiresIn: "2w" }
     );
     // 개인개발환경
-    res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
+    // res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
 
     // 배포환경 (팀프로젝트)
     // res.setHeader("Access-Control-Allow-Origin", "http://localhost:8080");
-    // res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-    // res.setHeader("Access-Control-Allow-Credentials", "true");
-    // res.setHeader(
-    //   "Access-Control-Allow-Methods",
-    //   "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-    // );
+    res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+    );
 
-    // res.setHeader(
-    //   "Access-Control-Allow-Headers",
-    //   "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
-    // );
-    // res.setHeader(
-    //   "Set-Cookie",
-    //   `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; httpOnly; SameSite=None; Secure`
-    // );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
+    );
+    res.setHeader(
+      "Set-Cookie",
+      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; httpOnly; SameSite=None; Secure`
+    );
   }
 
   getAccessToken({ user }) {
