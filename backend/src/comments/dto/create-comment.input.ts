@@ -6,8 +6,5 @@ export class CreateCommentInput {
   comment: string;
 
   @Field(() => String)
-  userId: string;
-
-  @Field(() => String)
   boardId: string;
 }

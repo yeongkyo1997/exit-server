@@ -21,8 +21,8 @@ export class SubCommentsService {
     });
   }
 
-  async create({ createSubCommentInput }) {
-    const { subComment, userId, commentId } = createSubCommentInput;
+  async create({ userId, createSubCommentInput }) {
+    const { subComment, commentId } = createSubCommentInput;
     return await this.subCommentRepository.save({
       subComment,
       user: userId,
@@ -30,10 +30,11 @@ export class SubCommentsService {
     });
   }
 
-  async update({ updateSubCommentInput }) {
-    const { subComment, userId, commentId } = updateSubCommentInput;
+  async update({ userId, updateSubCommentInput }) {
+    const { subComment, commentId, subCommentId } = updateSubCommentInput;
     await this.subCommentRepository.update(
       {
+        id: subCommentId,
         user: { id: userId },
         comment: { id: commentId },
       },
@@ -42,12 +43,20 @@ export class SubCommentsService {
     return "대댓글 업데이트 완료!";
   }
 
-  async remove({ userId, commentId }) {
+  async remove({ userId, commentId, subCommentId }) {
+    const result = await this.subCommentRepository.softDelete({
+      id: subCommentId,
+      user: { id: userId },
+      comment: { id: commentId },
+    });
+    return result.affected
+      ? `${subCommentId} deleted`
+      : `${subCommentId} delete fail`;
+  }
+
+  async removeAll({ commentId }) {
     const deleteData = await this.subCommentRepository.find({
-      where: {
-        user: { id: userId },
-        comment: { id: commentId },
-      },
+      where: { comment: { id: commentId } },
       relations: ["comment", "user"],
     });
 
