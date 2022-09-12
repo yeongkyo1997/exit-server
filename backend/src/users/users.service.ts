@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -35,13 +36,14 @@ export class UsersService {
   ) {}
 
   async create({ password, createUserInput }) {
-    const { email, nickname } = createUserInput;
+    const email = createUserInput.email;
+    const nickname = createUserInput.nickname;
 
-    const findUser = await this.userRepository.findOne({
+    const findEmail = await this.userRepository.findOne({
       where: { email },
     });
 
-    if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
+    if (findEmail) throw new ConflictException("이미 존재하는 이메일입니다.");
 
     const findNickname = await this.userRepository.findOne({
       where: { nickname },
@@ -65,15 +67,7 @@ export class UsersService {
     return findUsers;
   }
 
-  async findOneWithEmail({ email }) {
-    const findUser = await this.userRepository.findOne({
-      where: { email },
-      relations: ["userImage", "tags", "keywords", "categories"],
-    });
-    return findUser;
-  }
-
-  async findOneWithUserId({ userId }) {
+  async findOne({ userId }) {
     const findUser = await this.userRepository.findOne({
       where: { id: userId },
       relations: ["userImage", "tags", "keywords", "categories"],
@@ -81,12 +75,15 @@ export class UsersService {
     return findUser;
   }
 
-  // 로그인한 유저 수정
-  async update({ email, updateUserInput }) {
+  async update({ userId, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
-      where: { email },
+      where: { id: userId },
       relations: ["tags", "keywords", "categories"],
     });
+
+    if (!originUser) {
+      throw new NotFoundException("존재하지 않는 유저입니다");
+    }
 
     const {
       tags: originTags,
@@ -172,17 +169,28 @@ export class UsersService {
     return updatedUser;
   }
 
-  // 로그인한 유저 삭제
-  async remove({ email }) {
-    const isValid = await this.userRepository.findOne({ where: { email } });
+  async remove({ userId }) {
+    const isValid = await this.userRepository.findOne({
+      where: { id: userId },
+    });
 
-    if (!isValid) throw new ConflictException("존재하지 않는 이메일입니다.");
+    if (!isValid) throw new NotFoundException("존재하지 않는 유저입니다.");
 
-    const deleteUser = await this.userRepository.softDelete({ email });
+    const deleteUser = await this.userRepository.softDelete({ id: userId });
     return deleteUser.affected ? true : false;
   }
 
-  // 비밀번호 변경
+  async restore({ userId }) {
+    const isValid = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!isValid) throw new NotFoundException("존재하지 않는 이메일입니다.");
+
+    const restoreUser = await this.userRepository.restore({ id: userId });
+    return restoreUser.affected ? true : false;
+  }
+
   async changePassword({ email, password }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -193,17 +201,6 @@ export class UsersService {
     return updateUser;
   }
 
-  // 삭제된 유저 복구
-  async restore({ email }) {
-    const isValid = await this.userRepository.findOne({ where: { email } });
-
-    if (!isValid) throw new ConflictException("존재하지 않는 이메일입니다.");
-
-    const restoreUser = await this.userRepository.restore({ email });
-    return restoreUser.affected ? true : false;
-  }
-
-  // 유저 중복확인
   async checkDuplicateEmail({ email }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
     // 중복된 이메일이 있으면 에러
@@ -211,7 +208,6 @@ export class UsersService {
     return findUser ? true : false;
   }
 
-  // 가입된 유저인지 확인하고 토큰 전송
   async isRegisteredEmail({ email, emailToken }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
     if (!findUser)
@@ -220,7 +216,6 @@ export class UsersService {
     await this.emailService.checkEmail({ email, emailToken });
   }
 
-  // 비밀번호 변경하기
   async updatePassword({ email, password }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
 
@@ -231,7 +226,6 @@ export class UsersService {
     return updateUser;
   }
 
-  // 유저 랜덤 추천
   async fetchUserRandom() {
     const findUser = await this.userRepository.find({
       relations: ["userImage", "tags", "keywords", "categories"],
