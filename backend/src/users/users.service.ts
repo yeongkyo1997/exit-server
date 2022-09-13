@@ -98,7 +98,7 @@ export class UsersService {
     return findUser;
   }
 
-  async findOneWithBoard({ userId }) {
+  async findBoard({ userId }) {
     const userboard = await this.userBoardRepository.findOne({
       where: {
         user: { id: userId },

@@ -81,15 +81,14 @@ export class UsersResolver {
   }
 
   //유저가 현재 진행하고 있는 프로젝트 찾기
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => Board)
   async fetchProjectOfUser(
-    @Args("userId", { type: () => String }) userId: string
+    @Context() context: any //
   ) {
-    const user = await this.usersService.findOneByUserId({ userId });
-    if (user) {
-      const board = await this.usersService.findOneWithBoard({ userId });
-      return { ...board };
-    }
+    const userId = context.req.user.id;
+    const board = await this.usersService.findBoard({ userId });
+    return { ...board };
   }
 
   @UseGuards(GqlAuthAccessGuard)
