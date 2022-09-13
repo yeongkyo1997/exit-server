@@ -18,7 +18,7 @@ async function bootstrap() {
       "Accept",
     ],
     credentials: true,
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "https://ex1t.shop"],
     exposedHeaders: ["Authorization", "Set-Cookie", "Cookie"],
   });
   app.useStaticAssets(join(__dirname, "..", "static"));
