@@ -27,7 +27,12 @@ export class AuthsService {
       "Access-Control-Allow-Methods",
       "GET, POST, OPTIONS, PUT, PATCH, DELETE"
     );
+    const allowedOrigins = "http://localhost:3000,https://ex1t.shop".split(",");
+    const origin = req.headers.origin;
 
+    if (allowedOrigins.indexOf(origin) > -1) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
     res.setHeader(
       "Access-Control-Allow-Headers",
       "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
