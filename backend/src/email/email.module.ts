@@ -9,12 +9,14 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Category } from "src/categories/entities/category.entity";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User, //
       UserImage,
+      UserBoard,
       Tag,
       Board,
       Keyword,

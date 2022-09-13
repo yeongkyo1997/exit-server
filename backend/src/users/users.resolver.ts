@@ -12,6 +12,8 @@ import {
 } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
+import { Board } from "src/boards/entities/board.entity";
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -76,6 +78,18 @@ export class UsersResolver {
   @Query(() => User)
   fetchUserWithUserId(@Args("userId", { type: () => String }) userId: string) {
     return this.usersService.findOneByUserId({ userId });
+  }
+
+  //유저가 현재 진행하고 있는 프로젝트 찾기
+  @Query(() => Board)
+  async fetchProjectOfUser(
+    @Args("userId", { type: () => String }) userId: string
+  ) {
+    const user = await this.usersService.findOneByUserId({ userId });
+    if (user) {
+      const board = await this.usersService.findOneWithBoard({ userId });
+      return { ...board };
+    }
   }
 
   @UseGuards(GqlAuthAccessGuard)

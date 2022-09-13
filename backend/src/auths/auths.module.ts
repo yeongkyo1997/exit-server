@@ -17,6 +17,7 @@ import { JwtGoogleStrategy } from "src/commons/auth/jwt-social-google-access.str
 import { JwtNaverStrategy } from "src/commons/auth/jwt-social-naver-access.strategy";
 import { JwtKakaoStrategy } from "src/commons/auth/jwt-social-kakao-access.strategy";
 import { EmailService } from "src/email/email.service";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { EmailService } from "src/email/email.service";
     TypeOrmModule.forFeature([
       User, //
       UserImage,
+      UserBoard,
       Tag,
       Board,
       Keyword,

@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  ConsoleLogger,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -13,6 +15,7 @@ import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { EmailService } from "src/email/email.service";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Injectable()
 export class UsersService {
@@ -31,6 +34,9 @@ export class UsersService {
 
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+
+    @InjectRepository(UserBoard)
+    private readonly userBoardRepository: Repository<UserBoard>,
 
     private readonly emailService: EmailService
   ) {}
@@ -72,6 +78,7 @@ export class UsersService {
       where: { id: userId },
       relations: ["userImage", "tags", "keywords", "categories"],
     });
+
     return findUser;
   }
 
@@ -89,6 +96,24 @@ export class UsersService {
       relations: ["userImage", "tags", "keywords", "categories"],
     });
     return findUser;
+  }
+
+  async findOneWithBoard({ userId }) {
+    const userboard = await this.userBoardRepository.findOne({
+      where: {
+        user: { id: userId },
+        isAccepted: Boolean(1),
+      },
+      relations: ["board"],
+    });
+
+    const today = new Date();
+    const start = userboard.board.startAt;
+    const end = userboard.board.endAt;
+
+    if (today > start && today < end) {
+      return userboard.board;
+    }
   }
 
   async update({ userId, updateUserInput }) {
