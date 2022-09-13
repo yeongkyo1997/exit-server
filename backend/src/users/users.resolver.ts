@@ -52,7 +52,7 @@ export class UsersResolver {
 
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => User)
-  async fetchUser(
+  async fetchLoginedUser(
     @Context() context: any //
   ) {
     const validToken = context.req.headers["authorization"].split(" ")[1];
@@ -64,6 +64,18 @@ export class UsersResolver {
     const result = await this.usersService.findOne({ userId });
 
     return result;
+  }
+
+  // 유저 email로 유저 찾기
+  @Query(() => User)
+  fetchUserWithEmail(@Args("email", { type: () => String }) email: string) {
+    return this.usersService.findOneByEmail({ email });
+  }
+
+  // 유저 id로 유저 찾기
+  @Query(() => User)
+  fetchUserWithUserId(@Args("userId", { type: () => String }) userId: string) {
+    return this.usersService.findOneByUserId({ userId });
   }
 
   @UseGuards(GqlAuthAccessGuard)
