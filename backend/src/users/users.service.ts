@@ -83,6 +83,14 @@ export class UsersService {
     return findUser;
   }
 
+  async findOneByUserId({ userId }) {
+    const findUser = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUser;
+  }
+
   async update({ userId, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
       where: { id: userId },
