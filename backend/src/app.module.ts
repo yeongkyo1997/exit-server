@@ -37,7 +37,7 @@ import { TempModule } from "./temp/temp.module";
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
       cors: {
-        origin: ["http://localhost:3000"],
+        origin: ["http://localhost:3000", "https://ex1t.shop"],
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         preflightContinue: false,
         optionsSuccessStatus: 204,
