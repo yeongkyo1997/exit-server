@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   team-backend:
-    image: asia.gcr.io/galvanic-cirrus-360400/team-backend:0.74
+    image: asia.gcr.io/galvanic-cirrus-360400/team-backend:0.75
     platform: linux/x86_64
     build:
       context: .
@@ -25,6 +25,5 @@ services:
       - ./elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
       - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
       - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
-      - ./elk/elasticsearch/stopword.txt:/usr/share/logstash/stopword.txt
     environment:
       TZ: Asia/Seoul
