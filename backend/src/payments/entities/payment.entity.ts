@@ -1,6 +1,12 @@
 import { ObjectType, Field, Int, registerEnumType } from "@nestjs/graphql";
 import { User } from "src/users/entities/user.entity";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 export enum PAYMENT_TRANSACTION_STATUS_ENUM {
   PAYMENT = "PAYMENT",
@@ -31,6 +37,9 @@ export class Payment {
   })
   amount: number;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
   // @Column()
   // @Field(() => String)
   // method: string;
@@ -40,6 +49,6 @@ export class Payment {
   status: string;
 
   @ManyToOne(() => User)
-  @Field(() => [User])
-  user: User[];
+  @Field(() => User)
+  user: User;
 }
