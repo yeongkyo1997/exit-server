@@ -45,8 +45,8 @@ export class CreateBoardInput {
   @Field(() => Date)
   closedAt: Date;
 
-  @Field(() => CreateBoardImageInput, { defaultValue: { url: "" } })
-  boardImage?: CreateBoardImageInput;
+  @Field(() => CreateBoardImageInput, { defaultValue: { url: "null" } })
+  boardImage: CreateBoardImageInput;
 
   @Field(() => [String], { nullable: true })
   tags?: string[];
