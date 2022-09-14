@@ -24,7 +24,6 @@ import { ChatModule } from "./chat/chat.module";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
 import { FileUploadsModule } from "./fileUpload/fileUpload.module";
-import { TagImagesModule } from "./tag-images/tag-images.module";
 import { ConfigModule } from "@nestjs/config";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { TempModule } from "./temp/temp.module";
@@ -76,9 +75,7 @@ import { TempModule } from "./temp/temp.module";
     SubCommentsModule,
     EmailModule,
     UserBoardModule,
-    TagImagesModule,
     FileUploadsModule,
-    TagImagesModule,
     AttendanceModule,
     TempModule,
   ],
