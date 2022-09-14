@@ -7,6 +7,8 @@ import { ElasticsearchService } from "@nestjs/elasticsearch";
 import { CACHE_MANAGER, Inject, UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
+import { FileUpload, GraphQLUpload } from "graphql-upload";
+import { FilesService } from "src/files/files.service";
 
 @Resolver(() => Board)
 export class BoardsResolver {
@@ -14,6 +16,8 @@ export class BoardsResolver {
     private readonly boardsService: BoardsService, //
 
     private readonly elasticsearchService: ElasticsearchService,
+
+    private readonly filesService: FilesService,
 
     @Inject(CACHE_MANAGER)
     private readonly cacheManger: Cache
@@ -136,5 +140,23 @@ export class BoardsResolver {
   ) {
     const leader = context.req.user;
     return this.boardsService.remove({ leader, boardId });
+  }
+
+  @Mutation(() => String)
+  async uploadZipFile(
+    @Args("boardId") boardId: string, //
+    @Args("updateBoardInput") updateBoardInput: UpdateBoardInput,
+    @Args({ name: "zip", type: () => [GraphQLUpload] }) zip: FileUpload[]
+  ) {
+    const url = await this.filesService.upload({ file: zip, type: "zip" });
+    const board = await this.boardsService.findOne({ boardId });
+    updateBoardInput.projectUrl = url[0];
+
+    const result = await this.boardsService.update({
+      updateBoardInput,
+      leader: board.leader,
+      boardId,
+    });
+    return result.projectUrl;
   }
 }

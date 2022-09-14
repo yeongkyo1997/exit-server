@@ -3,17 +3,17 @@ import { BoardImagesService } from "./board-images.service";
 import { BoardImage } from "./entities/board-image.entity";
 import { FileUpload, GraphQLUpload } from "graphql-upload";
 
-@Resolver(() => BoardImage)
+@Resolver()
 export class BoardImagesResolver {
   constructor(
     private readonly boardImagesService: BoardImagesService //
   ) {}
 
-  @Mutation(() => BoardImage)
-  async uploadBoardImage(
-    @Args({ name: "images", type: () => [GraphQLUpload] }) image: FileUpload[]
+  @Mutation(() => String)
+  uploadBoardImage(
+    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
-    return await this.boardImagesService.create({ image });
+    return this.boardImagesService.create({ image });
   }
 
   @Query(() => BoardImage)
@@ -28,18 +28,10 @@ export class BoardImagesResolver {
     return this.boardImagesService.findAll();
   }
 
-  @Mutation(() => BoardImage)
-  updateBoardImage(
-    @Args("boardImageId") boardImageId: string, //
-    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
-  ) {
-    return this.boardImagesService.update({ boardImageId, image });
-  }
-
-  @Mutation(() => Boolean)
-  removeBoardImage(
-    @Args({ name: "boardImageId", type: () => String }) boardImageId: string //
-  ) {
-    return this.boardImagesService.delete({ boardImageId });
-  }
+  // @Mutation(() => Boolean)
+  // removeBoardImage(
+  //   @Args({ name: "url", type: () => [String] }) url: string[] //
+  // ) {
+  //   return this.boardImagesService.delete({ url });
+  // }
 }

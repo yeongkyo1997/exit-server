@@ -9,7 +9,7 @@ export class UserImagesResolver {
     private readonly userImagesService: UserImagesService //
   ) {}
 
-  @Mutation(() => UserImage)
+  @Mutation(() => String)
   async uploadUserImage(
     @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
   ) {
@@ -28,18 +28,10 @@ export class UserImagesResolver {
     return this.userImagesService.findAll();
   }
 
-  @Mutation(() => UserImage)
-  updateUserImage(
-    @Args("userImageId") userImageId: string, //
-    @Args({ name: "image", type: () => [GraphQLUpload] }) image: FileUpload[]
-  ) {
-    return this.userImagesService.update({ userImageId, image });
-  }
-
-  @Mutation(() => Boolean)
-  removeImage(
-    @Args({ name: "userImageId", type: () => String }) userImageId: string //
-  ) {
-    return this.userImagesService.delete({ userImageId });
-  }
+  // @Mutation(() => Boolean)
+  // removeImage(
+  //   @Args({ name: "userImageId", type: () => String }) userImageId: string //
+  // ) {
+  //   return this.userImagesService.delete({ userImageId });
+  // }
 }
