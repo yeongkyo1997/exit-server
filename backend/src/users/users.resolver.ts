@@ -81,6 +81,25 @@ export class UsersResolver {
     return this.usersService.findOneByUserId({ userId });
   }
 
+  @Query(() => [Board])
+  async fetchProjectsOfUser(
+    @Args("userId", { type: () => String }) userId: string //
+  ) {
+    const user = await this.usersService.findOneByUserId({ userId });
+    if (!user) {
+      throw new Error("유저가 존재하지 않습니다.");
+    }
+    const boards = await this.usersService.findBoards({ userId });
+    if (!boards) {
+      throw new Error("유저와 관련된 프로젝트가 없습니다.");
+    }
+    const result = [];
+    for (let i = 0; i < boards.length; i++) {
+      result.push({ ...boards[i].board });
+    }
+    return result;
+  }
+
   //유저가 현재 진행하고 있는 프로젝트 찾기
   @Query(() => Board)
   async fetchProjectOfUser(
