@@ -1,5 +1,4 @@
 import { InputType, Field } from "@nestjs/graphql";
-import { CreateTagImageInput } from "src/tag-images/dto/create-tag-image.input";
 
 @InputType()
 export class CreateTagInput {
@@ -11,7 +10,4 @@ export class CreateTagInput {
 
   @Field(() => [String])
   boards: string[];
-
-  @Field(() => CreateTagImageInput, { defaultValue: { url: "" } })
-  tagImage?: CreateTagImageInput;
 }
