@@ -100,12 +100,15 @@ export class BoardsResolver {
     return this.boardsService.findOne({ boardId });
   }
 
-  // @Query(() => Board)
-  // pickRandomBoardByCategory(
-  //   @Args("categoryName") categoryName: string //
-  // ) {
-  //   return this.boardsService.findOneByCategory({ categoryName });
-  // }
+  @UseGuards(GqlAuthAccessGuard)
+  @Query(() => Board)
+  fetchBoardRandom(
+    @Args("categoryId") categoryId: string, //
+    @Context() context
+  ) {
+    const userId = context.req.user.id;
+    return this.boardsService.findOneByCategory({ userId, categoryId });
+  }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Board)

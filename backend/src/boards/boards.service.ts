@@ -5,7 +5,7 @@ import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
 @Injectable()
@@ -22,7 +22,8 @@ export class BoardsService {
     @InjectRepository(UserBoard)
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(BoardImage)
-    private readonly boardImageRepository: Repository<BoardImage>
+    private readonly boardImageRepository: Repository<BoardImage>,
+    private readonly dataSource: DataSource
   ) {}
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
@@ -71,13 +72,63 @@ export class BoardsService {
     });
   }
 
-  findOneByCategory({ categoryName }) {
-    return this.boardRepository.createQueryBuilder("board");
+  async findOneByCategory({ userId, categoryId }) {
+    // 모집중인 프로젝트들
+    const waitingInfo = await this.boardRepository.find({
+      where: {
+        isSuccess: false,
+        status: false,
+      },
+      relations: ["boardImage", "tags", "keywords", "categories"],
+    });
+
+    // 카테고리가 포함된 프로젝트들
+    const filtTemp = await this.dataSource
+      .createQueryBuilder()
+      .select("boardId")
+      .from("board_categories_category", "bc")
+      .where("categoryId = :categoryId", {
+        categoryId: categoryId,
+      })
+      .execute();
+
+    const filt = [];
+    if (filtTemp.length)
+      for (const i of filtTemp) {
+        filt.push(i.boardId);
+      }
+
+    //내가 지원하거나 포함된 프로젝트들
+    const appliedTemp = await this.userBoardRepository.find({
+      where: { user: { id: userId } },
+      relations: ["user", "board"],
+    });
+
+    const applied = [];
+    if (appliedTemp.length)
+      for (const i of appliedTemp) {
+        applied.push(i.board.id);
+      }
+
+    const filteredInfo = waitingInfo.filter(
+      (ele) => filt.includes(ele.id) && !applied.includes(ele.id)
+    );
+
+    return filteredInfo[Math.floor(Math.random() * filteredInfo.length)];
   }
 
   async create({ leader, createBoardInput }) {
     const { boardImage, tags, keywords, categories, ...board } =
       createBoardInput;
+
+    if (board.bail < 50000 || board.bail > 1000000)
+      throw Error("보석금이 범위 밖입니다.");
+    if (board.totalMember < 1 || board.totalMember > 6)
+      throw Error("보석금이 범위 밖입니다.");
+    if (board.frequency < 1 || board.frequency > 7)
+      throw Error("보석금이 범위 밖입니다.");
+    if (board.closedAt > board.endAt)
+      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
 
     // 썸네일 저장 후 이미지DB에 저장하는 로직
     const boardImageResult = await this.boardImageRepository.save({
@@ -153,23 +204,48 @@ export class BoardsService {
   async update({ leader, boardId, updateBoardInput }) {
     const originBoard = await this.boardRepository.findOne({
       where: { id: boardId },
-      relations: ["boardImage", "tags", "keywords", "categories"],
+      relations: ["boardImage"],
     });
-
-    if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
-
-    const {
-      tags: originTags,
-      keywords: originKeywords,
-      categories: originCategories,
-    } = originBoard;
 
     const { boardImage, tags, keywords, categories, ...updateBoard } =
       updateBoardInput;
 
-    const tagsResult = [];
-    const keywordsResult = [];
-    const categoriesResult = [];
+    if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
+    if (updateBoard.bail < 50000 || updateBoard.bail > 1000000)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.totalMember < 1 || updateBoard.totalMember > 6)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.frequency < 1 || updateBoard.frequency > 7)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.closedAt > updateBoard.endAt)
+      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
+
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("board_tags_tag")
+      .where("boardId = :boardId", {
+        boardId: boardId,
+      })
+      .execute();
+
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("board_keywords_keyword")
+      .where("boardId = :boardId", {
+        boardId: boardId,
+      })
+      .execute();
+
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("board_categories_category")
+      .where("boardId = :boardId", {
+        boardId: boardId,
+      })
+      .execute();
 
     if (boardImage.url) {
       await this.boardImageRepository.update(
@@ -181,6 +257,10 @@ export class BoardsService {
         }
       );
     }
+
+    const tagsResult = [];
+    const keywordsResult = [];
+    const categoriesResult = [];
 
     for (let i = 0; tags && i < tags.length; i++) {
       const prevTag = await this.tagRepository.findOne({
@@ -224,23 +304,21 @@ export class BoardsService {
       }
     }
 
-    originTags.push(...tagsResult);
-    originKeywords.push(...keywordsResult);
-    originCategories.push(...categoriesResult);
+    if (!originBoard.isSuccess && updateBoard.isSuccess) {
+      updateBoard.endAt = new Date();
+    }
 
-    if (updateBoard.isSuccess) {
-      const curr = new Date();
-      const KR_TIME = 9 * 60 * 60 * 1000;
-      updateBoard.endAt = new Date(curr.getTime() + KR_TIME);
+    if (!originBoard.status && updateBoard.status) {
+      updateBoard.closedAt = new Date();
     }
 
     const updatedInfo = this.boardRepository.save({
       ...originBoard,
       ...updateBoard,
       boardImage: boardImage,
-      tags: originTags,
-      keywords: originKeywords,
-      categories: originCategories,
+      tags: tagsResult,
+      keywords: keywordsResult,
+      categories: categoriesResult,
     });
     return updatedInfo;
   }
