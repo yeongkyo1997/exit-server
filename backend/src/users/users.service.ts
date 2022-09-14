@@ -122,7 +122,6 @@ export class UsersService {
       where: { id: userId },
       relations: ["tags", "keywords", "categories"],
     });
-
     if (!originUser) {
       throw new NotFoundException("존재하지 않는 유저입니다");
     }
@@ -136,7 +135,7 @@ export class UsersService {
     const { userImage, tags, keywords, categories, ...updateUser } =
       updateUserInput;
 
-    if (userImage) {
+    if (userImage.url) {
       await this.userImageRepository.update(
         {
           id: originUser.userImage.id,
