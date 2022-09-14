@@ -12,6 +12,6 @@ export class CreateUserInput {
   @Field(() => String)
   nickname: string;
 
-  @Field(() => CreateUserImageInput, { defaultValue: { url: "" } })
+  @Field(() => CreateUserImageInput, { defaultValue: { url: "null" } })
   userImage: CreateUserImageInput;
 }

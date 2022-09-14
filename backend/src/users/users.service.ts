@@ -139,7 +139,7 @@ export class UsersService {
     const { userImage, tags, keywords, categories, ...updateUser } =
       updateUserInput;
 
-    if (userImage.url) {
+    if (userImage) {
       await this.userImageRepository.update(
         {
           id: originUser.userImage.id,
