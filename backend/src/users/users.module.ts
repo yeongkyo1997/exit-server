@@ -10,11 +10,13 @@ import { Keyword } from "src/keywords/entities/keyword.entity";
 import { JwtAccessStrategy } from "src/commons/auth/jwt-access.strategy";
 import { Category } from "src/categories/entities/category.entity";
 import { EmailService } from "src/email/email.service";
+import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User, //
+      UserBoard,
       UserImage,
       Tag,
       Board,
