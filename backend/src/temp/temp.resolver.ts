@@ -14,4 +14,10 @@ export class TempResolver {
   ) {
     return this.tempService.temp({ tagName, categoryName });
   }
+
+	@Mutation(() => Boolean)
+	async delete() {
+		return this.tempService.delete();
+	}
 }
+

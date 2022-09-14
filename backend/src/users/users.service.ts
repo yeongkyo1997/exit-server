@@ -120,7 +120,7 @@ export class UsersService {
   async update({ userId, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ["tags", "keywords", "categories"],
+      relations: ["tags", "keywords", "categories", "userImage"],
     });
     if (!originUser) {
       throw new NotFoundException("존재하지 않는 유저입니다");

@@ -38,4 +38,10 @@ export class TempService {
 
     return true;
   }
+
+	async delete() {
+		await this.tagRepository.delete({});
+		await this.categoryRepository.delete({});
+		return true;
+	}
 }
