@@ -21,9 +21,9 @@ import { FilesService } from "src/files/files.service";
       UserBoard,
       BoardImage,
     ]),
-    ElasticsearchModule.register({
-      node: "http://elasticsearch:9200",
-    }),
+    // ElasticsearchModule.register({
+    //   node: "http://elasticsearch:9200",
+    // }),
   ],
   providers: [
     BoardsResolver, //
