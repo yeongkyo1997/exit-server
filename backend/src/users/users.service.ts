@@ -2,7 +2,6 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Keyword } from "src/keywords/entities/keyword.entity";
@@ -12,7 +11,6 @@ import { Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
 import { Category } from "src/categories/entities/category.entity";
-import { EmailService } from "src/email/email.service";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Injectable()
@@ -34,9 +32,7 @@ export class UsersService {
     private readonly categoryRepository: Repository<Category>,
 
     @InjectRepository(UserBoard)
-    private readonly userBoardRepository: Repository<UserBoard>,
-
-    private readonly emailService: EmailService
+    private readonly userBoardRepository: Repository<UserBoard>
   ) {}
 
   async create({ password, createUserInput }) {
@@ -243,27 +239,23 @@ export class UsersService {
     return updateUser;
   }
 
-  async checkDuplicateEmail({ email }) {
-    const findUser = await this.userRepository.findOne({ where: { email } });
+  async checkEmailDuplicate({ email }) {
+    const findUser = await this.userRepository.findOne({
+      where: { email },
+    });
     // 중복된 이메일이 있으면 에러
     if (findUser) throw new ConflictException("이미 존재하는 이메일입니다.");
     return findUser ? true : false;
   }
 
-  async isRegisteredEmail({ email, emailToken }) {
-    const findUser = await this.userRepository.findOne({ where: { email } });
-    if (!findUser)
-      throw new UnauthorizedException("가입되지 않은 이메일입니다.");
-
-    await this.emailService.checkEmail({ email, emailToken });
-  }
-
   async updatePassword({ email, password }) {
     const findUser = await this.userRepository.findOne({ where: { email } });
 
+    const hashedPassword = await bcrypt.hash(password, 10.2);
+
     const updateUser = await this.userRepository.save({
       ...findUser,
-      password,
+      password: hashedPassword,
     });
     return updateUser;
   }
