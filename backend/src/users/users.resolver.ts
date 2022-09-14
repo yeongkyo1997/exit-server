@@ -13,24 +13,18 @@ import {
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { Board } from "src/boards/entities/board.entity";
+import { EmailService } from "src/email/email.service";
 
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     private readonly usersService: UsersService, //
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache //
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache, //
+    private readonly emailService: EmailService
   ) {}
 
   @Mutation(() => User)
-  async createUser(
-    @Args("createUserInput") createUserInput: CreateUserInput,
-    @Args("emailToken") emailToken: string
-  ) {
-    // 이메일 토큰 확인하기
-    const validToken = await this.cacheManager.get(createUserInput.email);
-    if (validToken !== emailToken)
-      throw new UnauthorizedException("이메일 인증번호를 확인해주세요.");
-
+  async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
     const password = createUserInput.password;
 
     const hashedPassword = await bcrypt.hash(password, 10.2);
@@ -125,43 +119,57 @@ export class UsersResolver {
   }
 
   // 비밀번호 변경을 위한 이메일 토큰 생성
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
-  async createEmailTokenForPassword(
-    @Args("email", { type: () => String }) email: string
+  async sendPasswordEmailToken(
+    @Context() context: any //
   ) {
+    const user = context.req.user;
     // 이메일 토큰 생성하기 문자 6자리
     const emailToken = Math.random().toString(36).substring(2, 8);
 
-    // 5분동안 유효한 이메일 토큰 생성
-    await this.cacheManager.set(email, emailToken, { ttl: 300 });
+    // 3분동안 유효한 이메일 토큰 생성
+    await this.cacheManager.set(user.email, emailToken, { ttl: 180 });
 
     // 이메일 토큰 전송하기
-    await this.usersService.isRegisteredEmail({ email, emailToken });
+    await this.emailService.sendEmail({
+      email: user.email,
+      emailToken,
+      changePassword: true,
+    });
     return true;
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   async updatePassword(
-    @Args("email", { type: () => String }) email: string,
-    @Args("password", { type: () => String }) password: string,
-    @Args("emailToken") emailToken: string
+    @Context() context: any,
+    @Args("password", { type: () => String }) password: string
   ) {
-    // 이메일 토큰 확인하기
-    const validToken = await this.cacheManager.get(email);
-    if (validToken !== emailToken)
-      throw new UnauthorizedException("이메일 인증번호를 확인해주세요.");
-
+    const user = context.req.user;
     const hashedPassword = await bcrypt.hash(password, 10.2);
 
-    await this.usersService.updatePassword({ email, password: hashedPassword });
+    await this.usersService.updatePassword({
+      email: user.email,
+      password: hashedPassword,
+    });
 
     // redis에서 이메일 토큰 삭제하기
-    await this.cacheManager.del(email);
+    await this.cacheManager.del(user.email);
 
     return true;
   }
+
   @Query(() => User)
   async fetchUserRandom() {
     return this.usersService.fetchUserRandom();
+  }
+
+  @Mutation(() => Boolean)
+  async checkEmailDuplicate(
+    @Args("email", { type: () => String }) email: string //
+  ) {
+    const result = await this.usersService.checkEmailDuplicate({ email });
+    return result;
   }
 }
