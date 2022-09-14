@@ -7,7 +7,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
 import { Category } from "src/categories/entities/category.entity";
@@ -32,7 +32,8 @@ export class UsersService {
     private readonly categoryRepository: Repository<Category>,
 
     @InjectRepository(UserBoard)
-    private readonly userBoardRepository: Repository<UserBoard>
+    private readonly userBoardRepository: Repository<UserBoard>,
+    private readonly dataSource: DataSource
   ) {}
 
   async create({ password, createUserInput }) {
@@ -155,6 +156,36 @@ export class UsersService {
         }
       );
     }
+
+    // 유저와 태그의 중간 테이블에 있는 데이터를 삭제
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("user_tags_tag")
+      .where("userId = :userId", {
+        userId: userId,
+      })
+      .execute();
+
+    // 유저와 키워드의 중간 테이블에 있는 데이터를 삭제
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("user_keywords_keyword")
+      .where("userId = :userId", {
+        userId: userId,
+      })
+      .execute();
+
+    // 유저와 카테고리의 중간 테이블에 있는 데이터를 삭제
+    await this.dataSource.manager
+      .createQueryBuilder()
+      .delete()
+      .from("user_categories_category")
+      .where("userId = :userId", {
+        userId: userId,
+      })
+      .execute();
 
     const saveTags = [];
     for (let i = 0; tags && i < tags.length; i++) {
