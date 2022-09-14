@@ -3,7 +3,7 @@ import {
   UnprocessableEntityException,
   UseGuards,
 } from "@nestjs/common";
-import { Args, Context, Int, Mutation, Resolver } from "@nestjs/graphql";
+import { Args, Context, Int, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { IContext } from "src/commons/type/context";
 import { IamportService } from "../iamport/iamport.service";
@@ -16,6 +16,13 @@ export class PaymentsResolver {
     private readonly paymentsService: PaymentsService, //
     private readonly iamportService: IamportService
   ) {}
+
+  @UseGuards(GqlAuthAccessGuard)
+  @Query(() => [Payment])
+  async fetchPayments(@Context() context) {
+    const user = context.req.user;
+    return this.paymentsService.findByUser({ user });
+  }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Payment)
@@ -49,6 +56,10 @@ export class PaymentsResolver {
     const paymentInf = await this.paymentsService.findStatus({ impUid });
     if (!paymentInf)
       throw new UnprocessableEntityException("취소할 결제 내역이 없습니다.");
+
+    // 결제 취소금액이 다르면
+    if (paymentInf.amount !== amount)
+      throw new ConflictException("취소금액이 다릅니다.");
 
     const accessToken = await this.iamportService.getToken();
 

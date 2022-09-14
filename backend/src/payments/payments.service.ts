@@ -19,6 +19,14 @@ export class PaymentsService {
     private readonly datasource: DataSource
   ) {}
 
+  async findByUser({ user }) {
+    return await this.paymentsRepository.find({
+      where: { user },
+      order: { createdAt: "DESC" },
+      relations: ["user"],
+    });
+  }
+
   async create({ impUid, amount, user: _user }) {
     const queryRunner = this.datasource.createQueryRunner();
     await queryRunner.connect();
