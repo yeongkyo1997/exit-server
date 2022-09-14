@@ -315,7 +315,6 @@ export class BoardsService {
     const updatedInfo = await this.boardRepository.save({
       ...originBoard,
       ...updateBoard,
-      boardImage: boardImage,
       tags: tagsResult,
       keywords: keywordsResult,
       categories: categoriesResult,
