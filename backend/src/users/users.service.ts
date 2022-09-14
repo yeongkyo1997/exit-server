@@ -1,7 +1,5 @@
 import {
   ConflictException,
-  ConsoleLogger,
-  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -66,9 +64,12 @@ export class UsersService {
     return saveUser;
   }
 
-  async findAll() {
+  async findAll({ page }) {
     const findUsers = await this.userRepository.find({
       relations: ["userImage", "tags", "keywords", "categories"],
+      order: { createdAt: "DESC" },
+      take: 10,
+      skip: (page - 1) * 10 || 0,
     });
     return findUsers;
   }
