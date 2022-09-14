@@ -200,7 +200,7 @@ export class UsersService {
     originKeywords.push(...saveKeywords);
     originCategories.push(...saveCategories);
 
-    const updatedUser = this.userRepository.save({
+    const updatedUser = await this.userRepository.save({
       ...originUser,
       ...updateUser,
       userImage: userImage,

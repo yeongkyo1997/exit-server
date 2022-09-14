@@ -234,7 +234,7 @@ export class BoardsService {
       updateBoard.endAt = new Date(curr.getTime() + KR_TIME);
     }
 
-    const updatedInfo = this.boardRepository.save({
+    const updatedInfo = await this.boardRepository.save({
       ...originBoard,
       ...updateBoard,
       boardImage: boardImage,
