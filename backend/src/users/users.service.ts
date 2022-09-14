@@ -40,8 +40,7 @@ export class UsersService {
   ) {}
 
   async create({ password, createUserInput }) {
-    const email = createUserInput.email;
-    const nickname = createUserInput.nickname;
+    const { email, nickname, userImage, ...rest } = createUserInput;
 
     const findEmail = await this.userRepository.findOne({
       where: { email },
@@ -56,8 +55,13 @@ export class UsersService {
     if (findNickname)
       throw new ConflictException("이미 존재하는 닉네임입니다.");
 
+    const saveImage = await this.userImageRepository.save({
+      ...userImage,
+    });
+
     const saveUser = await this.userRepository.save({
       ...createUserInput,
+      userImage: saveImage,
       password,
     });
 
@@ -202,7 +206,6 @@ export class UsersService {
     const updatedUser = await this.userRepository.save({
       ...originUser,
       ...updateUser,
-      userImage: userImage,
       tags: originTags,
       keywords: originKeywords,
       categories: originCategories,

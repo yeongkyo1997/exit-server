@@ -39,9 +39,14 @@ export class TempService {
     return true;
   }
 
-	async delete() {
-		await this.tagRepository.delete({});
-		await this.categoryRepository.delete({});
-		return true;
-	}
+  async delete() {
+    await this.categoryRepository.query(`
+      DELETE FROM user_categories_category;
+      DELETE FROM board_tags_tag;
+      DELETE FROM user_tags_tag;
+      DELETE FROM board_categories_category;
+      DELETE FROM tags;
+      DELETE FROM categories;
+    `);
+  }
 }
