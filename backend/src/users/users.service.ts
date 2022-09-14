@@ -113,6 +113,16 @@ export class UsersService {
     }
   }
 
+  async findBoards({ userId }) {
+    const userboards = await this.userBoardRepository.find({
+      where: {
+        user: { id: userId },
+      },
+      relations: ["board"],
+    });
+    return userboards;
+  }
+
   async update({ userId, updateUserInput }) {
     const originUser = await this.userRepository.findOne({
       where: { id: userId },
