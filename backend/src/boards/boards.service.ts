@@ -207,10 +207,18 @@ export class BoardsService {
       relations: ["boardImage"],
     });
 
-    if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
-
     const { boardImage, tags, keywords, categories, ...updateBoard } =
       updateBoardInput;
+
+    if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
+    if (updateBoard.bail < 50000 || updateBoard.bail > 1000000)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.totalMember < 1 || updateBoard.totalMember > 6)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.frequency < 1 || updateBoard.frequency > 7)
+      throw Error("보석금이 범위 밖입니다.");
+    if (updateBoard.closedAt > updateBoard.endAt)
+      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
 
     await this.dataSource.manager
       .createQueryBuilder()
