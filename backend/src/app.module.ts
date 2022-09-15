@@ -26,6 +26,7 @@ import { AppController } from "./app.controller";
 import { ConfigModule } from "@nestjs/config";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { TempModule } from "./temp/temp.module";
+import { PointHistoryModule } from './point-history/point-history.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { TempModule } from "./temp/temp.module";
     UserBoardModule,
     AttendanceModule,
     TempModule,
+    PointHistoryModule,
   ],
   providers: [IamportService],
   controllers: [AppController],
