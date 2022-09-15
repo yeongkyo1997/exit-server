@@ -202,17 +202,11 @@ export class AttendanceService {
 
   // 팀원의 현재 위치를 반환
   async getLocationCrew({ boardId, userId }) {
-    const board = await this.boardRepository.findOne({
-      where: {
-        id: boardId,
-      },
-    });
-
     const member = await this.userRepository.findOne({
       where: { id: userId },
     });
 
-    // 팀원의 최근 출석기록을 가져온다
+    // 팀원의 출석기록을 가져온다
     const memberAttendance = await this.attendanceRepository.findOne({
       where: {
         nickname: member.nickname,
@@ -222,11 +216,13 @@ export class AttendanceService {
       },
     });
 
+    // 출석기록이 없으면 에러를 반환
+    if (!memberAttendance) {
+      throw new Error("출석 기록이 없습니다.");
+    }
+
     // 위치를 반환
-    return {
-      latitude: memberAttendance.latitude,
-      longitude: memberAttendance.longitude,
-    };
+    return `${memberAttendance.latitude},${memberAttendance.longitude}`;
   }
 
   // 팀장의 현재 위치를 반환
@@ -252,9 +248,6 @@ export class AttendanceService {
     });
 
     // 위치를 반환
-    return {
-      latitude: leaderAttendance.latitude,
-      longitude: leaderAttendance.longitude,
-    };
+    return `${leaderAttendance.latitude},${leaderAttendance.longitude}`;
   }
 }
