@@ -15,7 +15,7 @@ export class BoardImagesService {
 
   async create({ image }) {
     const url = await this.filesService.upload({ file: image, type: "board" });
-    return url;
+    return url[0].toString();
   }
 
   async findOne({ boardImageId }) {

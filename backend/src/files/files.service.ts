@@ -11,8 +11,8 @@ export class FilesService {
 
     const storage = new Storage({
       projectId: process.env.PROJECT_ID,
-      keyFilename:
-        process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
+      keyFilename: process.env.KEY_FILE_NAME,
+      // process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
     }).bucket(bucket);
 
     const time = new Date();
@@ -34,8 +34,7 @@ export class FilesService {
               );
             })
             .on("error", (error) => {
-              reject(`Unable to upload image`);
-              return error;
+              reject(error);
             });
         });
         await results.push(url);
@@ -44,7 +43,7 @@ export class FilesService {
     return results;
   }
 
-  async remove({ url }) {
-    //아직 미완성
-  }
+  // async remove({ url }) {
+  //   //아직 미완성
+  // }
 }
