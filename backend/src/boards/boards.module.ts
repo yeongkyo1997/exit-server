@@ -10,6 +10,8 @@ import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 // import { ElasticsearchModule } from "@nestjs/elasticsearch";
 import { FilesService } from "src/files/files.service";
+import { User } from "src/users/entities/user.entity";
+import { PointHistory } from "src/point-history/entities/point-history.entity";
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { FilesService } from "src/files/files.service";
       Keyword,
       UserBoard,
       BoardImage,
+      User,
+      PointHistory,
     ]),
     // ElasticsearchModule.register({
     //   node: "http://elasticsearch:9200",
