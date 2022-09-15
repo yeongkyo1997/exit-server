@@ -97,8 +97,8 @@ export class AttendanceResolver {
     return this.attendanceService.getLocationCrew({ boardId, userId });
   }
 
-  // @Query(() => Object)
-  // async getLocationLeader(@Args("boardId") boardId: string) {
-  //   return this.attendanceService.getLocationLeader({ boardId });
-  // }
+  @Query(() => Object)
+  async getLocationLeader(@Args("boardId") boardId: string) {
+    return this.attendanceService.getLocationLeader({ boardId });
+  }
 }
