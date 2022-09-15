@@ -27,7 +27,7 @@ export class Board {
   @Field(() => String)
   title: string;
 
-  @Column()
+  @Column({ default: "" })
   @Field(() => String)
   context: string;
 
