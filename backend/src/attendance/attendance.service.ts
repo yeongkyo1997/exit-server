@@ -199,4 +199,55 @@ export class AttendanceService {
       (remainingTime % 60000) / 1000
     )}초`;
   }
+
+  // 팀원의 현재 위치를 반환
+  async getLocationCrew({ boardId, userId }) {
+    const member = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    // 팀원의 출석기록을 가져온다
+    const memberAttendance = await this.attendanceRepository.findOne({
+      where: {
+        nickname: member.nickname,
+      },
+      order: {
+        attendedAt: "DESC",
+      },
+    });
+
+    // 출석기록이 없으면 에러를 반환
+    if (!memberAttendance) {
+      throw new Error("출석 기록이 없습니다.");
+    }
+
+    // 위치를 반환
+    return `${memberAttendance.latitude},${memberAttendance.longitude}`;
+  }
+
+  // 팀장의 현재 위치를 반환
+  async getLocationLeader({ boardId }) {
+    const board = await this.boardRepository.findOne({
+      where: {
+        id: boardId,
+      },
+    });
+
+    const leader = await this.userRepository.findOne({
+      where: { id: board.leader },
+    });
+
+    // 팀장의 최근 출석기록을 가져온다
+    const leaderAttendance = await this.attendanceRepository.findOne({
+      where: {
+        nickname: leader.nickname,
+      },
+      order: {
+        attendedAt: "DESC",
+      },
+    });
+
+    // 위치를 반환
+    return `${leaderAttendance.latitude},${leaderAttendance.longitude}`;
+  }
 }
