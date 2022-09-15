@@ -7,9 +7,6 @@ export class CreateBoardInput {
   @Field(() => String)
   title: string;
 
-  @Field(() => String)
-  context: string;
-
   @Max(6)
   @Field(() => Int)
   totalMember: number;

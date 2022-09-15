@@ -1,26 +1,49 @@
 import { Injectable } from "@nestjs/common";
-import { CreateUserUrlInput } from "./dto/create-user-url.input";
-import { UpdateUserUrlInput } from "./dto/update-user-url.input";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { UserUrl } from "./entities/user-url.entity";
 
 @Injectable()
 export class UserUrlsService {
-  create(createUserUrlInput: CreateUserUrlInput) {
-    return "This action adds a new userUrl";
+  constructor(
+    @InjectRepository(UserUrl)
+    private readonly userUrlRepository: Repository<UserUrl>
+  ) {}
+
+  async findAll({ userId }) {
+    return await this.userUrlRepository.find({
+      where: { user: { id: userId } },
+    });
   }
 
-  findAll() {
-    return `This action returns all userUrls`;
+  // findOne(id: string) {
+  //   return `This action returns a #${id} userUrl`;
+  // }
+
+  async create({ userId, userUrl }) {
+    const isValid = await this.userUrlRepository.findOne({
+      where: { url: userUrl },
+    });
+
+    if (isValid) throw Error("이미 등록된 Url입니다.");
+
+    return await this.userUrlRepository.save({
+      url: userUrl,
+      user: userId,
+    });
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} userUrl`;
+  async update({ userUrl, userUrlId }) {
+    return await this.userUrlRepository.save({
+      id: userUrlId,
+      url: userUrl,
+    });
   }
 
-  update(id: string, updateUserUrlInput: UpdateUserUrlInput) {
-    return `This action updates a #${id} userUrl`;
-  }
-
-  remove(id: string) {
-    return `This action removes a #${id} userUrl`;
+  async remove({ userUrlId }) {
+    const result = await this.userUrlRepository.delete({
+      id: userUrlId,
+    });
+    return result.affected ? true : false;
   }
 }
