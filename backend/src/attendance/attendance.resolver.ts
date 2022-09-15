@@ -1,9 +1,11 @@
 import { CACHE_MANAGER, Inject, UseGuards } from "@nestjs/common";
-import { Args, Context, Query, Resolver } from "@nestjs/graphql";
+import { Args, Context, OmitType, Query, Resolver } from "@nestjs/graphql";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { AttendanceService } from "./attendance.service";
 import { BoardsService } from "src/boards/boards.service";
+import { Any } from "typeorm";
+import { Attendance } from "./entities/attendance.entity";
 
 @Resolver()
 export class AttendanceResolver {
@@ -29,7 +31,6 @@ export class AttendanceResolver {
     if (!validate) {
       throw new Error("유효하지 않은 유저입니다.");
     }
-    
 
     // 리더가 아니고(팀원일 경우) 리더가 캐시에 없으면 error
     if (board.leader !== user.id) {
@@ -87,4 +88,17 @@ export class AttendanceResolver {
   async getAttendanceTime(@Args("boardId") boardId: string) {
     return this.attendanceService.getRemainingTime({ boardId });
   }
+
+  @Query(() => Object)
+  async getLocationCrew(
+    @Args("boardId") boardId: string, //
+    @Args("userId") userId: string
+  ) {
+    return this.attendanceService.getLocationCrew({ boardId, userId });
+  }
+
+  // @Query(() => Object)
+  // async getLocationLeader(@Args("boardId") boardId: string) {
+  //   return this.attendanceService.getLocationLeader({ boardId });
+  // }
 }
