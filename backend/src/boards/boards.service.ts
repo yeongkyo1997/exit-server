@@ -3,8 +3,10 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
+import { PointHistory } from "src/point-history/entities/point-history.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
+import { User } from "src/users/entities/user.entity";
 import { DataSource, Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
@@ -23,6 +25,10 @@ export class BoardsService {
     private readonly userBoardRepository: Repository<UserBoard>,
     @InjectRepository(BoardImage)
     private readonly boardImageRepository: Repository<BoardImage>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(PointHistory)
+    private readonly pointHistoryRepository: Repository<PointHistory>,
     private readonly dataSource: DataSource
   ) {}
 
@@ -304,12 +310,92 @@ export class BoardsService {
       }
     }
 
+    // 성공했을 떄
     if (!originBoard.isSuccess && updateBoard.isSuccess) {
       updateBoard.endAt = new Date();
+
+      // board에 성공 표시
+      await this.boardRepository.update(
+        {
+          id: boardId,
+        },
+        {
+          isSuccess: true,
+          endAt: new Date(),
+        }
+      );
+
+      // 성공한 유저들에게 보석 지급
+      const successUsers = await this.userBoardRepository.find({
+        where: { board: boardId, isAccepted: true },
+      });
+
+      for (let i = 0; i < successUsers.length; i++) {
+        await this.userRepository.update(
+          {
+            id: successUsers[i].user.id,
+          },
+          {
+            point: successUsers[i].user.point + originBoard.bail * 1.1,
+          }
+        );
+      }
+
+      // pointHistory에 저장
+      for (let i = 0; i < successUsers.length; i++) {
+        await this.pointHistoryRepository.save({
+          user: successUsers[i].user,
+          point: originBoard.bail * 1.1,
+          type: "프로젝트 성공 보상",
+        });
+      }
     }
 
+    // 프로젝트 모집마감
     if (!originBoard.status && updateBoard.status) {
       updateBoard.closedAt = new Date();
+
+      // board에 모집 마감 표시
+      await this.boardRepository.update(
+        {
+          id: boardId,
+        },
+        {
+          status: true,
+          closedAt: new Date(),
+        }
+      );
+
+      // 모집 마감한 프로젝트에 승인한 유저들 포인트 차감
+      const acceptedUsers = await this.userBoardRepository.find({
+        where: { board: boardId, isAccepted: true },
+      });
+
+      for (let i = 0; i < acceptedUsers.length; i++) {
+        // 포인트 차감
+        await this.userRepository.update(
+          {
+            id: acceptedUsers[i].user.id,
+          },
+          {
+            point: acceptedUsers[i].user.point - originBoard.bail,
+          }
+        );
+
+        // pointHistory에 저장
+        await this.pointHistoryRepository.save({
+          user: acceptedUsers[i].user,
+          point: -originBoard.bail,
+          type: "프로젝트 참여 포인트 차감",
+        });
+
+        // 대기열에서 프로젝트에 참여한 유저들 삭제
+        await this.userBoardRepository.delete({
+          user: acceptedUsers[i].user,
+          board: originBoard,
+          isAccepted: false,
+        });
+      }
     }
 
     const updatedInfo = await this.boardRepository.save({
