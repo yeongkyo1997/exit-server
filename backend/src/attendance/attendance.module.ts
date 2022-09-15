@@ -11,6 +11,7 @@ import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Board } from "src/boards/entities/board.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { User } from "src/users/entities/user.entity";
+import { PointHistory } from "src/point-history/entities/point-history.entity";
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { User } from "src/users/entities/user.entity";
       Board,
       UserBoard,
       User,
+      PointHistory,
     ]),
   ],
   providers: [
