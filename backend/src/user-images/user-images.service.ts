@@ -16,7 +16,7 @@ export class UserImagesService {
 
   async create({ image }) {
     const url = await this.filesService.upload({ file: image, type: "user" });
-    return url;
+    return url[0].toString();
   }
 
   async findOne({ userImageId }) {

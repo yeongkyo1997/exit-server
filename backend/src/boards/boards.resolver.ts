@@ -153,7 +153,7 @@ export class BoardsResolver {
   ) {
     const url = await this.filesService.upload({ file: zip, type: "zip" });
     const board = await this.boardsService.findOne({ boardId });
-    updateBoardInput.projectUrl = url[0];
+    updateBoardInput.projectUrl = url[0].toString();
 
     const result = await this.boardsService.update({
       updateBoardInput,
