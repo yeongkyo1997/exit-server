@@ -11,8 +11,8 @@ export class FilesService {
 
     const storage = new Storage({
       projectId: process.env.PROJECT_ID,
-      keyFilename: process.env.KEY_FILE_NAME,
-      // process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
+      keyFilename:
+        process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
     }).bucket(bucket);
 
     const time = new Date();
