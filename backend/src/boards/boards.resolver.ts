@@ -3,7 +3,7 @@ import { BoardsService } from "./boards.service";
 import { Board } from "./entities/board.entity";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { UpdateBoardInput } from "./dto/update-board.input";
-// import { ElasticsearchService } from "@nestjs/elasticsearch";
+import { ElasticsearchService } from "@nestjs/elasticsearch";
 import { CACHE_MANAGER, Inject, UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
@@ -15,7 +15,7 @@ export class BoardsResolver {
   constructor(
     private readonly boardsService: BoardsService, //
 
-    // private readonly elasticsearchService: ElasticsearchService,
+    private readonly elasticsearchService: ElasticsearchService,
 
     private readonly filesService: FilesService,
 
@@ -44,37 +44,84 @@ export class BoardsResolver {
         keywordName,
       });
 
-    // // 검색어가 1글자 이하라면 에러를 발생시킨다.
-    // if (search.length <= 1)
-    //   throw new Error("검색어는 2글자 이상 입력해주세요.");
+    // 검색어가 1글자 이하라면 에러를 발생시킨다.
+    if (search.length <= 1)
+      throw new Error("검색어는 2글자 이상 입력해주세요.");
 
-    // // 검색어에 공백만 있다면 에러를 발생시킨다.
-    // if (search.match(/^\s+$/)) throw new Error("검색어를 입력해주세요.");
+    // 검색어에 공백만 있다면 에러를 발생시킨다.
+    if (search.match(/^\s+$/)) throw new Error("검색어를 입력해주세요.");
 
-    // // redis에 검색어가 저장되어있는지 확인한다.
+    // redis에 검색어가 저장되어있는지 확인한다.
     // if (await this.cacheManger.get(search)) {
     //   return await this.cacheManger.get(search);
     // }
 
-    // // elasticsearch에서 검색어로 검색한다.
-    // const searchResult = await this.elasticsearchService.search({
-    //   index: "teamboard",
-    //   body: {
-    //     query: {
-    //       multi_match: {
-    //         query: search,
-    //         fields: ["title", "description"],
-    //       },
-    //     },
-    //   },
-    // });
+    // elasticsearch에서 검색어로 검색한다.
+    const searchResult = await this.elasticsearchService.search({
+      index: "teamboard",
+      body: {
+        query: {
+          multi_match: {
+            query: search,
+            fields: ["title", "description"],
+          },
+        },
+      },
+    });
 
-    // // 최신 정보를 result에 저장한다.
-    // const result = searchResult.hits.hits.map((item) => item._source);
+    // 최신 정보를 result에 저장한다.
+    const result = searchResult.hits.hits.map((item) => item._source);
 
-    // // redis에 검색어와 검색결과를 저장한다.
-    // await this.cacheManger.set(search, result, { ttl: 60 });
-    // return result;
+    const result2 = result.map((item: object) => {
+      const boardImage = item["boardImage"].replace("{", "").replace("}", "");
+      const boardImageId = boardImage.split(",")[0].split(":")[1];
+      const boardImageUrl = boardImage.split(",")[1].split(":")[1];
+      const tags = item["tags"];
+      const tags2 = tags.split("},{").map((tag) => {
+        const id = tag.split(",")[0].split(":")[1];
+        const name = tag.split(",")[1].split(":")[1].replace("}", "");
+        return {
+          id,
+          name,
+        };
+      });
+      const keywords = item["keywords"];
+      const keywords2 = keywords.split("},{").map((keyword) => {
+        const id = keyword.split(",")[0].split(":")[1];
+        const name = keyword.split(",")[1].split(":")[1].replace("}", "");
+        return {
+          id,
+          name,
+        };
+      });
+      const categories = item["categories"];
+      const categories2 = categories.split("},{").map((category) => {
+        const id = category.split(",")[0].split(":")[1];
+        const name = category.split(",")[1].split(":")[1].replace("}", "");
+        return {
+          id,
+          name,
+        };
+      });
+      return {
+        ...item,
+        startAt: new Date(item["startAt"]),
+        endAt: new Date(item["endAt"]),
+        createdAt: new Date(item["createdAt"]),
+        closedAt: new Date(item["closedAt"]),
+        boardImage: {
+          id: boardImageId,
+          url: boardImageUrl,
+        },
+        tags: tags2,
+        keywords: keywords2,
+        categories: categories2,
+      };
+    });
+
+    // redis에 검색어와 검색결과를 저장한다.
+    await this.cacheManger.set(search, result2, { ttl: 60 });
+    return result2;
   }
 
   @Query(() => [Board])
