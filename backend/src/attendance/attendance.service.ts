@@ -122,6 +122,41 @@ export class AttendanceService {
     return attendanceCount;
   }
 
+  async getAllAttendancePercent({ board }) {
+    // 승인된 유저들의 수를 가져온다
+    const userCount = await this.userBoardRepository.count({
+      where: {
+        board: { id: board.id },
+      },
+    });
+    // 일주일에 몇 번 출석하는 보드인지 가져온다.
+    const frequency = board.frequency;
+
+    // 프로젝트 시작으로부터 몇 주차인지 가져온다.
+    const weekCount = Math.floor(
+      (new Date().getTime() - board.startAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    // 출석해야 하는 총 횟수를 계산한다.
+    const totalAttendanceCount = weekCount * frequency * userCount;
+    // 현재까지 출석한 횟수를 가져온다.
+    const attendanceCount = await this.attendanceRepository.count({
+      where: {
+        board: { id: board.id },
+      },
+    });
+
+    if (totalAttendanceCount === 0) {
+      return 0;
+    }
+
+    // 출석률을 계산한다.
+    const attendancePercent = Math.floor(
+      (attendanceCount / totalAttendanceCount) * 100
+    );
+
+    return attendancePercent;
+  }
+
   // 이미 출석한 유저인지 확인
   async checkAttendance({ user }) {
     // 유저가 참석하고 있는 보드의 아이디를 가져온다

@@ -12,11 +12,13 @@ import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { FilesService } from "src/files/files.service";
 import { User } from "src/users/entities/user.entity";
 import { PointHistory } from "src/point-history/entities/point-history.entity";
+import { Attendance } from "src/attendance/entities/attendance.entity";
+import { AttendanceService } from "src/attendance/attendance.service";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Board, //
+      Board,
       Tag,
       Category,
       Keyword,
@@ -24,6 +26,7 @@ import { PointHistory } from "src/point-history/entities/point-history.entity";
       BoardImage,
       User,
       PointHistory,
+      Attendance,
     ]),
     // ElasticsearchModule.register({
     //   node: "http://elasticsearch:9200",
@@ -32,6 +35,7 @@ import { PointHistory } from "src/point-history/entities/point-history.entity";
   providers: [
     BoardsResolver, //
     BoardsService,
+    AttendanceService,
     FilesService,
   ],
 })

@@ -145,6 +145,13 @@ export class BoardsResolver {
     return this.boardsService.remove({ leader, boardId });
   }
 
+  @Mutation(() => Boolean)
+  onClickBoard(
+    @Args("boardId") boardId: string //
+  ) {
+    return this.boardsService.onClickBoard({ boardId });
+  }
+
   @Mutation(() => String)
   async uploadZipFile(
     @Args("boardId") boardId: string, //
