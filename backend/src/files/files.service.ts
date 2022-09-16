@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Storage } from "@google-cloud/storage";
 import { v4 } from "uuid";
+import { Cron } from "@nestjs/schedule";
 
 @Injectable()
 export class FilesService {
@@ -43,7 +44,9 @@ export class FilesService {
     return results;
   }
 
-  // async remove({ url }) {
-  //   //아직 미완성
-  // }
+  //softDelete된 url이나 DB에는 저장이 안 되어 있지만 Bucket에는 올라가 있는 url을 찾아서 지워주기
+  // @Cron("* * * * * *")
+  async remove({ url }) {
+    //
+  }
 }

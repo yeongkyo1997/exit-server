@@ -4,11 +4,18 @@ import { Board } from "./entities/board.entity";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { UpdateBoardInput } from "./dto/update-board.input";
 import { ElasticsearchService } from "@nestjs/elasticsearch";
-import { CACHE_MANAGER, Inject, UseGuards } from "@nestjs/common";
+import {
+  CACHE_MANAGER,
+  Inject,
+  UnprocessableEntityException,
+  UseGuards,
+} from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { FileUpload, GraphQLUpload } from "graphql-upload";
 import { FilesService } from "src/files/files.service";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
 
 @Resolver(() => Board)
 export class BoardsResolver {
@@ -20,7 +27,10 @@ export class BoardsResolver {
     private readonly filesService: FilesService,
 
     @Inject(CACHE_MANAGER)
-    private readonly cacheManger: Cache
+    private readonly cacheManger: Cache,
+
+    @InjectRepository(Board)
+    private readonly boardRepository: Repository<Board>
   ) {}
 
   @Query(() => [Board])
@@ -161,5 +171,17 @@ export class BoardsResolver {
       boardId,
     });
     return result.projectUrl;
+  }
+
+  @Mutation(() => Boolean)
+  async removeZipFile(
+    @Args("boardId") boardId: string //
+  ) {
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!board) {
+      throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
+    }
   }
 }
