@@ -255,7 +255,7 @@ export class BoardsService {
       })
       .execute();
 
-    if (boardImage.url) {
+    if (boardImage.url != "null") {
       await this.boardImageRepository.update(
         {
           id: originBoard.boardImage.id,
@@ -265,7 +265,6 @@ export class BoardsService {
         }
       );
     }
-
     const tagsResult = [];
     const keywordsResult = [];
     const categoriesResult = [];
@@ -329,10 +328,11 @@ export class BoardsService {
 
       // 성공한 유저들에게 보석 지급
       const successUsers = await this.userBoardRepository.find({
-        where: { board: boardId, isAccepted: true },
+        where: { board: { id: boardId }, isAccepted: true },
+        relations: ["user", "board"],
       });
 
-      for (let i = 0; i < successUsers.length; i++) {
+      for (let i = 0; successUsers && i < successUsers.length; i++) {
         await this.userRepository.update(
           {
             id: successUsers[i].user.id,
@@ -344,11 +344,11 @@ export class BoardsService {
       }
 
       // pointHistory에 저장
-      for (let i = 0; i < successUsers.length; i++) {
+      for (let i = 0; successUsers && i < successUsers.length; i++) {
         await this.pointHistoryRepository.save({
           user: successUsers[i].user,
-          point: originBoard.bail * 1.1,
-          type: "프로젝트 성공 보상",
+          amount: originBoard.bail * 1.1,
+          pointHistory: "프로젝트 성공 보상",
         });
       }
     }
@@ -370,10 +370,11 @@ export class BoardsService {
 
       // 모집 마감한 프로젝트에 승인한 유저들 포인트 차감
       const acceptedUsers = await this.userBoardRepository.find({
-        where: { board: boardId, isAccepted: true },
+        where: { board: { id: boardId }, isAccepted: true },
+        relations: ["user", "board"],
       });
 
-      for (let i = 0; i < acceptedUsers.length; i++) {
+      for (let i = 0; acceptedUsers && i < acceptedUsers.length; i++) {
         // 포인트 차감
         await this.userRepository.update(
           {
@@ -387,8 +388,8 @@ export class BoardsService {
         // pointHistory에 저장
         await this.pointHistoryRepository.save({
           user: acceptedUsers[i].user,
-          point: -originBoard.bail,
-          type: "프로젝트 참여 포인트 차감",
+          amount: -originBoard.bail,
+          pointHistory: "프로젝트 참여 포인트 차감",
         });
 
         // 대기열에서 프로젝트에 참여한 유저들 삭제
@@ -407,6 +408,7 @@ export class BoardsService {
       keywords: keywordsResult,
       categories: categoriesResult,
     });
+
     return updatedInfo;
   }
 
