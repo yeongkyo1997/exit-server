@@ -16,7 +16,7 @@ import { PointHistory } from "src/point-history/entities/point-history.entity";
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Attendance, //
+      Attendance,
       Tag,
       Keyword,
       Category,

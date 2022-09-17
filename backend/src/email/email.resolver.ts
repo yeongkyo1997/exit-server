@@ -33,9 +33,28 @@ export class EmailResolver {
     return "이메일을 보냈습니다.";
   }
 
+  @Mutation(() => String)
+  async sendEmailToken(
+    @Args("email", { type: () => String }) email: string //
+  ) {
+    // 6자리 이메일 토큰 생성
+    const emailToken = Math.random().toString(36).substring(2, 8);
+
+    // ttl: 3분
+    await this.cacheManager.set(email, emailToken, { ttl: 180 });
+    this.cacheManager.get(email).then((res) => console.log(res));
+    this.emailService.sendEmail({
+      email,
+      emailToken,
+    });
+    return "이메일을 보냈습니다.";
+  }
+
   // 랜덤한 비밀번호 생성하고 이메일로 보내기
   @Mutation(() => String)
-  async sendNewPassword(@Args("email", { type: () => String }) email: string) {
+  async sendNewPassword(
+    @Args("email", { type: () => String }) email: string //
+  ) {
     // 유저 생성 전에 이메일 중복 체크
 
     const findUser = await this.usersService.findOneByEmail({ email });
