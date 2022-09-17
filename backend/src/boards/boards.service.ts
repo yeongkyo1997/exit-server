@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { AttendanceService } from "src/attendance/attendance.service";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
@@ -29,7 +30,8 @@ export class BoardsService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
-    private readonly dataSource: DataSource
+    private readonly dataSource: DataSource,
+    private readonly attendanceService: AttendanceService
   ) {}
 
   findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
@@ -419,5 +421,23 @@ export class BoardsService {
     // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
     const result = await this.boardRepository.softDelete({ id: boardId });
     return result.affected ? true : false;
+  }
+
+  async onClickBoard({ boardId }) {
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!board) throw Error("존재하지 않는 게시물입니다.");
+
+    // 출석률을 가지고온다.
+    const attendancePercent =
+      await this.attendanceService.getAllAttendancePercent({
+        board,
+      });
+
+    if (attendancePercent < 80) {
+      return false;
+    }
+    return true;
   }
 }
