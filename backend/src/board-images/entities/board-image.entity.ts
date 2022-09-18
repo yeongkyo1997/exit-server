@@ -1,5 +1,10 @@
 import { ObjectType, Field } from "@nestjs/graphql";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 @Entity()
 @ObjectType()
@@ -11,4 +16,7 @@ export class BoardImage {
   @Column()
   @Field(() => String)
   url: string;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }
