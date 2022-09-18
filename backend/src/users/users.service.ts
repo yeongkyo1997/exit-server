@@ -12,6 +12,7 @@ import * as bcrypt from "bcrypt";
 import { User } from "./entities/user.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
+import { Board } from "src/boards/entities/board.entity";
 
 @Injectable()
 export class UsersService {
@@ -33,6 +34,10 @@ export class UsersService {
 
     @InjectRepository(UserBoard)
     private readonly userBoardRepository: Repository<UserBoard>,
+
+    @InjectRepository(Board)
+    private readonly boardRepository: Repository<Board>,
+
     private readonly dataSource: DataSource
   ) {}
 
@@ -114,7 +119,13 @@ export class UsersService {
     const end = userboard.board.endAt;
 
     if (today > start && today < end) {
-      return userboard.board;
+      const result = await this.boardRepository.findOne({
+        where: {
+          id: userboard.board.id,
+        },
+        relations: ["boardImage", "tags", "keywords", "categories"],
+      });
+      return result;
     }
   }
 
@@ -125,7 +136,18 @@ export class UsersService {
       },
       relations: ["board"],
     });
-    return userboards;
+    const result = [];
+    for (let i = 0; i < userboards.length; i++) {
+      result.push(
+        await this.boardRepository.findOne({
+          where: {
+            id: userboards[i].board.id,
+          },
+          relations: ["boardImage", "tags", "keywords", "categories"],
+        })
+      );
+    }
+    return result;
   }
 
   async update({ userId, updateUserInput }) {
