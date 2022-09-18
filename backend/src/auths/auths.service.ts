@@ -67,6 +67,6 @@ export class AuthsService {
 
     this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://localhost:3000/");
+    res.redirect("http://127.0.0.1:3000");
   }
 }
