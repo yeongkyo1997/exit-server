@@ -214,6 +214,16 @@ export class BoardsResolver {
   }
 
   @UseGuards(GqlAuthAccessGuard)
+  @Mutation(() => String)
+  async updateBoardFinish(
+    @Args("boardId") boardId: string, //
+    @Context() context: any
+  ) {
+    const user = context.req.user;
+    return this.boardsService.updateFinish({ boardId, userId: user.id });
+  }
+
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   removeBoard(
     @Args("boardId") boardId: string, //
@@ -223,7 +233,7 @@ export class BoardsResolver {
     return this.boardsService.remove({ leader, boardId });
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => String)
   onClickBoard(
     @Args("boardId") boardId: string //
   ) {
