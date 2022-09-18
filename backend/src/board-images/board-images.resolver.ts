@@ -28,10 +28,10 @@ export class BoardImagesResolver {
     return this.boardImagesService.findAll();
   }
 
-  // @Mutation(() => Boolean)
-  // removeBoardImage(
-  //   @Args({ name: "url", type: () => [String] }) url: string[] //
-  // ) {
-  //   return this.boardImagesService.delete({ url });
-  // }
+  @Mutation(() => Boolean)
+  removeBoardImage(
+    @Args({ name: "boardImageId", type: () => String }) boardImageId: string //
+  ) {
+    return this.boardImagesService.delete({ boardImageId });
+  }
 }
