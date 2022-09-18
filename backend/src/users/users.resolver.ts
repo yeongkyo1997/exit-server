@@ -87,11 +87,7 @@ export class UsersResolver {
     if (!boards) {
       throw new Error("유저와 관련된 프로젝트가 없습니다.");
     }
-    const result = [];
-    for (let i = 0; i < boards.length; i++) {
-      result.push({ ...boards[i].board });
-    }
-    return result;
+    return boards;
   }
 
   //유저가 현재 진행하고 있는 프로젝트 찾기
@@ -108,7 +104,7 @@ export class UsersResolver {
     if (!board) {
       throw new Error("유저가 진행중인 프로젝트가 없습니다.");
     }
-    return { ...board };
+    return board;
   }
 
   @UseGuards(GqlAuthAccessGuard)

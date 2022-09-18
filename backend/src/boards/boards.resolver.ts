@@ -73,49 +73,70 @@ export class BoardsResolver {
     const result = searchResult.hits.hits.map((item) => item._source);
 
     const result2 = result.map((item: object) => {
-      const boardImage = item["boardImage"].replace("{", "").replace("}", "");
-      const boardImageId = boardImage.split(",")[0].split(":")[1];
-      const boardImageUrl = boardImage.split(",")[1].split(":")[1];
+      const boardImage =
+        item["boardImage"] == null
+          ? null
+          : item["boardImage"].replace("{", "").replace("}", "");
+
+      const boardImageId =
+        boardImage == null ? "" : boardImage.split(",")[0].split(":")[1];
+
+      const boardImageUrl =
+        boardImage == null ? "" : boardImage.split(",")[1].split(":")[1];
+
       const tags = item["tags"];
-      const tags2 = tags.split("},{").map((tag) => {
-        const id = tag.split(",")[0].split(":")[1];
-        const name = tag.split(",")[1].split(":")[1].replace("}", "");
-        return {
-          id,
-          name,
-        };
-      });
+      const tags2 =
+        tags == null
+          ? null
+          : tags.split("},{").map((tag) => {
+              const id = tag.split(",")[0].split(":")[1];
+              const name = tag.split(",")[1].split(":")[1].replace("}", "");
+              return {
+                id,
+                name,
+              };
+            });
       const keywords = item["keywords"];
-      const keywords2 = keywords.split("},{").map((keyword) => {
-        const id = keyword.split(",")[0].split(":")[1];
-        const name = keyword.split(",")[1].split(":")[1].replace("}", "");
-        return {
-          id,
-          name,
-        };
-      });
+      const keywords2 =
+        keywords == null
+          ? null
+          : keywords.split("},{").map((keyword) => {
+              const id = keyword.split(",")[0].split(":")[1];
+              const name = keyword.split(",")[1].split(":")[1].replace("}", "");
+              return {
+                id,
+                name,
+              };
+            });
       const categories = item["categories"];
-      const categories2 = categories.split("},{").map((category) => {
-        const id = category.split(",")[0].split(":")[1];
-        const name = category.split(",")[1].split(":")[1].replace("}", "");
-        return {
-          id,
-          name,
-        };
-      });
+      const categories2 =
+        categories == null
+          ? null
+          : categories.split("},{").map((category) => {
+              const id = category.split(",")[0].split(":")[1];
+              const name = category
+                .split(",")[1]
+                .split(":")[1]
+                .replace("}", "");
+              return {
+                id,
+                name,
+              };
+            });
       return {
         ...item,
         startAt: new Date(item["startAt"]),
         endAt: new Date(item["endAt"]),
         createdAt: new Date(item["createdAt"]),
         closedAt: new Date(item["closedAt"]),
-        boardImage: {
-          id: boardImageId,
-          url: boardImageUrl,
-        },
-        tags: tags2,
-        keywords: keywords2,
-        categories: categories2,
+        // boardImage가 있다면 boardImageId와 boardImageUrl을 추가하고 없다면 boardImage 넣지 않는다.
+        boardImage: { id: boardImageId, url: boardImageUrl },
+        // tags2가 있다면 tags2를 넣고 없다면 tags2 넣지 않는다.
+        tags: tags2 ? tags2 : [],
+        // keywords2가 있다면 keywords2를 넣고 없다면 keywords2 넣지 않는다.
+        keywords: keywords2 ? keywords2 : [],
+        // categories2가 있다면 categories2를 넣고 없다면 categories2 넣지 않는다.
+        categories: categories2 ? categories2 : [],
       };
     });
 

@@ -31,25 +31,25 @@ services:
     environment:
       TZ: Asia/Seoul
 
-  elasticsearch:
-    build:
-      context: ./elk/elasticsearch
-      dockerfile: Dockerfile.elasticsearch
+  # elasticsearch:
+  #   build:
+  #     context: ./elk/elasticsearch
+  #     dockerfile: Dockerfile.elasticsearch
 
-    environment:
-      discovery.type: single-node
-      TZ: Asia/Seoul
-    ports:
-      - 9200:9200
+  #   environment:
+  #     discovery.type: single-node
+  #     TZ: Asia/Seoul
+  #   ports:
+  #     - 9200:9200
 
-  logstash:
-    image: logstash:7.16.2
-    volumes:
-      - ./elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
-      - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
-    environment:
-      TZ: Asia/Seoul
+  # logstash:
+  #   image: logstash:7.16.2
+  #   volumes:
+  #     - ./elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+  #     - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
+  #     - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
+  #   environment:
+  #     TZ: Asia/Seoul
 
   # kibana:
   #   image: kibana:7.17.0
