@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { FilesService } from "src/files/files.service";
 import { Repository } from "typeorm";
@@ -19,29 +19,25 @@ export class BoardImagesService {
   }
 
   async findOne({ boardImageId }) {
-    await this.boardImageRepository.findOne({
+    return await this.boardImageRepository.findOne({
       where: { id: boardImageId },
     });
   }
 
   async findAll() {
-    await this.boardImageRepository.find({});
+    return await this.boardImageRepository.find({});
   }
 
-  // async delete({ url }) {
-  //   try {
-  //     for (let i = 0; i < url.length; i++) {
-  //       const boardImage = await this.boardImageRepository.findOne({
-  //         where: { url: url[i] },
-  //       });
-  //       await this.filesService.remove({ url });
-  //       await this.boardImageRepository.softDelete({
-  //         id: boardImage.id,
-  //       });
-  //     }
-  //   } catch (error) {
-  //     return false;
-  //   }
-  //   return true;
-  // }
+  async delete({ boardImageId }) {
+    const boardImage = await this.boardImageRepository.findOne({
+      where: { id: boardImageId },
+    });
+    if (!boardImage) {
+      throw new UnprocessableEntityException("존재하지 않는 이미지입니다.");
+    }
+    const result = await this.boardImageRepository.softDelete({
+      id: boardImageId,
+    });
+    return result.affected ? true : false;
+  }
 }

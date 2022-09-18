@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { Storage } from "@google-cloud/storage";
+import { Injectable, UnprocessableEntityException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { UserImage } from "./entities/user-image.entity";
@@ -20,19 +19,25 @@ export class UserImagesService {
   }
 
   async findOne({ userImageId }) {
-    await this.userImageRepository.findOne({
+    return await this.userImageRepository.findOne({
       where: { id: userImageId },
     });
   }
 
   async findAll() {
-    await this.userImageRepository.find({});
+    return await this.userImageRepository.find({});
   }
 
-  // async delete({ userImageId }) {
-  //   const result = await this.userImageRepository.softDelete({
-  //     id: userImageId,
-  //   });
-  //   return result.affected ? true : false;
-  // }
+  async delete({ userImageId }) {
+    const userImage = await this.userImageRepository.findOne({
+      where: { id: userImageId },
+    });
+    if (!userImage) {
+      throw new UnprocessableEntityException("존재하지 않는 이미지입니다.");
+    }
+    const result = await this.userImageRepository.softDelete({
+      id: userImageId,
+    });
+    return result.affected ? true : false;
+  }
 }

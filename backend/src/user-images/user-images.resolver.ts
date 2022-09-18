@@ -28,10 +28,10 @@ export class UserImagesResolver {
     return this.userImagesService.findAll();
   }
 
-  // @Mutation(() => Boolean)
-  // removeImage(
-  //   @Args({ name: "userImageId", type: () => String }) userImageId: string //
-  // ) {
-  //   return this.userImagesService.delete({ userImageId });
-  // }
+  @Mutation(() => Boolean)
+  removeImage(
+    @Args({ name: "userImageId", type: () => String }) userImageId: string //
+  ) {
+    return this.userImagesService.delete({ userImageId });
+  }
 }
