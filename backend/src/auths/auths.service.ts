@@ -58,9 +58,12 @@ export class AuthsService {
     const createUserInput = req.user;
     if (!user) {
       user = await this.usersService.create({
-        password,
         createUserInput,
+        password,
       });
+      this.setRefreshToken({ user, res, req });
+
+      res.redirect("http://127.0.0.1:3000");
     } else {
       throw new ConflictException("이미 존재하는 이메일입니다.");
     }
