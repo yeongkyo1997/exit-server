@@ -29,7 +29,12 @@ export class UserBoardService {
     const result = [];
     for (let i = 0; i < users.length; i++) {
       if (users[i]["user"].id !== users[i]["board"].leader) {
-        result.push(users[i]);
+        result.push(
+          await this.userRepository.findOne({
+            where: { id: users[i]["user"].id },
+            relations: ["userImage", "tags", "keywords", "categories"],
+          })
+        );
       }
     }
     return result;
