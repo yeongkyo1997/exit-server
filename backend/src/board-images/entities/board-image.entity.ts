@@ -13,7 +13,7 @@ export class BoardImage {
   @Field(() => String)
   id: string;
 
-  @Column({ default: "null" })
+  @Column()
   @Field(() => String)
   url: string;
 
