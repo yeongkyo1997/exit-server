@@ -38,6 +38,10 @@ export class User {
   @Field(() => Int)
   point: number;
 
+  @Column({ nullable: true })
+  @Field(() => String)
+  userUrl: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
