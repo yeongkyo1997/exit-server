@@ -8,7 +8,7 @@ export class UserImage {
   @Field(() => String)
   id: string;
 
-  @Column()
+  @Column({ default: "null" })
   @Field(() => String)
   url: string;
 }
