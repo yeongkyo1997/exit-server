@@ -4,7 +4,7 @@ import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { AttendanceService } from "./attendance.service";
 import { BoardsService } from "src/boards/boards.service";
-import { Any } from "typeorm";
+import { Attendance } from "./entities/attendance.entity";
 
 @Resolver()
 export class AttendanceResolver {
@@ -83,6 +83,11 @@ export class AttendanceResolver {
     return this.attendanceService.getAttendanceCount({ boardId });
   }
 
+  @Query(() => Number)
+  async getAttendancePercent(@Args("boardId") boardId: string) {
+    return this.attendanceService.getAttendanceCount({ boardId });
+  }
+
   @Query(() => String)
   async getAttendanceTime(@Args("boardId") boardId: string) {
     return this.attendanceService.getRemainingTime({ boardId });
@@ -99,5 +104,10 @@ export class AttendanceResolver {
   @Query(() => String)
   async getLocationLeader(@Args("boardId") boardId: string) {
     return this.attendanceService.getLocationLeader({ boardId });
+  }
+
+  @Query(() => [Attendance])
+  async fetchAttendance(@Args("boardId") boardId: string) {
+    return this.attendanceService.getAttendanceList({ boardId });
   }
 }
