@@ -32,6 +32,7 @@ export class LikesService {
       likes[i]["user"]["keywords"] = userData["keywords"];
       likes[i]["user"]["categories"] = userData["categories"];
       likes[i]["user"]["userImage"] = userData["userImage"];
+      likes[i]["user"]["tags"] = userData["tags"];
 
       const boardData = await this.boardRepository.findOne({
         where: { id: likes[i]["board"].id },
