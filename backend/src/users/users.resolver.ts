@@ -75,6 +75,13 @@ export class UsersResolver {
     return this.usersService.findOneByUserId({ userId });
   }
 
+  @Query(() => User)
+  fetchUserWithNickname(
+    @Args("nickname", { type: () => String }) nickname: string //
+  ) {
+    return this.usersService.findOneByNickname({ nickname });
+  }
+
   @Query(() => [Board])
   async fetchProjectsOfUser(
     @Args("userId", { type: () => String }) userId: string //

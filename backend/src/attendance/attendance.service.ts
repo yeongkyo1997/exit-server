@@ -157,6 +157,16 @@ export class AttendanceService {
     return attendancePercent;
   }
 
+  async getAttendancePercent({ boardId }) {
+    const board = await this.boardRepository.findOne({
+      where: {
+        id: boardId,
+      },
+    });
+
+    return this.getAllAttendancePercent({ board });
+  }
+
   // 이미 출석한 유저인지 확인
   async checkAttendance({ user }) {
     // 유저가 참석하고 있는 보드의 아이디를 가져온다
@@ -245,6 +255,7 @@ export class AttendanceService {
     const memberAttendance = await this.attendanceRepository.findOne({
       where: {
         nickname: member.nickname,
+        board: { id: boardId },
       },
       order: {
         attendedAt: "DESC",
@@ -284,5 +295,33 @@ export class AttendanceService {
 
     // 위치를 반환
     return `${leaderAttendance.latitude},${leaderAttendance.longitude}`;
+  }
+
+  // 보드의 출석부를 반환
+  async getAttendanceList({ boardId }) {
+    const board = await this.boardRepository.findOne({
+      where: {
+        id: boardId,
+      },
+    });
+
+    const attendanceList = await this.attendanceRepository.find({
+      where: {
+        board,
+      },
+      order: {
+        attendedAt: "DESC",
+      },
+    });
+
+    // 당일 출석한 유저의 출석기록을 반환
+    return attendanceList.filter((attendance) => {
+      const today = new Date();
+      return (
+        attendance.attendedAt.getFullYear() === today.getFullYear() &&
+        attendance.attendedAt.getMonth() === today.getMonth() &&
+        attendance.attendedAt.getDate() === today.getDate()
+      );
+    });
   }
 }

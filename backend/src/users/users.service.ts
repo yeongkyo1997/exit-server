@@ -105,6 +105,14 @@ export class UsersService {
     return findUser;
   }
 
+  async findOneByNickname({ nickname }) {
+    const findUser = await this.userRepository.findOne({
+      where: { nickname },
+      relations: ["userImage", "tags", "keywords", "categories"],
+    });
+    return findUser;
+  }
+
   async findBoard({ userId }) {
     const userboard = await this.userBoardRepository.findOne({
       where: {
