@@ -85,7 +85,7 @@ export class AttendanceResolver {
 
   @Query(() => Number)
   async getAttendancePercent(@Args("boardId") boardId: string) {
-    return this.attendanceService.getAttendanceCount({ boardId });
+    return this.attendanceService.getAttendancePercent({ boardId });
   }
 
   @Query(() => String)

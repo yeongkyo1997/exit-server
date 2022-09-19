@@ -1,4 +1,4 @@
-import { Field, ObjectType } from "@nestjs/graphql";
+import { Field, Float, ObjectType } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
 import {
   Column,
@@ -28,11 +28,11 @@ export class Attendance {
   attendedAt: Date;
 
   @Column({ type: "double" })
-  @Field(() => Double)
+  @Field(() => Float)
   latitude: number;
 
   @Column({ type: "double" })
-  @Field(() => Double)
+  @Field(() => Float)
   longitude: number;
 
   @ManyToOne(() => Board)
