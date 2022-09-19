@@ -311,6 +311,10 @@ export class BoardsService {
       }
     }
 
+    if (!originBoard.status && updateBoard.status) {
+      updateBoard.closedAt = new Date();
+    }
+
     const updatedInfo = await this.boardRepository.save({
       ...originBoard,
       ...updateBoard,

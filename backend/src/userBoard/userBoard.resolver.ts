@@ -12,7 +12,7 @@ export class UserBoardResolver {
   ) {}
 
   //프로젝트를 신청한 유저들(리더 제외) 불러오는 함수
-  @Query(() => [UserBoard])
+  @Query(() => [User])
   fetchUserBoards(
     @Args("userId", { nullable: true }) userId: string, //
     @Args("boardId", { nullable: true }) boardId: string,
