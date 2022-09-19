@@ -45,27 +45,37 @@ export class UserBoardService {
   }
 
   async create({ createUserBoardInput }) {
+    const { userId, boardId } = createUserBoardInput;
     const checkDuplication = await this.userBoardRepository.findOne({
       where: {
-        user: { id: createUserBoardInput.userId },
-        board: { id: createUserBoardInput.boardId },
+        user: { id: userId },
+        board: { id: boardId },
       },
     });
 
-    if (checkDuplication) {
-      return new Error("이미 신청한 프로젝트입니다.");
+    if (checkDuplication) throw new Error("이미 신청한 프로젝트입니다.");
+
+    const checkOtherBoard = await this.userBoardRepository.find({
+      where: {
+        user: { id: userId },
+        isAccepted: true,
+      },
+      relations: ["board"],
+    });
+
+    const now = new Date();
+    for (let i = 0; i < checkOtherBoard.length; i++) {
+      if (checkOtherBoard[i].board.endAt > now)
+        throw Error("이미 진행중인 프로젝트가 있습니다.");
     }
 
     const user = await this.userRepository.findOne({
-      where: {
-        id: createUserBoardInput.userId,
-      },
+      where: { id: userId },
     });
     const board = await this.boardRepository.findOne({
-      where: {
-        id: createUserBoardInput.boardId,
-      },
+      where: { id: boardId },
     });
+
     return await this.userBoardRepository.save({
       user,
       board,

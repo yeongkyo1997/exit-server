@@ -3,7 +3,6 @@ import { UserBoardService } from "./userBoard.service";
 import { UserBoard } from "./entities/userBoard.entity";
 import { CreateUserBoardInput } from "./dto/create-userBoard.input";
 import { UpdateUserBoardInput } from "./dto/update-userBoard.input";
-import { User } from "src/users/entities/user.entity";
 
 @Resolver(() => UserBoard)
 export class UserBoardResolver {
