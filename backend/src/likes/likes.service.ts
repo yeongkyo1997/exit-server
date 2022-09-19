@@ -22,8 +22,7 @@ export class LikesService {
     });
   }
 
-  async create({ createLikeInput }) {
-    const { userId, boardId } = createLikeInput;
+  async create({ userId, boardId }) {
     const isValid = await this.likeRepository.findOne({
       where: {
         user: { id: userId },
@@ -50,8 +49,8 @@ export class LikesService {
       { countLike: boardInfo.countLike + 1 }
     );
     await this.likeRepository.save({
-      user: createLikeInput.userId,
-      board: createLikeInput.boardId,
+      user: userId,
+      board: boardId,
     });
     return "찜 등록";
   }
