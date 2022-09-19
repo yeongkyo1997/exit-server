@@ -3,6 +3,7 @@ import { UserBoardService } from "./userBoard.service";
 import { UserBoard } from "./entities/userBoard.entity";
 import { CreateUserBoardInput } from "./dto/create-userBoard.input";
 import { UpdateUserBoardInput } from "./dto/update-userBoard.input";
+import { User } from "src/users/entities/user.entity";
 
 @Resolver(() => UserBoard)
 export class UserBoardResolver {
@@ -10,6 +11,7 @@ export class UserBoardResolver {
     private readonly userBoardService: UserBoardService //
   ) {}
 
+  //프로젝트를 신청한 유저들(리더 제외) 불러오는 함수
   @Query(() => [UserBoard])
   fetchUserBoards(
     @Args("userId", { nullable: true }) userId: string, //

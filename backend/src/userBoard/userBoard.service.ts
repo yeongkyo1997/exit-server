@@ -16,8 +16,9 @@ export class UserBoardService {
     private readonly userRepository: Repository<User>
   ) {}
 
+  //프로젝트를 신청한 유저들(리더 제외) 불러오는 함수
   async findAll({ userId, boardId, isAccepted }) {
-    return await this.userBoardRepository.find({
+    const users = await this.userBoardRepository.find({
       where: {
         user: { id: userId },
         board: { id: boardId },
@@ -25,6 +26,13 @@ export class UserBoardService {
       },
       relations: ["board", "user"],
     });
+    const result = [];
+    for (let i = 0; i < users.length; i++) {
+      if (users[i]["user"].id !== users[i]["board"].leader) {
+        result.push(users[i]);
+      }
+    }
+    return result;
   }
 
   async create({ createUserBoardInput }) {

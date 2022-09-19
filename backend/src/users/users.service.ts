@@ -133,19 +133,28 @@ export class UsersService {
     const userboards = await this.userBoardRepository.find({
       where: {
         user: { id: userId },
+        isAccepted: true,
       },
       relations: ["board"],
     });
     const result = [];
+    const today = new Date();
     for (let i = 0; i < userboards.length; i++) {
-      result.push(
-        await this.boardRepository.findOne({
-          where: {
-            id: userboards[i].board.id,
-          },
-          relations: ["boardImage", "tags", "keywords", "categories"],
-        })
-      );
+      if (
+        !(
+          userboards[i]["board"].startAt < today &&
+          userboards[i]["board"].endAt > today
+        )
+      ) {
+        result.push(
+          await this.boardRepository.findOne({
+            where: {
+              id: userboards[i].board.id,
+            },
+            relations: ["boardImage", "tags", "keywords", "categories"],
+          })
+        );
+      }
     }
     return result;
   }
@@ -329,7 +338,10 @@ export class UsersService {
     const findUser = await this.userRepository.find({
       relations: ["userImage", "tags", "keywords", "categories"],
     });
-    const randomUser = findUser[Math.floor(Math.random() * findUser.length)];
+    const result = findUser.filter((user) => user["userImage"].url !== "null");
+
+    const randomUser = result[Math.floor(Math.random() * result.length)];
+
     return randomUser;
   }
 }
