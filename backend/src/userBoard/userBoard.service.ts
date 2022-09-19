@@ -84,6 +84,7 @@ export class UserBoardService {
 
   async update({ updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
+
     // 이미 참석한 프로젝트인지 확인
     const checkAccepted = await this.userBoardRepository.findOne({
       where: {
@@ -134,9 +135,23 @@ export class UserBoardService {
       relations: ["board", "user"],
     });
 
+    if (userBoardData.length == 1 && userBoardData[0].isAccepted) {
+      const boardInfo = await this.boardRepository.findOne({
+        where: { id: boardId },
+      });
+      const updateCount = await this.boardRepository.update(
+        {
+          id: boardId,
+        },
+        {
+          countMember: boardInfo.countMember - 1,
+        }
+      );
+    }
+
     const showResult = [];
     for (let i = 0; i < userBoardData.length; i++) {
-      const result = await this.userBoardRepository.softDelete({
+      const result = await this.userBoardRepository.delete({
         id: userBoardData[i].id,
       });
       showResult.push(
