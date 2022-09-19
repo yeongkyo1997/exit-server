@@ -39,7 +39,7 @@ export class User {
   point: number;
 
   @Column({ nullable: true })
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   userUrl: string;
 
   @CreateDateColumn()
