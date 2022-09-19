@@ -311,11 +311,39 @@ export class BoardsService {
       }
     }
 
-    // 성공했을 떄
-    if (!originBoard.isSuccess && updateBoard.isSuccess) {
-      updateBoard.endAt = new Date();
+    const updatedInfo = await this.boardRepository.save({
+      ...originBoard,
+      ...updateBoard,
+      tags: tagsResult,
+      keywords: keywordsResult,
+      categories: categoriesResult,
+    });
 
-      // board에 성공 표시
+    return updatedInfo;
+  }
+
+  async updateFinish({ boardId, userId }) {
+    const userBoard = await this.userBoardRepository.findOne({
+      where: { user: { id: userId }, board: { id: boardId } },
+    });
+
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+
+    if (!userBoard) throw Error("참여한 프로젝트가 아닙니다.");
+    if (board.isSuccess) throw Error("이미 완료된 프로젝트입니다.");
+
+    if (board.leader !== userId)
+      throw Error("프로젝트 리더만 완료할 수 있습니다.");
+
+    // 출석률 계산
+    const attendance = await this.attendanceService.getAllAttendancePercent(
+      boardId
+    );
+
+    // 출석률이 80% 이상이면 성공
+    if (attendance >= 80) {
       await this.boardRepository.update(
         {
           id: boardId,
@@ -338,7 +366,7 @@ export class BoardsService {
             id: successUsers[i].user.id,
           },
           {
-            point: successUsers[i].user.point + originBoard.bail * 1.1,
+            point: successUsers[i].user.point + board.bail * 1.1,
           }
         );
       }
@@ -347,69 +375,49 @@ export class BoardsService {
       for (let i = 0; successUsers && i < successUsers.length; i++) {
         await this.pointHistoryRepository.save({
           user: successUsers[i].user,
-          amount: originBoard.bail * 1.1,
+          amount: board.bail * 1.1,
           pointHistory: "프로젝트 성공 보상",
         });
       }
-    }
-
-    // 프로젝트 모집마감
-    if (!originBoard.status && updateBoard.status) {
-      updateBoard.closedAt = new Date();
-
-      // board에 모집 마감 표시
+      return "프로젝트 성공";
+    } else {
       await this.boardRepository.update(
         {
           id: boardId,
         },
         {
-          status: true,
-          closedAt: new Date(),
+          isSuccess: false,
+          endAt: new Date(),
         }
       );
 
-      // 모집 마감한 프로젝트에 승인한 유저들 포인트 차감
-      const acceptedUsers = await this.userBoardRepository.find({
+      // 실패한 유저들에게 보석 차감
+      const failUsers = await this.userBoardRepository.find({
         where: { board: { id: boardId }, isAccepted: true },
         relations: ["user", "board"],
       });
 
-      for (let i = 0; acceptedUsers && i < acceptedUsers.length; i++) {
-        // 포인트 차감
+      for (let i = 0; failUsers && i < failUsers.length; i++) {
         await this.userRepository.update(
           {
-            id: acceptedUsers[i].user.id,
+            id: failUsers[i].user.id,
           },
           {
-            point: acceptedUsers[i].user.point - originBoard.bail,
+            point: failUsers[i].user.point + board.bail * 0.4,
           }
         );
+      }
 
-        // pointHistory에 저장
+      // pointHistory에 저장
+      for (let i = 0; failUsers && i < failUsers.length; i++) {
         await this.pointHistoryRepository.save({
-          user: acceptedUsers[i].user,
-          amount: -originBoard.bail,
-          pointHistory: "프로젝트 참여 포인트 차감",
-        });
-
-        // 대기열에서 프로젝트에 참여한 유저들 삭제
-        await this.userBoardRepository.delete({
-          user: acceptedUsers[i].user,
-          board: originBoard,
-          isAccepted: false,
+          user: failUsers[i].user,
+          amount: board.bail * 0.4,
+          pointHistory: "프로젝트 실패 보상",
         });
       }
+      return "프로젝트 실패";
     }
-
-    const updatedInfo = await this.boardRepository.save({
-      ...originBoard,
-      ...updateBoard,
-      tags: tagsResult,
-      keywords: keywordsResult,
-      categories: categoriesResult,
-    });
-
-    return updatedInfo;
   }
 
   async remove({ leader, boardId }) {
@@ -438,8 +446,15 @@ export class BoardsService {
       });
 
     if (attendancePercent < 80) {
-      return false;
+      return "출석률이 80% 미만입니다.";
     }
-    return true;
+
+    // 종료일이 지났는지 확인한다.
+    const now = new Date();
+    if (board.endAt < now) {
+      return "프로젝트를 최종적으로 성공했습니다.";
+    } else {
+      return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
+    }
   }
 }
