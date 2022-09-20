@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Like } from "./entities/like.entity";
 
@@ -10,16 +11,42 @@ export class LikesService {
     @InjectRepository(Like)
     private readonly likeRepository: Repository<Like>,
     @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>
+    private readonly boardRepository: Repository<Board>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
   async findAll({ userId, boardId }) {
-    return await this.likeRepository.find({
+    const likes = await this.likeRepository.find({
       where: {
         user: { id: userId },
         board: { id: boardId },
       },
       relations: ["board", "user"],
     });
+    const result = [];
+    for (let i = 0; i < likes.length; i++) {
+      const userData = await this.userRepository.findOne({
+        where: { id: likes[i]["user"].id },
+        relations: ["userImage", "tags", "keywords", "categories"],
+      });
+      likes[i]["user"]["keywords"] = userData["keywords"];
+      likes[i]["user"]["categories"] = userData["categories"];
+      likes[i]["user"]["userImage"] = userData["userImage"];
+      likes[i]["user"]["tags"] = userData["tags"];
+
+      const boardData = await this.boardRepository.findOne({
+        where: { id: likes[i]["board"].id },
+        relations: ["boardImage", "tags", "keywords", "categories"],
+      });
+      likes[i]["board"]["keywords"] = boardData["keywords"];
+      likes[i]["board"]["categories"] = boardData["categories"];
+      likes[i]["board"]["boardImage"] = boardData["boardImage"];
+      likes[i]["board"]["tags"] = boardData["tags"];
+
+      result.push(likes[i]);
+    }
+
+    return result;
   }
 
   async create({ userId, boardId }) {
