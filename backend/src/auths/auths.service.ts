@@ -55,7 +55,12 @@ export class AuthsService {
       email: req.user.email,
     });
     const password = await bcrypt.hash(req.user.password, 10.2);
+
     const createUserInput = req.user;
+
+    createUserInput["userImage"] = {
+      url: "null",
+    };
     if (!user) {
       user = await this.usersService.create({
         createUserInput,
