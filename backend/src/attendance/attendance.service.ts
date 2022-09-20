@@ -304,10 +304,9 @@ export class AttendanceService {
         id: boardId,
       },
     });
-
     const attendanceList = await this.attendanceRepository.find({
       where: {
-        board,
+        board: { id: boardId },
       },
       order: {
         attendedAt: "DESC",
