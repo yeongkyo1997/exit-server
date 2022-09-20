@@ -14,7 +14,13 @@ import { User } from "src/users/entities/user.entity";
 
 @WebSocketGateway({
   namespace: "chat",
-  cors: { origin: ["http://localhost:3000", "https://ex1t.shop"] },
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5500",
+      "https://ex1t.shop",
+    ],
+  },
 })
 @Injectable()
 export class ChatGateway {
