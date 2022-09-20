@@ -145,26 +145,7 @@ export class UsersService {
       },
       relations: ["board"],
     });
-    // const result = [];
-    // const today = new Date();
-    // for (let i = 0; i < userboards.length; i++) {
-    //   if (
-    //     !(
-    //       userboards[i]["board"].startAt < today &&
-    //       userboards[i]["board"].endAt > today
-    //     )
-    //   ) {
-    //     result.push(
-    //       await this.boardRepository.findOne({
-    //         where: {
-    //           id: userboards[i].board.id,
-    //         },
-    //         relations: ["boardImage", "tags", "keywords", "categories"],
-    //       })
-    //     );
-    //   }
-    // }
-    // return result;
+
     const today = new Date();
     const result = [];
     await Promise.all(
