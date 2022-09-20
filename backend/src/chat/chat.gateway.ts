@@ -39,27 +39,24 @@ export class ChatGateway {
 
   @SubscribeMessage("message")
   connectSomeone(
-    @MessageBody() data: string, //
-    @ConnectedSocket() client
+    @MessageBody() data: string //
   ) {
     const [nickname, room] = data; // 채팅방 입장!
     const receive = `${nickname}님이 입장했습니다.`;
     this.server.emit("receive" + room, receive);
     console.log(this.server, "server");
-    this.wsClients.push(client);
   }
 
-  private broadcast(event, client, message: any) {
-    for (const c of this.wsClients) {
-      if (client.id == c.id) continue;
-      c.emit(event, message);
-    }
-  }
+  // private broadcast(event, client, message: any) {
+  //   for (const c of this.wsClients) {
+  //     if (client.id == c.id) continue;
+  //     c.emit(event, message);
+  //   }
+  // }
 
   @SubscribeMessage("send")
   async sendMessage(
-    @MessageBody() data: string, //
-    @ConnectedSocket() client
+    @MessageBody() data: string //
   ) {
     const [room, nickname, message] = data;
     const user = await this.userRepositoey.findOne({
@@ -72,7 +69,6 @@ export class ChatGateway {
       message: data[2],
     });
 
-    console.log(`${client.id} : ${data}`);
-    this.broadcast(room, client, [nickname, message]);
+    this.server.emit(room, [nickname, message]);
   }
 }
