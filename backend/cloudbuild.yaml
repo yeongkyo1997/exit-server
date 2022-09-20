@@ -15,8 +15,8 @@ steps:
         "set",
         "image",
         "deployment/teambackend",
-        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.964172",
-      ]
+        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.96418",
+
     env:
       - CLOUDSDK_COMPUTE_ZONE=asia-northeast3
       - CLOUDSDK_CONTAINER_CLUSTER=autopilot-cluster-1
