@@ -145,25 +145,42 @@ export class UsersService {
       },
       relations: ["board"],
     });
-    const result = [];
+    // const result = [];
+    // const today = new Date();
+    // for (let i = 0; i < userboards.length; i++) {
+    //   if (
+    //     !(
+    //       userboards[i]["board"].startAt < today &&
+    //       userboards[i]["board"].endAt > today
+    //     )
+    //   ) {
+    //     result.push(
+    //       await this.boardRepository.findOne({
+    //         where: {
+    //           id: userboards[i].board.id,
+    //         },
+    //         relations: ["boardImage", "tags", "keywords", "categories"],
+    //       })
+    //     );
+    //   }
+    // }
+    // return result;
     const today = new Date();
-    for (let i = 0; i < userboards.length; i++) {
-      if (
-        !(
-          userboards[i]["board"].startAt < today &&
-          userboards[i]["board"].endAt > today
-        )
-      ) {
-        result.push(
-          await this.boardRepository.findOne({
-            where: {
-              id: userboards[i].board.id,
-            },
-            relations: ["boardImage", "tags", "keywords", "categories"],
-          })
-        );
-      }
-    }
+    const result = [];
+    await Promise.all(
+      userboards.map(async (el) => {
+        if (!(el["board"].startAt < today && el["board"].endAt > today)) {
+          result.push(
+            await this.boardRepository.findOne({
+              where: {
+                id: el.board.id,
+              },
+              relations: ["boardImage", "tags", "keywords", "categories"],
+            })
+          );
+        }
+      })
+    );
     return result;
   }
 
