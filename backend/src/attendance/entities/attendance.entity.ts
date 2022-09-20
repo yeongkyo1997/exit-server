@@ -27,11 +27,11 @@ export class Attendance {
   @Field(() => Date)
   attendedAt: Date;
 
-  @Column({ type: "double" })
+  @Column({ type: "float" })
   @Field(() => Float)
   latitude: number;
 
-  @Column({ type: "double" })
+  @Column({ type: "float" })
   @Field(() => Float)
   longitude: number;
 
