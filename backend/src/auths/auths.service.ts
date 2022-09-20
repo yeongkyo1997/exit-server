@@ -61,15 +61,12 @@ export class AuthsService {
         createUserInput,
         password,
       });
-      this.setRefreshToken({ user, res, req });
-
-      res.redirect("http://127.0.0.1:3000");
     } else {
       throw new ConflictException("이미 존재하는 이메일입니다.");
     }
 
     this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://127.0.0.1:3000");
+    res.redirect("http://localhost:3000");
   }
 }
