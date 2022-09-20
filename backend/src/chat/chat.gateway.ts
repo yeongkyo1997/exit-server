@@ -16,6 +16,7 @@ import { User } from "src/users/entities/user.entity";
   namespace: "chat",
   cors: {
     origin: [
+      true,
       "http://localhost:3000",
       "http://localhost:5500",
       "https://ex1t.shop",
@@ -66,7 +67,7 @@ export class ChatGateway {
     });
 
     await this.chatMessageRepository.save({
-      user: user,
+      user: { id: user.id },
       room: room,
       message: data[2],
     });
