@@ -67,7 +67,6 @@ export class AttendanceResolver {
       await this.cacheManager.set(user.id, `${latitude},${longitude}`, {
         ttl: 600,
       });
-      await this.cacheManager.set(boardId, 1, { ttl: 600 });
       await this.attendanceService.checkLocation({
         user,
         latitude,

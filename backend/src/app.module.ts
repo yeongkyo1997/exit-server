@@ -52,7 +52,7 @@ import { PointHistoryModule } from "./point-history/point-history.module";
       entities: [__dirname + "/**/*.entity.*"],
       synchronize: true,
       logging: true,
-      timezone: "Z",
+      // timezone: "Z",
     }),
     CacheModule.register<RedisClientOptions>({
       store: redisStore,
