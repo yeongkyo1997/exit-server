@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { PointHistory } from "src/point-history/entities/point-history.entity";
 import { Connection, DataSource, Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import {
@@ -15,6 +16,9 @@ export class PaymentsService {
 
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectRepository(PointHistory)
+    private readonly pointHistoryRepository: Repository<PointHistory>,
 
     private readonly datasource: DataSource
   ) {}
@@ -68,7 +72,15 @@ export class PaymentsService {
         ...user,
         point: user.point + amount,
       });
+
+      const createPointHistory = this.pointHistoryRepository.create({
+        pointHistory: "포인트 충전",
+        amount,
+        user: { id: user.id },
+      });
+
       await queryRunner.manager.save(updatedUser);
+      await queryRunner.manager.save(createPointHistory);
 
       // ================================ commit 성공 확정 ==========================
       await queryRunner.commitTransaction();
@@ -120,7 +132,15 @@ export class PaymentsService {
         ...user,
         point: user.point - amount,
       });
+
+      const createPointHistory = this.pointHistoryRepository.create({
+        pointHistory: "포인트 환불",
+        amount,
+        user: { id: user.id },
+      });
+
       await queryRunner.manager.save(updatedUser);
+      await queryRunner.manager.save(createPointHistory);
 
       await queryRunner.commitTransaction();
 
