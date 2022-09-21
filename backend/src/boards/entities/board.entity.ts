@@ -28,10 +28,6 @@ export class Board {
   @Field(() => String)
   title: string;
 
-  @Column({ default: "" })
-  @Field(() => String)
-  context: string;
-
   @Column()
   @Field(() => Int)
   totalMember: number;
@@ -45,7 +41,7 @@ export class Board {
   @Field(() => Int)
   countLike: number;
 
-  @Column()
+  @Column({ length: 250 })
   @Field(() => String)
   description: string;
 

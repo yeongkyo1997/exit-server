@@ -6,8 +6,5 @@ export class CreateUserBoardInput {
   isAccepted: boolean;
 
   @Field(() => String)
-  userId: string;
-
-  @Field(() => String)
   boardId: string;
 }
