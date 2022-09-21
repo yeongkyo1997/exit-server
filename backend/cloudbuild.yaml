@@ -15,7 +15,7 @@ steps:
         "set",
         "image",
         "deployment/teambackend",
-        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.964171",
+        "team-backend-sha256-1=asia.gcr.io/galvanic-cirrus-360400/team-backend:0.97",
       ]
     env:
       - CLOUDSDK_COMPUTE_ZONE=asia-northeast3

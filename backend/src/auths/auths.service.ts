@@ -51,25 +51,27 @@ export class AuthsService {
   }
 
   async socialLogin({ req, res }) {
-    let user = await this.usersService.findOneByEmail({
+    const user = await this.usersService.findOneByEmail({
       email: req.user.email,
     });
-    const password = await bcrypt.hash(req.user.password, 10.2);
-    const createUserInput = req.user;
+
     if (!user) {
-      user = await this.usersService.create({
+      const password = await bcrypt.hash(req.user.password, 10.2);
+
+      const createUserInput = req.user;
+
+      createUserInput["userImage"] = {
+        url: "null",
+      };
+
+      await this.usersService.create({
         createUserInput,
         password,
       });
-      this.setRefreshToken({ user, res, req });
-
-      res.redirect("http://127.0.0.1:3000");
-    } else {
-      throw new ConflictException("이미 존재하는 이메일입니다.");
     }
 
     this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://127.0.0.1:3000");
+    res.redirect("https://ex1t.shop/");
   }
 }
