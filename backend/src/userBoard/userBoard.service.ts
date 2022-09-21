@@ -44,8 +44,8 @@ export class UserBoardService {
     return result;
   }
 
-  async create({ createUserBoardInput }) {
-    const { userId, boardId } = createUserBoardInput;
+  async create({ userId, createUserBoardInput }) {
+    const { boardId } = createUserBoardInput;
     const checkDuplication = await this.userBoardRepository.findOne({
       where: {
         user: { id: userId },
@@ -63,7 +63,7 @@ export class UserBoardService {
       relations: ["board"],
     });
 
-    const now = new Date();
+    const now = new Date(new Intl.DateTimeFormat("kr").format());
     for (let i = 0; i < checkOtherBoard.length; i++) {
       if (checkOtherBoard[i].board.endAt > now)
         throw Error("이미 진행중인 프로젝트가 있습니다.");

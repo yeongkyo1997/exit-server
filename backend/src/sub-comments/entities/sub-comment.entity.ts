@@ -23,12 +23,15 @@ export class SubComment {
   subComment: string;
 
   @CreateDateColumn()
+  @Field(() => Date)
   createdAt: Date;
 
   @UpdateDateColumn()
+  @Field(() => Date)
   updatedAt: Date;
 
   @DeleteDateColumn()
+  @Field(() => Date)
   deletedAt: Date;
 
   @ManyToOne(() => Comment)

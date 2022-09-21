@@ -1,4 +1,5 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { Min } from "class-validator";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
@@ -27,10 +28,6 @@ export class Board {
   @Field(() => String)
   title: string;
 
-  @Column({ default: "" })
-  @Field(() => String)
-  context: string;
-
   @Column()
   @Field(() => Int)
   totalMember: number;
@@ -39,11 +36,12 @@ export class Board {
   @Field(() => Int)
   countMember: number;
 
+  @Min(0)
   @Column({ default: 0 })
   @Field(() => Int)
   countLike: number;
 
-  @Column()
+  @Column({ length: 250 })
   @Field(() => String)
   description: string;
 

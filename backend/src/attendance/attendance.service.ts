@@ -59,7 +59,7 @@ export class AttendanceService {
         // 현재 시간 저장
         nickname: user.nickname,
         userId: user.id,
-        attendedAt: new Date(),
+        attendedAt: new Date(new Intl.DateTimeFormat("kr").format()),
         latitude: Number(latitude),
         longitude: Number(longitude),
         board,
@@ -114,7 +114,11 @@ export class AttendanceService {
         "attendance.attendedAt >= :attendedAt AND attendance.attendedAt <= :finish",
         {
           attendedAt: leaderAttendance.attendedAt,
-          finish: new Date(leaderAttendance.attendedAt.getTime() + 10 * 60000),
+          finish: new Date(
+            new Intl.DateTimeFormat("kr").format(
+              leaderAttendance.attendedAt.getTime() + 10 * 60000
+            )
+          ),
         }
       )
       .getCount();
@@ -134,7 +138,9 @@ export class AttendanceService {
 
     // 프로젝트 시작으로부터 몇 주차인지 가져온다.
     const weekCount = Math.floor(
-      (new Date().getTime() - board.startAt.getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(new Intl.DateTimeFormat("kr").format()).getTime() -
+        board.startAt.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
     // 출석해야 하는 총 횟수를 계산한다.
     const totalAttendanceCount = weekCount * frequency * userCount;
@@ -194,7 +200,11 @@ export class AttendanceService {
         "attendance.attendedAt >= :attendedAt AND attendance.attendedAt <= :finish",
         {
           attendedAt: leaderAttendance.attendedAt,
-          finish: new Date(leaderAttendance.attendedAt.getTime() + 10 * 60000),
+          finish: new Date(
+            new Intl.DateTimeFormat("kr").format(
+              leaderAttendance.attendedAt.getTime() + 10 * 60000
+            )
+          ),
         }
       )
       .andWhere("attendance.nickname = :nickname", {
@@ -233,9 +243,15 @@ export class AttendanceService {
     });
 
     // leader의 출석시간을 기준으로 10분 이후의 시간
-    const finish = new Date(leaderAttendance.attendedAt.getTime() + 10 * 60000);
+    const finish = new Date(
+      new Intl.DateTimeFormat("kr").format(
+        leaderAttendance.attendedAt.getTime() + 10 * 60000
+      )
+    );
     // 현재 시간과 10분 이후의 시간을 비교하여 남은 시간을 반환
-    const remainingTime = finish.getTime() - new Date().getTime();
+    const remainingTime =
+      finish.getTime() -
+      new Date(new Intl.DateTimeFormat("kr").format()).getTime();
     if (remainingTime < 0) {
       throw new Error("출석 가능한 시간이 아닙니다.");
     }
@@ -315,7 +331,7 @@ export class AttendanceService {
 
     // 당일 출석한 유저의 출석기록을 반환
     return attendanceList.filter((attendance) => {
-      const today = new Date();
+      const today = new Date(new Intl.DateTimeFormat("kr").format());
       return (
         attendance.attendedAt.getFullYear() === today.getFullYear() &&
         attendance.attendedAt.getMonth() === today.getMonth() &&

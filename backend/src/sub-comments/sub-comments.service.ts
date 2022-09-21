@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { SubComment } from "./entities/sub-comment.entity";
 
@@ -7,11 +8,13 @@ import { SubComment } from "./entities/sub-comment.entity";
 export class SubCommentsService {
   constructor(
     @InjectRepository(SubComment)
-    private readonly subCommentRepository: Repository<SubComment>
+    private readonly subCommentRepository: Repository<SubComment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
   ) {}
 
   async findAll({ userId, commentId }) {
-    return await this.subCommentRepository.find({
+    const subCommentData = await this.subCommentRepository.find({
       where: {
         user: { id: userId },
         comment: { id: commentId },
@@ -19,6 +22,17 @@ export class SubCommentsService {
       relations: ["comment", "user"],
       order: { createdAt: "ASC" },
     });
+
+    for (let i = 0; i < subCommentData.length; i++) {
+      const userData = await this.userRepository.findOne({
+        where: { id: subCommentData[i]["user"]["id"] },
+        relations: ["userImage"],
+      });
+
+      subCommentData[i]["user"]["userImage"] = userData["userImage"];
+    }
+
+    return subCommentData;
   }
 
   async create({ userId, createSubCommentInput }) {

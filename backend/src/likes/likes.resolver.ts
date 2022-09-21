@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Args, Int, Context } from "@nestjs/graphql";
 import { LikesService } from "./likes.service";
 import { Like } from "./entities/like.entity";
 import { UseGuards } from "@nestjs/common";
-import { GqlAuthRefreshGuard } from "src/commons/auth/gql-auth.guard";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => Like)
 export class LikesResolver {
@@ -17,7 +17,7 @@ export class LikesResolver {
   ) {
     return this.likesService.findAll({ userId, boardId });
   }
-  @UseGuards(GqlAuthRefreshGuard)
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   createOrDeleteLike(
     @Args("boardId") boardId: string, //

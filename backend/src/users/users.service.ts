@@ -122,7 +122,7 @@ export class UsersService {
       relations: ["board"],
     });
 
-    const today = new Date();
+    const today = new Date(new Intl.DateTimeFormat("kr").format());
     const start = userboard.board.startAt;
     const end = userboard.board.endAt;
 
@@ -146,7 +146,7 @@ export class UsersService {
       relations: ["board"],
     });
 
-    const today = new Date();
+    const today = new Date(new Intl.DateTimeFormat("kr").format());
     const result = [];
     await Promise.all(
       userboards.map(async (el) => {
