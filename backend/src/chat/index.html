@@ -23,15 +23,16 @@
 		socket.emit('message', nickname, room);
 
 		socket.on('connect', () => {
-			/* 누군가 채팅침 */
-			socket.on(room, (data) => {
-				if (nickname === data[0]) return;
-				$('#chatList').append(`<div>${data[0]} : ${data[1]}</div>`);
-			});
-			/* 누군가 입장 */
-			socket.on('receive' + room, (receive) => {
-				$('#chatList').append(`<div style="color:blue;">${receive}</div>`);
-			});
+			console.log("연결됨")
+		});
+		/* 누군가 채팅침 */
+		socket.on(room, (data) => {
+			// if (nickname === data[0]) return;
+			$('#chatList').append(`<div>${data[0]} : ${data[1]}</div>`);
+		});
+		/* 누군가 입장 */
+		socket.on('receive' + room, (receive) => {
+			$('#chatList').append(`<div style="color:blue;">${receive}</div>`);
 		});
 
 		function msg_send() {

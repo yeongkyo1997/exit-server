@@ -1,6 +1,5 @@
 import { Server } from "socket.io";
 import {
-  ConnectedSocket,
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
@@ -46,13 +45,6 @@ export class ChatGateway {
     this.server.emit("receive" + room, receive);
     console.log(this.server, "server");
   }
-
-  // private broadcast(event, client, message: any) {
-  //   for (const c of this.wsClients) {
-  //     if (client.id == c.id) continue;
-  //     c.emit(event, message);
-  //   }
-  // }
 
   @SubscribeMessage("send")
   async sendMessage(
