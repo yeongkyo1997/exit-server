@@ -1,4 +1,5 @@
 import { ObjectType, Field, Int } from "@nestjs/graphql";
+import { Min } from "class-validator";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
@@ -39,6 +40,7 @@ export class Board {
   @Field(() => Int)
   countMember: number;
 
+  @Min(0)
   @Column({ default: 0 })
   @Field(() => Int)
   countLike: number;
