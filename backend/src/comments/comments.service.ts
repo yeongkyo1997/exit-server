@@ -23,7 +23,6 @@ export class CommentsService {
       },
       relations: ["board", "user"],
       order: { createdAt: "ASC" },
-      withDeleted: true,
     });
 
     if (userId) {

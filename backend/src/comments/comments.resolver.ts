@@ -39,7 +39,7 @@ export class CommentsResolver {
   }
 
   @UseGuards(GqlAuthAccessGuard)
-  @Mutation(() => [String])
+  @Mutation(() => String)
   removeComment(
     @Args("commentId", { nullable: true }) commentId: string,
     @Context() context
