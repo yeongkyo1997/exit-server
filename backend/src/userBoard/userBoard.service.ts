@@ -44,8 +44,8 @@ export class UserBoardService {
     return result;
   }
 
-  async create({ createUserBoardInput }) {
-    const { userId, boardId } = createUserBoardInput;
+  async create({ userId, createUserBoardInput }) {
+    const { boardId } = createUserBoardInput;
     const checkDuplication = await this.userBoardRepository.findOne({
       where: {
         user: { id: userId },

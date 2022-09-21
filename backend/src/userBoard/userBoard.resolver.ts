@@ -1,8 +1,10 @@
-import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
 import { UserBoardService } from "./userBoard.service";
 import { UserBoard } from "./entities/userBoard.entity";
 import { CreateUserBoardInput } from "./dto/create-userBoard.input";
 import { UpdateUserBoardInput } from "./dto/update-userBoard.input";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => UserBoard)
 export class UserBoardResolver {
@@ -20,11 +22,14 @@ export class UserBoardResolver {
     return this.userBoardService.findAll({ userId, boardId, isAccepted });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => UserBoard)
   createUserBoard(
+    @Context() context: any,
     @Args("createUserBoardInput") createUserBoardInput: CreateUserBoardInput
   ) {
-    return this.userBoardService.create({ createUserBoardInput });
+    const userId = context.req.user.id;
+    return this.userBoardService.create({ userId, createUserBoardInput });
   }
 
   @Mutation(() => UserBoard)

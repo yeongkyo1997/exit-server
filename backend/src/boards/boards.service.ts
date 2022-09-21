@@ -138,6 +138,20 @@ export class BoardsService {
     if (board.closedAt > board.endAt)
       throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
 
+    const checkOtherBoard = await this.userBoardRepository.find({
+      where: {
+        user: { id: leader.id },
+        isAccepted: true,
+      },
+      relations: ["board"],
+    });
+
+    const now = new Date(new Intl.DateTimeFormat("kr").format());
+    for (let i = 0; i < checkOtherBoard.length; i++) {
+      if (checkOtherBoard[i].board.endAt > now)
+        throw Error("이미 진행중인 프로젝트가 있습니다.");
+    }
+
     // 썸네일 저장 후 이미지DB에 저장하는 로직
     const boardImageResult = await this.boardImageRepository.save({
       url: boardImage.url,
