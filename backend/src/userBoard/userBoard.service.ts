@@ -63,7 +63,7 @@ export class UserBoardService {
       relations: ["board"],
     });
 
-    const now = new Date();
+    const now = new Date(new Intl.DateTimeFormat("kr").format());
     for (let i = 0; i < checkOtherBoard.length; i++) {
       if (checkOtherBoard[i].board.endAt > now)
         throw Error("이미 진행중인 프로젝트가 있습니다.");
