@@ -475,4 +475,16 @@ export class BoardsService {
       return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
     }
   }
+
+  myJsonParse(data: string) {
+    if (!data) return [];
+    return data.split("},{").map((el: string) => {
+      const id = el.split(",")[0].split(":")[1];
+      const name = el.split(",")[1].split(":")[1].replace("}", "");
+      return {
+        id,
+        name,
+      };
+    });
+  }
 }
