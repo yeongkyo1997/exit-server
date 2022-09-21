@@ -47,12 +47,13 @@ export class ChatService {
     });
 
     const host = await this.chatRoomRepository.find({
-      where: { user },
+      where: { user: { id: user.id } },
     });
 
     const me = await this.chatRoomRepository.find({
-      where: { user: currentUser.id },
+      where: { user: { id: currentUser.id } },
     });
+
     let result;
     for (let i = 0; i < host.length; i++) {
       for (let j = 0; j < me.length; j++) {
@@ -61,7 +62,6 @@ export class ChatService {
         }
       }
     }
-    console.log(result, "room아이디");
 
     return result;
   }
