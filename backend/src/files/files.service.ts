@@ -16,7 +16,7 @@ export class FilesService {
         process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
     }).bucket(bucket);
 
-    const time = new Date();
+    const time = new Date(new Intl.DateTimeFormat("kr").format());
     const year = time.getFullYear();
     const month = String(time.getMonth() + 1).padStart(2, "0");
     const day = String(time.getDate()).padStart(2, "0");

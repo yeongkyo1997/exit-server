@@ -312,7 +312,7 @@ export class BoardsService {
     }
 
     if (!originBoard.status && updateBoard.status) {
-      updateBoard.closedAt = new Date();
+      updateBoard.closedAt = new Date(new Intl.DateTimeFormat("kr").format());
     }
 
     const updatedInfo = await this.boardRepository.save({
@@ -354,7 +354,7 @@ export class BoardsService {
         },
         {
           isSuccess: true,
-          endAt: new Date(),
+          endAt: new Date(new Intl.DateTimeFormat("kr").format()),
         }
       );
 
@@ -391,7 +391,7 @@ export class BoardsService {
         },
         {
           isSuccess: false,
-          endAt: new Date(),
+          endAt: new Date(new Intl.DateTimeFormat("kr").format()),
         }
       );
 
@@ -454,7 +454,7 @@ export class BoardsService {
     }
 
     // 종료일이 지났는지 확인한다.
-    const now = new Date();
+    const now = new Date(new Intl.DateTimeFormat("kr").format());
     if (board.endAt < now) {
       return "프로젝트를 최종적으로 성공했습니다.";
     } else {
