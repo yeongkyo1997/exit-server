@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { SubCommentsService } from "src/sub-comments/sub-comments.service";
+import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Comment } from "./entities/comment.entity";
 
@@ -9,18 +10,43 @@ export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly subCommentsService: SubCommentsService
   ) {}
 
   async findAll({ userId, boardId }) {
-    return await this.commentRepository.find({
+    const commentData = await this.commentRepository.find({
       where: {
         user: { id: userId },
         board: { id: boardId },
       },
       relations: ["board", "user"],
       order: { createdAt: "ASC" },
+      withDeleted: true,
     });
+
+    if (userId) {
+      const userData = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: ["userImage"],
+      });
+      for (let i = 0; i < commentData.length; i++) {
+        commentData[i]["user"]["userImage"] = userData["userImage"];
+      }
+      return commentData;
+    } else {
+      for (let i = 0; i < commentData.length; i++) {
+        const userData = await this.userRepository.findOne({
+          where: { id: commentData[i]["user"]["id"] },
+          relations: ["userImage"],
+        });
+
+        commentData[i]["user"]["userImage"] = userData["userImage"];
+      }
+
+      return commentData;
+    }
   }
 
   async create({ userId, createCommentInput }) {
