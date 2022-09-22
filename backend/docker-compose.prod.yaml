@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   team-backend:
-    image: asia.gcr.io/galvanic-cirrus-360400/team-backend:0.972
+    image: asia.gcr.io/galvanic-cirrus-360400/team-backend:0.9721
 
     platform: linux/x86_64
     build:
