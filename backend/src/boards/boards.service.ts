@@ -126,15 +126,20 @@ export class BoardsService {
   }
 
   async create({ leader, createBoardInput }) {
+    const checkPoint = await this.userRepository.findOne({
+      where: { id: leader.id },
+    });
+
     const { boardImage, tags, keywords, categories, ...board } =
       createBoardInput;
-
+    if (checkPoint.point < board.bail)
+      throw Error("보유 포인트가 보석금보다 적습니다.");
     if (board.bail < 50000 || board.bail > 1000000)
       throw Error("보석금이 범위 밖입니다.");
     if (board.totalMember < 1 || board.totalMember > 6)
-      throw Error("보석금이 범위 밖입니다.");
+      throw Error("총 인원 수가 범위 밖입니다.");
     if (board.frequency < 1 || board.frequency > 7)
-      throw Error("보석금이 범위 밖입니다.");
+      throw Error("모임 주기가 범위 밖입니다.");
     if (board.closedAt > board.endAt)
       throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
 
@@ -237,9 +242,9 @@ export class BoardsService {
     if (updateBoard.bail < 50000 || updateBoard.bail > 1000000)
       throw Error("보석금이 범위 밖입니다.");
     if (updateBoard.totalMember < 1 || updateBoard.totalMember > 6)
-      throw Error("보석금이 범위 밖입니다.");
+      throw Error("총 인원 수가 범위 밖입니다.");
     if (updateBoard.frequency < 1 || updateBoard.frequency > 7)
-      throw Error("보석금이 범위 밖입니다.");
+      throw Error("모임 주기가 범위 밖입니다.");
     if (updateBoard.closedAt > updateBoard.endAt)
       throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
 
