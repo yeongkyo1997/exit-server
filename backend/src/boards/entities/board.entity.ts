@@ -41,7 +41,7 @@ export class Board {
   @Field(() => Int)
   countLike: number;
 
-  @Column({ length: 250 })
+  @Column({ type: "longtext" })
   @Field(() => String)
   description: string;
 
