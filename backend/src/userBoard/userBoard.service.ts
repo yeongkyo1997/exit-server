@@ -64,7 +64,8 @@ export class UserBoardService {
     });
 
     const now = new Date(new Intl.DateTimeFormat("kr").format());
-    for (let i = 0; i < checkOtherBoard.length; i++) {
+    for (let i = 0; checkOtherBoard && i < checkOtherBoard.length; i++) {
+      if (checkOtherBoard[i].board === null) continue;
       if (checkOtherBoard[i].board.endAt > now)
         throw Error("이미 진행중인 프로젝트가 있습니다.");
     }
@@ -75,6 +76,9 @@ export class UserBoardService {
     const board = await this.boardRepository.findOne({
       where: { id: boardId },
     });
+
+    if (user.point < board.bail)
+      throw Error("보유 포인트가 보석금보다 적습니다.");
 
     return await this.userBoardRepository.save({
       user,
