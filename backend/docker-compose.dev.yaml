@@ -43,7 +43,7 @@ services:
   logstash:
     image: logstash:7.17.0
     volumes:
-      - ./elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./elk/logstash/logstash.prod.conf:/usr/share/logstash/pipeline/logstash.prod.conf
       - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
       - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
 
