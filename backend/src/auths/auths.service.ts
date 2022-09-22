@@ -72,6 +72,6 @@ export class AuthsService {
 
     this.setRefreshToken({ user, res, req });
 
-    res.redirect("https://ex1t.shop/");
+    res.redirect("http://localhost:3000");
   }
 }
