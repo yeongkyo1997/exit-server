@@ -80,7 +80,7 @@ export class BoardsService {
     });
   }
 
-  async findOneByCategory({ userId, categoryId }) {
+  async randomBoardByCategory({ userId, categoryId }) {
     // 모집중인 프로젝트들
     const waitingInfo = await this.boardRepository.find({
       where: {
@@ -89,6 +89,11 @@ export class BoardsService {
       },
       relations: ["boardImage", "tags", "keywords", "categories"],
     });
+
+    const newWaitingInfo = waitingInfo.filter(
+      (ele) =>
+        new Date(ele.startAt) > new Date(new Intl.DateTimeFormat("kr").format())
+    );
 
     // 카테고리가 포함된 프로젝트들
     const filtTemp = await this.dataSource
@@ -118,7 +123,7 @@ export class BoardsService {
         applied.push(i.board.id);
       }
 
-    const filteredInfo = waitingInfo.filter(
+    const filteredInfo = newWaitingInfo.filter(
       (ele) => filt.includes(ele.id) && !applied.includes(ele.id)
     );
 
