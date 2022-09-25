@@ -150,7 +150,7 @@ export class BoardsResolver {
     @Context() context
   ) {
     const userId = context.req.user.id;
-    return this.boardsService.findOneByCategory({ userId, categoryId });
+    return this.boardsService.randomBoardByCategory({ userId, categoryId });
   }
 
   @UseGuards(GqlAuthAccessGuard)
