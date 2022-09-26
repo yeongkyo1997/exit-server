@@ -58,12 +58,13 @@ export class CategoriesService {
     });
   }
 
-  async remove(id: string) {
+  async remove({ name }) {
     // 카테고리가 존재하지 않는다면 에러를 던진다.
-    if (!(await this.categoryRepository.findOne({ where: { id } }))) {
+    if (!(await this.categoryRepository.findOne({ where: { name } }))) {
       throw new Error("존재하지 않는 카테고리입니다.");
     }
-    return this.categoryRepository.softDelete({ id });
+    const result = await this.categoryRepository.softDelete({ name });
+    return result.affected ? true : false;
   }
 
   async restore(id: string) {

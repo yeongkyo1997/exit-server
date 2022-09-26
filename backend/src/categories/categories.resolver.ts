@@ -41,9 +41,9 @@ export class CategoriesResolver {
 
   @Mutation(() => Boolean)
   removeCategory(
-    @Args("id", { type: () => String }) id: string //
+    @Args("name", { type: () => String }) name: string //
   ) {
-    return this.categoriesService.remove(id);
+    return this.categoriesService.remove({ name });
   }
 
   @Mutation(() => Category)

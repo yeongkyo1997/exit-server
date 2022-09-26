@@ -1,7 +1,13 @@
 import { ObjectType, Field } from "@nestjs/graphql";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
 @Entity()
 @ObjectType()
@@ -13,6 +19,9 @@ export class Category {
   @Column({ unique: true })
   @Field(() => String)
   name: string;
+
+  @DeleteDateColumn()
+  deleteAt: Date;
 
   @ManyToMany(() => Board, (boards) => boards.categories)
   @Field(() => [Board])

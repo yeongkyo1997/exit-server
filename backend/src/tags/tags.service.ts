@@ -56,13 +56,14 @@ export class TagsService {
     return this.tagsRepository.save({ ...tag, ...updateTagInput });
   }
 
-  remove(id: string) {
-    const tag = this.tagsRepository.findOne({ where: { id } });
+  async remove({ name }) {
+    const tag = this.tagsRepository.findOne({ where: { name } });
     // 태그가 존재하지 않는다면 에러를 던진다.
     if (!tag) {
       throw new Error("존재하지 않는 태그입니다.");
     }
-    return this.tagsRepository.softDelete({ id });
+    const result = await this.tagsRepository.softDelete({ name });
+    return result.affected ? true : false;
   }
 
   /**
