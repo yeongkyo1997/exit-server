@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Int, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
 import { SubCommentsService } from "./sub-comments.service";
 import { SubComment } from "./entities/sub-comment.entity";
 import { CreateSubCommentInput } from "./dto/create-sub-comment.input";

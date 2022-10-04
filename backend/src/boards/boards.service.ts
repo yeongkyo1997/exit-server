@@ -11,6 +11,15 @@ import { User } from "src/users/entities/user.entity";
 import { DataSource, Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
+interface board {
+  isSuccess?: boolean;
+  status?: boolean;
+  page?: number;
+  tagName?: string;
+  categoryName?: string;
+  keywordName?: string;
+  search?: string;
+}
 @Injectable()
 export class BoardsService {
   constructor(
@@ -34,7 +43,14 @@ export class BoardsService {
     private readonly attendanceService: AttendanceService
   ) {}
 
-  findAll({ isSuccess, status, page, tagName, categoryName, keywordName }) {
+  findAll({
+    isSuccess,
+    status,
+    page,
+    tagName,
+    categoryName,
+    keywordName,
+  }: board) {
     return this.boardRepository.find({
       where: {
         isSuccess,

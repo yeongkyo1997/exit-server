@@ -1,7 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { Storage } from "@google-cloud/storage";
 import { v4 } from "uuid";
-import { Cron } from "@nestjs/schedule";
 
 @Injectable()
 export class FilesService {
@@ -12,8 +11,7 @@ export class FilesService {
 
     const storage = new Storage({
       projectId: process.env.PROJECT_ID,
-      keyFilename:
-        process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
+      keyFilename: process.env.KEY_FILE_NAME,
     }).bucket(bucket);
 
     const time = new Date(new Intl.DateTimeFormat("kr").format());
@@ -43,29 +41,4 @@ export class FilesService {
     );
     return results;
   }
-
-  //softDelete된 url이나 DB에는 저장이 안 되어 있지만 Bucket에는 올라가 있는 url을 찾아서 지워주기
-  // @Cron("* * * * * *")
-  // async remove({ url }) {
-  //   const bucket = process.env.BUCKET_NAME;
-
-  //   const storage = new Storage({
-  //     projectId: process.env.PROJECT_ID,
-  //     keyFilename:
-  //       process.env.KEY_FILE_NAME || "/team-secret/gcp-file-storage.json",
-  //   }).bucket(bucket);
-
-  //   const fileName = url.replace(
-  //     `"https://storage.googleapis.com/${bucket}/`,
-  //     ""
-  //   );
-
-  //   await new Promise((resolve, reject) => {
-  //     storage
-  //       .file(fileName)
-  //       .delete()
-  //   });
-
-  //   return result.affected ? true : false;
-  // }
 }

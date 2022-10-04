@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersService } from "src/users/users.service";
 import * as bcrypt from "bcrypt";
@@ -15,11 +15,8 @@ export class AuthsService {
       { email: user.email, sub: user.id, nickname: user.nickname },
       { secret: "myRefreshKey", expiresIn: "2w" }
     );
-    // 개인개발환경
-    // res.setHeader("Set-Cookie", `refreshToken=${refreshToken}; path=/;`);
 
     // 배포환경 (팀프로젝트)
-
     res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
     res.setHeader("Access-Control-Allow-Origin", "https://ex1t.shop");
     res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -39,7 +36,7 @@ export class AuthsService {
     );
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.teamserver05.shop; httpOnly; SameSite=None; Secure`
+      `refreshToken=${refreshToken}; path=/; domain=.mainproject04.shop; httpOnly; SameSite=None; Secure`
     );
   }
 
