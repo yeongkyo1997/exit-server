@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PointHistory } from "src/point-history/entities/point-history.entity";
-import { Connection, DataSource, Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import {
   Payment,

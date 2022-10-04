@@ -34,6 +34,46 @@ export class BoardsResolver {
   ) {}
 
   @Query(() => [Board])
+  async fetchBoadsIsSuccess(
+    @Args("isSuccess") isSuccess: boolean,
+    @Args("page", { defaultValue: 1 }) page: number
+  ) {
+    this.boardsService.findAll({ isSuccess, page });
+  }
+
+  @Query(() => [Board])
+  async fetchBoardsStatus(
+    @Args("status") status: boolean,
+    @Args("page", { defaultValue: 1 }) page: number
+  ) {
+    this.boardsService.findAll({ status, page });
+  }
+
+  @Query(() => [Board])
+  async fetchBoardsTagName(
+    @Args("tagName") tagName: string,
+    @Args("page", { defaultValue: 1 }) page: number
+  ) {
+    this.boardsService.findAll({ tagName, page });
+  }
+
+  @Query(() => [Board])
+  async fetchBoardsCategoryName(
+    @Args("categoryName") categoryName: string,
+    @Args("page", { defaultValue: 1 }) page: number
+  ) {
+    this.boardsService.findAll({ categoryName, page });
+  }
+
+  @Query(() => [Board])
+  async fetchBoardsKeywordName(
+    @Args("keywordName") keywordName: string,
+    @Args("page", { defaultValue: 1 }) page: number
+  ) {
+    this.boardsService.findAll({ keywordName, page });
+  }
+
+  @Query(() => [Board])
   async fetchBoards(
     @Args("isSuccess", { nullable: true }) isSuccess: boolean,
     @Args("status", { nullable: true }) status: boolean,

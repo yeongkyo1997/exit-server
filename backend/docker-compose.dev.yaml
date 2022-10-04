@@ -14,23 +14,6 @@ services:
     environment:
       - TZ=Asia/Seoul
 
-  # team-database:
-  #   # platform: linux/x86_64
-  #   image: mysql:latest
-  #   environment:
-  #     MYSQL_DATABASE: "teamdocker"
-  #     MYSQL_ROOT_PASSWORD: "root"
-  #     TZ: Asia/Seoul
-  #   ports:
-  #     - 3306:3306
-
-  # team-redis:
-  #   image: redis:latest
-  #   ports:
-  #     - 6379:6379
-  #   environment:
-  #     TZ: Asia/Seoul
-
   elasticsearch:
     build:
       context: ./elk/elasticsearch
@@ -46,11 +29,4 @@ services:
       - ./elk/logstash/logstash.prod.conf:/usr/share/logstash/pipeline/logstash.prod.conf
       - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar
       - ./elk/elasticsearch/config-elasticsearch.json:/usr/share/logstash/config-elasticsearch.json
-
-  # kibana:
-  #   image: kibana:7.17.0
-  #   environment:
-  #     ELASTICSEARCH_URL: http://elasticsearch:9200
-  #     ELASTICSEARCH_HOST: http://elasticsearch:9200
-  #   ports:
-  #     - 5601:5601
+      - ./elk/elasticsearch/stopword.txt:/usr/share/logstash/stopword.txt

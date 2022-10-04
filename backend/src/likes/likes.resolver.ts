@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Int, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
 import { LikesService } from "./likes.service";
 import { Like } from "./entities/like.entity";
 import { UseGuards } from "@nestjs/common";

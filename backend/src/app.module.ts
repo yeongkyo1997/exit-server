@@ -39,7 +39,6 @@ import { PointHistoryModule } from "./point-history/point-history.module";
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         preflightContinue: false,
         optionsSuccessStatus: 204,
-        //exposedHeaders: ["Set-Cookie", "Cookie"], 실험용(배포시 반드시 지워야 함!)
       },
     }),
     TypeOrmModule.forRoot({
