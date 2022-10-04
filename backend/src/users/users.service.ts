@@ -273,16 +273,12 @@ export class UsersService {
       }
     }
 
-    originTags.push(...saveTags);
-    originKeywords.push(...saveKeywords);
-    originCategories.push(...saveCategories);
-
     const updatedUser = await this.userRepository.save({
       ...originUser,
       ...updateUser,
-      tags: originTags,
-      keywords: originKeywords,
-      categories: originCategories,
+      tags: saveTags,
+      keywords: saveKeywords,
+      categories: saveCategories,
     });
     return updatedUser;
   }
