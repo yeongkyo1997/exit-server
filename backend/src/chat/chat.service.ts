@@ -66,6 +66,13 @@ export class ChatService {
     return result;
   }
 
+  async isMember({ room, userId }) {
+    const count = await this.chatRoomRepository.count({
+      where: { room, user: { id: userId } },
+    });
+    return count > 0;
+  }
+
   async load({ room }) {
     const result = await this.chatMessageRepository.find({
       where: { room: room },
@@ -73,7 +80,6 @@ export class ChatService {
       relations: ["user"],
     });
 
-    console.log(result, "result");
     return result;
   }
 }

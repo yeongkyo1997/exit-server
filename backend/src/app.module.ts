@@ -49,7 +49,8 @@ import { PointHistoryModule } from "./point-history/point-history.module";
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_DATABASE,
       entities: [__dirname + "/**/*.entity.*"],
-      synchronize: true,
+      // 운영 DB 스키마가 자동 변경되지 않도록 명시적으로 켠 환경(로컬 개발)에서만 동기화한다
+      synchronize: process.env.DATABASE_SYNCHRONIZE === "true",
       logging: true,
       // timezone: "Z",
     }),

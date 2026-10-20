@@ -53,12 +53,18 @@ export class EmailResolver {
   // 랜덤한 비밀번호 생성하고 이메일로 보내기
   @Mutation(() => String)
   async sendNewPassword(
-    @Args("email", { type: () => String }) email: string //
+    @Args("email", { type: () => String }) email: string, //
+    @Args("emailToken", { type: () => String }) emailToken: string
   ) {
-    // 유저 생성 전에 이메일 중복 체크
+    // sendEmailToken으로 받은 인증번호를 확인해 본인만 비밀번호를 재발급받을 수 있게 한다
+    const cacheEmailToken = await this.cacheManager.get(email);
+    if (!cacheEmailToken || cacheEmailToken !== emailToken)
+      throw new Error("인증번호가 일치하지 않습니다.");
 
     const findUser = await this.usersService.findOneByEmail({ email });
     if (!findUser) throw new Error("등록되지 않은 이메일입니다.");
+
+    await this.cacheManager.del(email);
 
     // 6자리 이메일 토큰 생성
     const password = Math.random().toString(36).substring(2, 8);

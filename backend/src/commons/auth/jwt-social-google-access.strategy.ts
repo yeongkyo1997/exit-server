@@ -14,7 +14,6 @@ export class JwtGoogleStrategy extends PassportStrategy(Strategy, "google") {
   validate(accessToken, refreshToken, profile) {
     return {
       email: profile.emails[0].value,
-      password: profile.emails[0].value,
       nickname: profile.displayName,
     };
   }

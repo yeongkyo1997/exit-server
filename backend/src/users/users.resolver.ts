@@ -6,6 +6,7 @@ import { UpdateUserInput } from "./dto/update-user.input";
 import * as bcrypt from "bcrypt";
 import {
   CACHE_MANAGER,
+  ForbiddenException,
   Inject,
   UnauthorizedException,
   UseGuards,
@@ -133,10 +134,15 @@ export class UsersResolver {
     return this.usersService.remove({ userId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   restoreUser(
+    @Context() context: any,
     @Args("userId", { type: () => String }) userId: string //
   ) {
+    // 본인 계정만 복구할 수 있다
+    if (userId !== context.req.user.id)
+      throw new ForbiddenException("본인 계정만 복구할 수 있습니다.");
     return this.usersService.restore({ userId });
   }
 

@@ -6,6 +6,7 @@ import { UpdateBoardInput } from "./dto/update-board.input";
 import { ElasticsearchService } from "@nestjs/elasticsearch";
 import {
   CACHE_MANAGER,
+  ForbiddenException,
   Inject,
   UnprocessableEntityException,
   UseGuards,
@@ -241,24 +242,36 @@ export class BoardsResolver {
     return this.boardsService.onClickBoard({ boardId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   async uploadZipFile(
     @Args("boardId") boardId: string, //
     @Args("updateBoardInput") updateBoardInput: UpdateBoardInput,
-    @Args({ name: "zip", type: () => [GraphQLUpload] }) zip: FileUpload[]
+    @Args({ name: "zip", type: () => [GraphQLUpload] }) zip: FileUpload[],
+    @Context() context
   ) {
-    const url = await this.filesService.upload({ file: zip, type: "zip" });
+    // 업로드 전에 작성자인지 먼저 확인한다 (update에서도 다시 검사한다)
+    const leader = context.req.user;
     const board = await this.boardsService.findOne({ boardId });
+    if (!board) {
+      throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
+    }
+    if (board.leader !== leader.id) {
+      throw new ForbiddenException("작성자가 아닙니다.");
+    }
+
+    const url = await this.filesService.upload({ file: zip, type: "zip" });
     updateBoardInput.projectUrl = url[0].toString();
 
     const result = await this.boardsService.update({
       updateBoardInput,
-      leader: board.leader,
+      leader,
       boardId,
     });
     return result.projectUrl;
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   async removeZipFile(
     @Args("boardId") boardId: string //

@@ -6,7 +6,7 @@ import { UsersService } from "src/users/users.service";
 import { AuthsService } from "./auths.service";
 
 interface IOAuthUser {
-  user: Pick<User, "email" | "password" | "nickname">;
+  user: Pick<User, "email" | "nickname">;
 }
 
 @Controller()
@@ -31,7 +31,7 @@ export class AuthController {
     @Req() req: Request & IOAuthUser, //
     @Res() res: Response
   ) {
-    this.authService.socialLogin({ req, res });
+    await this.authService.socialLogin({ req, res });
   }
 
   @Get("/login/kakao")
@@ -40,6 +40,6 @@ export class AuthController {
     @Req() req: Request & IOAuthUser, //
     @Res() res: Response
   ) {
-    this.authService.socialLogin({ req, res });
+    await this.authService.socialLogin({ req, res });
   }
 }

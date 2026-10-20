@@ -1,10 +1,8 @@
-import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
+import { Resolver, Query, Args, Context } from "@nestjs/graphql";
 import { PointHistoryService } from "./point-history.service";
 import { PointHistory } from "./entities/point-history.entity";
 import { UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
-import { CreatePointHistoryInput } from "./dto/create-point-history.input";
-import { UpdatePointHistoryInput } from "./dto/update-point-history.input";
 
 @Resolver(() => PointHistory)
 export class PointHistoryResolver {
@@ -33,36 +31,5 @@ export class PointHistoryResolver {
   //   return this.pointHistoryService.findOne(id);
   // }
 
-  @UseGuards(GqlAuthAccessGuard)
-  @Mutation(() => PointHistory)
-  createPointHistory(
-    @Context() context,
-    @Args("createPointHistoryInput")
-    createPointHistoryInput: CreatePointHistoryInput //
-  ) {
-    const userId = context.req.user.id;
-    return this.pointHistoryService.create({ userId, createPointHistoryInput });
-  }
-
-  @UseGuards(GqlAuthAccessGuard)
-  @Mutation(() => PointHistory)
-  updatePointHistory(
-    @Context() context,
-    @Args("pointHistoryId") pointHistoryId: string, //
-    @Args("updatePointHistoryInput")
-    updatePointHistoryInput: UpdatePointHistoryInput
-  ) {
-    return this.pointHistoryService.update({
-      updatePointHistoryInput,
-      pointHistoryId,
-    });
-  }
-
-  @UseGuards(GqlAuthAccessGuard)
-  @Mutation(() => Boolean)
-  removePointHistory(
-    @Args("pointHistoryId") pointHistoryId: string //
-  ) {
-    return this.pointHistoryService.remove({ pointHistoryId });
-  }
+  // 포인트 내역은 결제/정산 로직에서만 기록한다. 사용자가 직접 생성/수정/삭제하는 API는 두지 않는다.
 }

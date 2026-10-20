@@ -92,16 +92,31 @@ export class AttendanceResolver {
     return this.attendanceService.getRemainingTime({ boardId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => String)
-  getLocationCrew(
+  async getLocationCrew(
     @Args("boardId") boardId: string, //
-    @Args("userId") userId: string
+    @Args("userId") userId: string,
+    @Context() context: any
   ) {
+    // 위치 정보는 같은 프로젝트의 팀원에게만 공개한다
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: context.req.user.id,
+    });
     return this.attendanceService.getLocationCrew({ boardId, userId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => String)
-  async getLocationLeader(@Args("boardId") boardId: string) {
+  async getLocationLeader(
+    @Args("boardId") boardId: string,
+    @Context() context: any
+  ) {
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: context.req.user.id,
+    });
     return this.attendanceService.getLocationLeader({ boardId });
   }
 

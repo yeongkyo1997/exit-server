@@ -1,4 +1,4 @@
-import { UseGuards } from "@nestjs/common";
+import { ForbiddenException, UseGuards } from "@nestjs/common";
 import { Resolver, Query, Args, Mutation, Context } from "@nestjs/graphql";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { ChatService } from "./chat.service";
@@ -37,7 +37,17 @@ export class ChatResolver {
 
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => [ChatMessage])
-  fetchLogs(@Args("room") room: string) {
+  async fetchLogs(
+    @Args("room") room: string, //
+    @Context() context: any
+  ) {
+    // 채팅방 참여자만 대화 내역을 볼 수 있다
+    const isMember = await this.chatService.isMember({
+      room,
+      userId: context.req.user.id,
+    });
+    if (!isMember)
+      throw new ForbiddenException("채팅방 참여자만 조회할 수 있습니다.");
     return this.chatService.load({ room });
   }
 }

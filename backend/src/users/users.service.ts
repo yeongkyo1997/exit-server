@@ -297,6 +297,7 @@ export class UsersService {
   async restore({ userId }) {
     const isValid = await this.userRepository.findOne({
       where: { id: userId },
+      withDeleted: true,
     });
 
     if (!isValid) throw new NotFoundException("존재하지 않는 이메일입니다.");

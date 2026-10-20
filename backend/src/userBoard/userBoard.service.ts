@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
@@ -86,8 +86,16 @@ export class UserBoardService {
     });
   }
 
-  async update({ updateUserBoardInput }) {
+  async update({ requesterId, updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
+
+    // 지원자 승인/거절은 프로젝트 리더만 할 수 있다
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!board) throw new Error("존재하지 않는 프로젝트입니다.");
+    if (board.leader !== requesterId)
+      throw new ForbiddenException("프로젝트 리더만 승인할 수 있습니다.");
 
     // 이미 참석한 프로젝트인지 확인
     const checkAccepted = await this.userBoardRepository.findOne({
@@ -130,7 +138,20 @@ export class UserBoardService {
     });
   }
 
-  async removeAll({ userId, boardId }) {
+  async removeAll({ requesterId, userId, boardId }) {
+    // 본인 지원 내역은 본인이, 그 외에는 해당 프로젝트 리더만 삭제할 수 있다
+    if (userId !== requesterId) {
+      if (!boardId)
+        throw new ForbiddenException(
+          "다른 유저의 지원 내역은 삭제할 수 없습니다."
+        );
+      const board = await this.boardRepository.findOne({
+        where: { id: boardId },
+      });
+      if (!board || board.leader !== requesterId)
+        throw new ForbiddenException("프로젝트 리더만 삭제할 수 있습니다.");
+    }
+
     const userBoardData = await this.userBoardRepository.find({
       where: {
         user: { id: userId },

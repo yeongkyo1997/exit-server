@@ -67,8 +67,8 @@ export class AuthsResolver {
      * 인증이 되었는지 확인하는 로직
      */
     try {
-      jwt.verify(accessToken, "myAccessKey");
-      jwt.verify(refreshToken, "myRefreshKey");
+      jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch {
       throw new UnauthorizedException();
     }

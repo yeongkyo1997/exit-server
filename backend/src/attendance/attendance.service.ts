@@ -1,4 +1,9 @@
-import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
+import {
+  CACHE_MANAGER,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Cache } from "cache-manager";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
@@ -67,6 +72,19 @@ export class AttendanceService {
 
       return true;
     }
+  }
+
+  // 해당 프로젝트에 승인된 팀원인지 확인한다
+  async assertBoardMember({ boardId, userId }) {
+    const member = await this.userBoardRepository.findOne({
+      where: {
+        user: { id: userId },
+        board: { id: boardId },
+        isAccepted: true,
+      },
+    });
+    if (!member)
+      throw new ForbiddenException("프로젝트 팀원만 조회할 수 있습니다.");
   }
 
   async effectiveUser({ user }) {
