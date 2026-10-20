@@ -39,7 +39,7 @@ export class BoardsResolver {
     @Args("isSuccess") isSuccess: boolean,
     @Args("page", { defaultValue: 1 }) page: number
   ) {
-    this.boardsService.findAll({ isSuccess, page });
+    return this.boardsService.findAll({ isSuccess, page });
   }
 
   @Query(() => [Board])
@@ -47,7 +47,7 @@ export class BoardsResolver {
     @Args("status") status: boolean,
     @Args("page", { defaultValue: 1 }) page: number
   ) {
-    this.boardsService.findAll({ status, page });
+    return this.boardsService.findAll({ status, page });
   }
 
   @Query(() => [Board])
@@ -55,7 +55,7 @@ export class BoardsResolver {
     @Args("tagName") tagName: string,
     @Args("page", { defaultValue: 1 }) page: number
   ) {
-    this.boardsService.findAll({ tagName, page });
+    return this.boardsService.findAll({ tagName, page });
   }
 
   @Query(() => [Board])
@@ -63,7 +63,7 @@ export class BoardsResolver {
     @Args("categoryName") categoryName: string,
     @Args("page", { defaultValue: 1 }) page: number
   ) {
-    this.boardsService.findAll({ categoryName, page });
+    return this.boardsService.findAll({ categoryName, page });
   }
 
   @Query(() => [Board])
@@ -71,7 +71,7 @@ export class BoardsResolver {
     @Args("keywordName") keywordName: string,
     @Args("page", { defaultValue: 1 }) page: number
   ) {
-    this.boardsService.findAll({ keywordName, page });
+    return this.boardsService.findAll({ keywordName, page });
   }
 
   @Query(() => [Board])

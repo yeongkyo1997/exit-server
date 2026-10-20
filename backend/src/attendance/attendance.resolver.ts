@@ -25,16 +25,20 @@ export class AttendanceResolver {
     const user = context.req.user;
 
     const board = await this.boardService.findOne({ boardId });
+    if (!board) throw new Error("존재하지 않는 프로젝트입니다.");
 
-    const validate = await this.attendanceService.effectiveUser({ user });
-    if (!validate) {
-      throw new Error("유효하지 않은 유저입니다.");
-    }
+    // 이 프로젝트에 승인된 팀원만 출석할 수 있다
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: user.id,
+    });
 
     // 리더가 아니고(팀원일 경우) 리더가 캐시에 없으면 error
     if (board.leader !== user.id) {
       // 이미 출석한 유저인지 확인
-      if (!this.attendanceService.checkAttendance({ user })) {
+      if (
+        await this.attendanceService.hasAttended({ board, userId: user.id })
+      ) {
         throw new Error("이미 출석한 유저입니다.");
       }
       // 리더를 레디스에서 찾기

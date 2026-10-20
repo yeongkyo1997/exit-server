@@ -65,6 +65,11 @@ export class Board {
   @Field(() => Boolean)
   isSuccess: boolean;
 
+  // 정산(보석금 반환/보상 지급)이 끝났는지 여부. 중복 정산을 막는다.
+  @Column({ default: false })
+  @Field(() => Boolean)
+  isFinished: boolean;
+
   @Column({ default: "" })
   @Field(() => String)
   projectUrl: string;

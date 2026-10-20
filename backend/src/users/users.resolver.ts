@@ -15,6 +15,7 @@ import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { Board } from "src/boards/entities/board.entity";
 import { EmailService } from "src/email/email.service";
+import { emailVerifiedKey } from "src/email/email-verified";
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -26,6 +27,10 @@ export class UsersResolver {
 
   @Mutation(() => User)
   async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
+    // checkEmailToken으로 이메일 인증을 마친 경우에만 가입할 수 있다
+    if (!(await this.cacheManager.get(emailVerifiedKey(createUserInput.email))))
+      throw new UnauthorizedException("이메일 인증이 필요합니다.");
+
     const password = createUserInput.password;
 
     const hashedPassword = await bcrypt.hash(password, 10.2);
@@ -35,8 +40,9 @@ export class UsersResolver {
       password: hashedPassword,
     });
 
-    // redis에서 이메일 토큰 삭제하기
+    // redis에서 이메일 토큰과 인증 표시 삭제하기
     await this.cacheManager.del(createUserInput.email);
+    await this.cacheManager.del(emailVerifiedKey(createUserInput.email));
 
     return result;
   }
@@ -175,15 +181,20 @@ export class UsersResolver {
     @Args("password", { type: () => String }) password: string
   ) {
     const user = context.req.user;
-    const hashedPassword = await bcrypt.hash(password, 10.2);
 
+    // sendPasswordEmailToken -> checkEmailToken으로 인증한 경우에만 변경할 수 있다
+    if (!(await this.cacheManager.get(emailVerifiedKey(user.email))))
+      throw new UnauthorizedException("이메일 인증이 필요합니다.");
+
+    // 해싱은 usersService.updatePassword에서 한 번만 한다
     await this.usersService.updatePassword({
       email: user.email,
-      password: hashedPassword,
+      password,
     });
 
-    // redis에서 이메일 토큰 삭제하기
+    // redis에서 이메일 토큰과 인증 표시 삭제하기
     await this.cacheManager.del(user.email);
+    await this.cacheManager.del(emailVerifiedKey(user.email));
 
     return true;
   }

@@ -13,6 +13,7 @@ import { Cache } from "cache-manager";
 import { IContext } from "src/commons/type/context";
 import * as jwt from "jsonwebtoken";
 import { GqlAuthRefreshGuard } from "src/commons/auth/gql-auth.guard";
+import { getRefreshToken } from "src/commons/auth/cookie";
 
 @Resolver()
 export class AuthsResolver {
@@ -60,8 +61,8 @@ export class AuthsResolver {
    */
   @Mutation(() => String)
   async logout(@Context() context: IContext) {
-    const accessToken = context.req.headers["authorization"].split(" ")[1];
-    const refreshToken = context.req.headers["cookie"].split("=")[1];
+    const accessToken = context.req.headers["authorization"]?.split(" ")[1];
+    const refreshToken = getRefreshToken(context.req.headers["cookie"]);
 
     /**
      * 인증이 되었는지 확인하는 로직

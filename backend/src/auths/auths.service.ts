@@ -35,9 +35,11 @@ export class AuthsService {
       "Access-Control-Allow-Headers",
       "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
     );
+    // 쿠키 도메인은 배포 환경마다 다르므로 환경변수로 지정한다 (없으면 기존 도메인)
+    const cookieDomain = process.env.COOKIE_DOMAIN ?? ".mainproject04.shop";
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.mainproject04.shop; httpOnly; SameSite=None; Secure`
+      `refreshToken=${refreshToken}; path=/; domain=${cookieDomain}; httpOnly; SameSite=None; Secure`
     );
   }
 
@@ -71,6 +73,6 @@ export class AuthsService {
 
     this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://localhost:3000");
+    res.redirect(process.env.FRONTEND_URL ?? "http://localhost:3000");
   }
 }

@@ -3,6 +3,7 @@ import { Args, Mutation, Resolver } from "@nestjs/graphql";
 import { Cache } from "cache-manager";
 import { UsersService } from "src/users/users.service";
 import { EmailService } from "./email.service";
+import { emailVerifiedKey } from "./email-verified";
 @Resolver()
 export class EmailResolver {
   constructor(
@@ -54,17 +55,21 @@ export class EmailResolver {
   @Mutation(() => String)
   async sendNewPassword(
     @Args("email", { type: () => String }) email: string, //
-    @Args("emailToken", { type: () => String }) emailToken: string
+    @Args("emailToken", { type: () => String, nullable: true })
+    emailToken?: string
   ) {
-    // sendEmailToken으로 받은 인증번호를 확인해 본인만 비밀번호를 재발급받을 수 있게 한다
+    // 인증번호를 함께 보내거나 checkEmailToken으로 먼저 인증한 경우에만 재발급한다
     const cacheEmailToken = await this.cacheManager.get(email);
-    if (!cacheEmailToken || cacheEmailToken !== emailToken)
-      throw new Error("인증번호가 일치하지 않습니다.");
+    const isVerified =
+      (emailToken && cacheEmailToken === emailToken) ||
+      (await this.cacheManager.get(emailVerifiedKey(email)));
+    if (!isVerified) throw new Error("이메일 인증이 필요합니다.");
 
     const findUser = await this.usersService.findOneByEmail({ email });
     if (!findUser) throw new Error("등록되지 않은 이메일입니다.");
 
     await this.cacheManager.del(email);
+    await this.cacheManager.del(emailVerifiedKey(email));
 
     // 6자리 이메일 토큰 생성
     const password = Math.random().toString(36).substring(2, 8);
@@ -89,8 +94,11 @@ export class EmailResolver {
     @Args("emailToken", { type: () => String }) emailToken: string
   ) {
     const cacheEmailToken = await this.cacheManager.get(email);
-    if (cacheEmailToken !== emailToken)
+    if (!cacheEmailToken || cacheEmailToken !== emailToken)
       throw new Error("인증번호가 일치하지 않습니다.");
+
+    // 인증 완료 표시를 10분간 남겨서 회원가입/비밀번호 변경 시 확인한다
+    await this.cacheManager.set(emailVerifiedKey(email), true, { ttl: 600 });
     return "인증되었습니다.";
   }
 }

@@ -10,6 +10,7 @@ import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { User } from "src/users/entities/user.entity";
 import { DataSource, Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
+import { addPoint, deductPoint } from "src/commons/point/point.util";
 
 interface board {
   isSuccess?: boolean;
@@ -230,24 +231,33 @@ export class BoardsService {
       }
     }
 
-    const savedInfo = await this.boardRepository.save({
-      ...board,
-      leader: leader.id,
-      leaderNickname: leader.nickname,
-      boardImage: boardImageResult,
-      tags: tagsResult,
-      keywords: keywordsResult,
-      categories: categoriesResult,
-    });
+    // 보드 생성, 리더 참여 등록, 리더 보석금 납부를 하나의 트랜잭션으로 처리한다
+    return await this.dataSource.transaction(async (manager) => {
+      const savedInfo = await manager.save(Board, {
+        ...board,
+        leader: leader.id,
+        leaderNickname: leader.nickname,
+        boardImage: boardImageResult,
+        tags: tagsResult,
+        keywords: keywordsResult,
+        categories: categoriesResult,
+      });
 
-    // userBoard에도 저장
-    await this.userBoardRepository.save({
-      user: leader,
-      board: savedInfo.id,
-      isAccepted: true,
-    });
+      // userBoard에도 저장
+      await manager.save(UserBoard, {
+        user: { id: leader.id },
+        board: { id: savedInfo.id },
+        isAccepted: true,
+      });
 
-    return savedInfo;
+      await deductPoint(manager, {
+        userId: leader.id,
+        amount: savedInfo.bail,
+        reason: "보석금 납부",
+      });
+
+      return savedInfo;
+    });
   }
 
   async update({ leader, boardId, updateBoardInput }) {
@@ -259,7 +269,11 @@ export class BoardsService {
     const { boardImage, tags, keywords, categories, ...updateBoard } =
       updateBoardInput;
 
+    if (!originBoard) throw Error("존재하지 않는 프로젝트입니다.");
     if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
+    // 이미 납부한 보석금과 정산 금액이 어긋나지 않도록 보석금은 변경할 수 없다
+    if (updateBoard.bail != null && updateBoard.bail !== originBoard.bail)
+      throw Error("보석금은 변경할 수 없습니다.");
     if (updateBoard.bail < 50000 || updateBoard.bail > 1000000)
       throw Error("보석금이 범위 밖입니다.");
     if (updateBoard.totalMember < 1 || updateBoard.totalMember > 6)
@@ -368,101 +382,54 @@ export class BoardsService {
   }
 
   async updateFinish({ boardId, userId }) {
-    const userBoard = await this.userBoardRepository.findOne({
-      where: { user: { id: userId }, board: { id: boardId } },
-    });
-
     const board = await this.boardRepository.findOne({
       where: { id: boardId },
     });
 
-    if (!userBoard) throw Error("참여한 프로젝트가 아닙니다.");
-    if (board.isSuccess) throw Error("이미 완료된 프로젝트입니다.");
-
+    if (!board) throw Error("존재하지 않는 프로젝트입니다.");
     if (board.leader !== userId)
       throw Error("프로젝트 리더만 완료할 수 있습니다.");
+    // isFinished 컬럼이 생기기 전에 성공 처리된 보드도 다시 정산되지 않게 막는다
+    if (board.isFinished || board.isSuccess)
+      throw Error("이미 완료된 프로젝트입니다.");
 
     // 출석률 계산
-    const attendance = await this.attendanceService.getAllAttendancePercent(
-      boardId
-    );
+    const attendance = await this.attendanceService.getAllAttendancePercent({
+      board,
+    });
 
-    // 출석률이 80% 이상이면 성공
-    if (attendance >= 80) {
-      await this.boardRepository.update(
+    // 출석률이 80% 이상이면 성공: 보석금의 110%, 실패: 40%를 돌려준다
+    const isSuccess = attendance >= 80;
+    const reward = Math.floor(board.bail * (isSuccess ? 1.1 : 0.4));
+
+    await this.dataSource.transaction(async (manager) => {
+      // 아직 정산되지 않은 보드만 갱신해서, 동시에/반복해서 호출돼도 한 번만 정산한다
+      const result = await manager.update(
+        Board,
+        { id: boardId, isFinished: false },
         {
-          id: boardId,
-        },
-        {
-          isSuccess: true,
+          isFinished: true,
+          isSuccess,
           endAt: new Date(new Intl.DateTimeFormat("kr").format()),
         }
       );
+      if (!result.affected) throw Error("이미 완료된 프로젝트입니다.");
 
-      // 성공한 유저들에게 보석 지급
-      const successUsers = await this.userBoardRepository.find({
+      const members = await manager.find(UserBoard, {
         where: { board: { id: boardId }, isAccepted: true },
-        relations: ["user", "board"],
+        relations: ["user"],
       });
 
-      for (let i = 0; successUsers && i < successUsers.length; i++) {
-        await this.userRepository.update(
-          {
-            id: successUsers[i].user.id,
-          },
-          {
-            point: successUsers[i].user.point + board.bail * 1.1,
-          }
-        );
-      }
-
-      // pointHistory에 저장
-      for (let i = 0; successUsers && i < successUsers.length; i++) {
-        await this.pointHistoryRepository.save({
-          user: successUsers[i].user,
-          amount: board.bail * 1.1,
-          pointHistory: "프로젝트 성공 보상",
+      for (const member of members) {
+        await addPoint(manager, {
+          userId: member.user.id,
+          amount: reward,
+          reason: isSuccess ? "프로젝트 성공 보상" : "프로젝트 실패 보상",
         });
       }
-      return "프로젝트 성공";
-    } else {
-      await this.boardRepository.update(
-        {
-          id: boardId,
-        },
-        {
-          isSuccess: false,
-          endAt: new Date(new Intl.DateTimeFormat("kr").format()),
-        }
-      );
+    });
 
-      // 실패한 유저들에게 보석 차감
-      const failUsers = await this.userBoardRepository.find({
-        where: { board: { id: boardId }, isAccepted: true },
-        relations: ["user", "board"],
-      });
-
-      for (let i = 0; failUsers && i < failUsers.length; i++) {
-        await this.userRepository.update(
-          {
-            id: failUsers[i].user.id,
-          },
-          {
-            point: failUsers[i].user.point + board.bail * 0.4,
-          }
-        );
-      }
-
-      // pointHistory에 저장
-      for (let i = 0; failUsers && i < failUsers.length; i++) {
-        await this.pointHistoryRepository.save({
-          user: failUsers[i].user,
-          amount: board.bail * 0.4,
-          pointHistory: "프로젝트 실패 보상",
-        });
-      }
-      return "프로젝트 실패";
-    }
+    return isSuccess ? "프로젝트 성공" : "프로젝트 실패";
   }
 
   async remove({ leader, boardId }) {
@@ -470,12 +437,37 @@ export class BoardsService {
       where: { id: boardId },
     });
 
+    if (!originBoard) throw Error("존재하지 않는 프로젝트입니다.");
     if (originBoard.leader != leader.id)
       throw Error("작성자만 지울 수 있습니다.");
 
-    // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
-    const result = await this.boardRepository.softDelete({ id: boardId });
-    return result.affected ? true : false;
+    return await this.dataSource.transaction(async (manager) => {
+      // 정산과 동시에 실행되지 않도록 보드 행을 잠그고 다시 읽는다
+      const board = await manager.findOne(Board, {
+        where: { id: boardId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!board) throw Error("존재하지 않는 프로젝트입니다.");
+
+      // 정산 전에 삭제하면 승인된 팀원 전원에게 보석금을 돌려준다
+      if (!board.isFinished) {
+        const members = await manager.find(UserBoard, {
+          where: { board: { id: boardId }, isAccepted: true },
+          relations: ["user"],
+        });
+        for (const member of members) {
+          await addPoint(manager, {
+            userId: member.user.id,
+            amount: board.bail,
+            reason: "보석금 반환",
+          });
+        }
+      }
+
+      // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
+      const result = await manager.softDelete(Board, { id: boardId });
+      return result.affected ? true : false;
+    });
   }
 
   async onClickBoard({ boardId }) {

@@ -121,6 +121,8 @@ export class UsersService {
       },
       relations: ["board"],
     });
+    // 승인된 프로젝트가 없으면 resolver에서 "진행중인 프로젝트가 없습니다"로 처리한다
+    if (!userboard?.board) return null;
 
     const today = new Date(new Intl.DateTimeFormat("kr").format());
     const start = userboard.board.startAt;

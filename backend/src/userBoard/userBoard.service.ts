@@ -2,7 +2,8 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
-import { Repository } from "typeorm";
+import { DataSource, Repository } from "typeorm";
+import { addPoint, deductPoint } from "src/commons/point/point.util";
 import { UserBoard } from "./entities/userBoard.entity";
 
 @Injectable()
@@ -13,7 +14,8 @@ export class UserBoardService {
     @InjectRepository(Board)
     private readonly boardRepository: Repository<Board>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly dataSource: DataSource
   ) {}
 
   //프로젝트를 신청한 유저들(리더 제외) 불러오는 함수
@@ -108,7 +110,7 @@ export class UserBoardService {
 
     // 이미 참석한 프로젝트라면 에러
     if (checkAccepted) {
-      return new Error("이미 참석한 프로젝트입니다.");
+      throw new Error("이미 참석한 프로젝트입니다.");
     }
 
     const getId = await this.userBoardRepository.findOne({
@@ -118,23 +120,34 @@ export class UserBoardService {
       },
       relations: ["board", "user"],
     });
+    if (!getId) throw new Error("신청 내역이 없습니다.");
 
-    const boardInfo = await this.boardRepository.findOne({
-      where: { id: boardId },
-    });
+    // 승인 시 보석금 납부, 인원 증가, 승인 처리를 하나의 트랜잭션으로 처리한다
+    return await this.dataSource.transaction(async (manager) => {
+      if (isAccepted) {
+        if (board.isFinished) throw new Error("이미 완료된 프로젝트입니다.");
 
-    if (isAccepted) {
-      await this.boardRepository.save({
-        ...boardInfo,
-        countMember: boardInfo.countMember + 1,
+        await deductPoint(manager, {
+          userId,
+          amount: board.bail,
+          reason: "보석금 납부",
+        });
+
+        // deductPoint가 유저 행을 잠근 뒤에 다시 확인해서, 동시에 승인돼도 한 번만 납부하게 한다
+        const current = await manager.findOne(UserBoard, {
+          where: { id: getId.id },
+        });
+        if (current.isAccepted) throw new Error("이미 참석한 프로젝트입니다.");
+
+        await manager.increment(Board, { id: boardId }, "countMember", 1);
+      }
+
+      return await manager.save(UserBoard, {
+        id: getId.id,
+        board: { id: boardId },
+        user: getId.user,
+        isAccepted,
       });
-    }
-
-    return await this.userBoardRepository.save({
-      id: getId.id,
-      board: boardInfo,
-      user: await this.userRepository.findOne({ where: { id: userId } }),
-      isAccepted,
     });
   }
 
@@ -160,29 +173,34 @@ export class UserBoardService {
       relations: ["board", "user"],
     });
 
-    if (userBoardData.length == 1 && userBoardData[0].isAccepted) {
-      const boardInfo = await this.boardRepository.findOne({
-        where: { id: boardId },
-      });
-      const updateCount = await this.boardRepository.update(
-        {
-          id: boardId,
-        },
-        {
-          countMember: boardInfo.countMember - 1,
-        }
-      );
-    }
-
     const showResult = [];
-    for (let i = 0; i < userBoardData.length; i++) {
-      const result = await this.userBoardRepository.delete({
-        id: userBoardData[i].id,
+    for (const userBoard of userBoardData) {
+      const affected = await this.dataSource.transaction(async (manager) => {
+        // 먼저 삭제해서, 같은 신청 건이 동시에 삭제돼도 보석금은 한 번만 반환되게 한다
+        const result = await manager.delete(UserBoard, { id: userBoard.id });
+        if (!result.affected) return 0;
+
+        // 정산 전인 프로젝트에서 승인된 팀원이 빠지면 보석금을 돌려주고 인원을 줄인다
+        if (userBoard.isAccepted && userBoard.board) {
+          const board = await manager.findOne(Board, {
+            where: { id: userBoard.board.id },
+            lock: { mode: "pessimistic_write" },
+          });
+          if (board && !board.isFinished) {
+            await addPoint(manager, {
+              userId: userBoard.user.id,
+              amount: board.bail,
+              reason: "보석금 반환",
+            });
+            await manager.decrement(Board, { id: board.id }, "countMember", 1);
+          }
+        }
+
+        return result.affected;
       });
+
       showResult.push(
-        result.affected
-          ? `${userBoardData[i].id} deleted`
-          : `${userBoardData[i].id} delete failed`
+        affected ? `${userBoard.id} deleted` : `${userBoard.id} delete failed`
       );
     }
 
