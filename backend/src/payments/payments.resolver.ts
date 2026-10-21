@@ -33,6 +33,10 @@ export class PaymentsResolver {
   ) {
     const user = context.req.user;
 
+    // impUid는 아임포트 API 경로에 그대로 들어가므로 정해진 형식만 허용한다
+    if (!/^imp_[0-9]+$/.test(impUid))
+      throw new UnprocessableEntityException("잘못된 결제 번호입니다.");
+
     const access_Token = await this.iamportService.getToken();
 
     // 클라이언트가 보낸 금액이 아니라 아임포트에 실제로 결제된 상태와 금액을 기준으로 검증
