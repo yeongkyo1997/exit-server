@@ -39,11 +39,14 @@ export class UserBoardResolver {
     return this.userBoardService.update({ updateUserBoardInput });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => [String])
   removeUserBoards(
+    @Context() context: any,
     @Args("userId", { nullable: true }) userId: string, //
     @Args("boardId", { nullable: true }) boardId: string //
   ) {
-    return this.userBoardService.removeAll({ userId, boardId });
+    const requesterId = context.req.user.id;
+    return this.userBoardService.removeAll({ requesterId, userId, boardId });
   }
 }

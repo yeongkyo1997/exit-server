@@ -25,6 +25,9 @@ services:
 
   logstash:
     image: logstash:7.17.0
+    # logstash.dev.conf의 DATABASE_USERNAME / DATABASE_PASSWORD를 채운다
+    env_file:
+      - ./.env.dev
     volumes:
       - ./elk/logstash/logstash.dev.conf:/usr/share/logstash/pipeline/logstash.dev.conf
       - ./elk/logstash/mysql-connector-java-8.0.28.jar:/usr/share/logstash/mysql-connector-java-8.0.28.jar

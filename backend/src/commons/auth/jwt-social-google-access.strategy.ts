@@ -12,9 +12,10 @@ export class JwtGoogleStrategy extends PassportStrategy(Strategy, "google") {
   }
 
   validate(accessToken, refreshToken, profile) {
+    // 구글이 인증하지 않은 이메일로는 기존 계정에 연결하지 않는다
+    const email = profile.emails?.[0];
     return {
-      email: profile.emails[0].value,
-      password: profile.emails[0].value,
+      email: email?.verified === false ? undefined : email?.value,
       nickname: profile.displayName,
     };
   }

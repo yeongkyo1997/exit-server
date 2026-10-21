@@ -35,10 +35,15 @@ export class PaymentsResolver {
 
     const access_Token = await this.iamportService.getToken();
 
-    await this.iamportService.verifyToken({
+    // 클라이언트가 보낸 금액이 아니라 아임포트에 실제로 결제된 상태와 금액을 기준으로 검증
+    const iamportPayment = await this.iamportService.verifyToken({
       accessToken: access_Token,
       impUid,
     });
+    if (iamportPayment?.status !== "paid")
+      throw new UnprocessableEntityException("결제가 완료되지 않았습니다.");
+    if (iamportPayment.amount - (iamportPayment.cancel_amount ?? 0) !== amount)
+      throw new UnprocessableEntityException("결제 금액이 일치하지 않습니다.");
 
     const validPayment = await this.paymentsService.findStatus({ impUid });
     if (validPayment) throw new ConflictException("이미 추가된 결제건입니다.");

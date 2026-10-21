@@ -90,6 +90,9 @@ export class UsersService {
   }
 
   async findOneByEmail({ email }) {
+    // email이 없으면 where 조건이 빠져 첫 번째 유저가 조회되므로 바로 null을 반환
+    if (!email) return null;
+
     const findUser = await this.userRepository.findOne({
       where: { email },
       relations: ["userImage", "tags", "keywords", "categories"],
