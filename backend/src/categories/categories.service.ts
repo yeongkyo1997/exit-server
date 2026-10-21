@@ -64,7 +64,7 @@ export class CategoriesService {
       throw new Error("존재하지 않는 카테고리입니다.");
     }
     const result = await this.categoryRepository.softDelete({ name });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 
   async restore(id: string) {

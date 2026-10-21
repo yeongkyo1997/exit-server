@@ -5,11 +5,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
 import { UserImage } from "src/user-images/entities/user-image.entity";
 import { Tag } from "src/tags/entities/tag.entity";
-import { Board } from "src/boards/entities/board.entity";
 import { Keyword } from "src/keywords/entities/keyword.entity";
-import { JwtAccessStrategy } from "src/commons/auth/jwt-access.strategy";
 import { Category } from "src/categories/entities/category.entity";
-import { EmailService } from "src/email/email.service";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 
 @Module({
@@ -19,7 +16,6 @@ import { UserBoard } from "src/userBoard/entities/userBoard.entity";
       UserBoard,
       UserImage,
       Tag,
-      Board,
       Keyword,
       Category,
     ]),
@@ -27,8 +23,7 @@ import { UserBoard } from "src/userBoard/entities/userBoard.entity";
   providers: [
     UsersResolver, //
     UsersService,
-    JwtAccessStrategy,
-    EmailService,
   ],
+  exports: [UsersService],
 })
 export class UsersModule {}

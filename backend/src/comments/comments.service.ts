@@ -5,7 +5,6 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { SubCommentsService } from "src/sub-comments/sub-comments.service";
-import { User } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 import { Comment } from "./entities/comment.entity";
 
@@ -14,42 +13,23 @@ export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly subCommentsService: SubCommentsService
   ) {}
 
   async findAll({ userId, boardId }) {
-    const commentData = await this.commentRepository.find({
+    const comments = await this.commentRepository.find({
       where: {
         user: { id: userId },
         board: { id: boardId },
       },
-      relations: ["board", "user"],
+      relations: ["board", "user", "user.userImage"],
       order: { createdAt: "ASC" },
     });
 
-    if (userId) {
-      const userData = await this.userRepository.findOne({
-        where: { id: userId },
-        relations: ["userImage"],
-      });
-      for (let i = 0; i < commentData.length; i++) {
-        commentData[i]["user"]["userImage"] = userData["userImage"];
-      }
-      return commentData;
-    } else {
-      for (let i = 0; i < commentData.length; i++) {
-        const userData = await this.userRepository.findOne({
-          where: { id: commentData[i]["user"]["id"] },
-          relations: ["userImage"],
-        });
+    // 버그 유지: 작성자가 soft-delete된 댓글은 user가 null이라 여기서 TypeError
+    comments.map((comment) => comment.user.id);
 
-        commentData[i]["user"]["userImage"] = userData["userImage"];
-      }
-
-      return commentData;
-    }
+    return comments;
   }
 
   async create({ userId, createCommentInput }) {

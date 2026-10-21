@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
+import { BOARD_RELATIONS, USER_RELATIONS } from "src/commons/relations";
 import { User } from "src/users/entities/user.entity";
-import { Repository, DataSource } from "typeorm";
+import { Repository, DataSource, In } from "typeorm";
 import { Like } from "./entities/like.entity";
 
 @Injectable()
@@ -25,30 +26,45 @@ export class LikesService {
       },
       relations: ["board", "user"],
     });
-    const result = [];
-    for (let i = 0; i < likes.length; i++) {
-      const userData = await this.userRepository.findOne({
-        where: { id: likes[i]["user"].id },
-        relations: ["userImage", "tags", "keywords", "categories"],
-      });
-      likes[i]["user"]["keywords"] = userData["keywords"];
-      likes[i]["user"]["categories"] = userData["categories"];
-      likes[i]["user"]["userImage"] = userData["userImage"];
-      likes[i]["user"]["tags"] = userData["tags"];
 
-      const boardData = await this.boardRepository.findOne({
-        where: { id: likes[i]["board"].id },
-        relations: ["boardImage", "tags", "keywords", "categories"],
-      });
-      likes[i]["board"]["keywords"] = boardData["keywords"];
-      likes[i]["board"]["categories"] = boardData["categories"];
-      likes[i]["board"]["boardImage"] = boardData["boardImage"];
-      likes[i]["board"]["tags"] = boardData["tags"];
-
-      result.push(likes[i]);
+    // 행마다 user.id → board.id 순서로 읽어 soft-delete된 유저·보드면 지금처럼 TypeError
+    const userIds = [];
+    const boardIds = [];
+    for (const like of likes) {
+      userIds.push(like.user.id);
+      boardIds.push(like.board.id);
     }
 
-    return result;
+    const users = userIds.length
+      ? await this.userRepository.find({
+          where: { id: In([...new Set(userIds)]) },
+          relations: USER_RELATIONS,
+        })
+      : [];
+    const boards = boardIds.length
+      ? await this.boardRepository.find({
+          where: { id: In([...new Set(boardIds)]) },
+          relations: BOARD_RELATIONS,
+        })
+      : [];
+    const userMap = new Map(users.map((user) => [user.id, user]));
+    const boardMap = new Map(boards.map((board) => [board.id, board]));
+
+    for (const like of likes) {
+      const userData = userMap.get(like.user.id);
+      like.user.keywords = userData.keywords;
+      like.user.categories = userData.categories;
+      like.user.userImage = userData.userImage;
+      like.user.tags = userData.tags;
+
+      const boardData = boardMap.get(like.board.id);
+      like.board.keywords = boardData.keywords;
+      like.board.categories = boardData.categories;
+      like.board.boardImage = boardData.boardImage;
+      like.board.tags = boardData.tags;
+    }
+
+    return likes;
   }
 
   async create({ userId, boardId }) {

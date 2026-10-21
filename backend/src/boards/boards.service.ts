@@ -1,25 +1,38 @@
-import { Injectable } from "@nestjs/common";
+import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
+import { ElasticsearchService } from "@nestjs/elasticsearch";
+import { Cache } from "cache-manager";
 import { AttendanceService } from "src/attendance/attendance.service";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
+import { BOARD_RELATIONS } from "src/commons/relations";
+import { toLocalDate } from "src/commons/utils/date";
+import {
+  deleteJoinRows,
+  findOrCreateByName,
+} from "src/commons/utils/repository";
 import { Keyword } from "src/keywords/entities/keyword.entity";
 import { PointHistory } from "src/point-history/entities/point-history.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
+import {
+  assertEnoughPoint,
+  assertNoOngoingProject,
+} from "src/userBoard/userBoard.rules";
 import { User } from "src/users/entities/user.entity";
-import { DataSource, In, Repository } from "typeorm";
+import { DataSource, FindOptionsOrder, In, Repository } from "typeorm";
+import { CreateBoardInput } from "./dto/create-board.input";
 import { Board } from "./entities/board.entity";
 
-interface board {
+interface BoardFilter {
   isSuccess?: boolean;
   status?: boolean;
   page?: number;
   tagName?: string;
   categoryName?: string;
   keywordName?: string;
-  search?: string;
 }
+
 @Injectable()
 export class BoardsService {
   constructor(
@@ -40,17 +53,32 @@ export class BoardsService {
     @InjectRepository(PointHistory)
     private readonly pointHistoryRepository: Repository<PointHistory>,
     private readonly dataSource: DataSource,
-    private readonly attendanceService: AttendanceService
+    private readonly attendanceService: AttendanceService,
+    private readonly elasticsearchService: ElasticsearchService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache
   ) {}
 
-  findAll({
-    isSuccess,
-    status,
-    page,
-    tagName,
-    categoryName,
-    keywordName,
-  }: board) {
+  findAll(filter: BoardFilter) {
+    return this.findBoards(filter, { createdAt: "DESC" });
+  }
+
+  findAllByLikes(filter: BoardFilter) {
+    return this.findBoards(filter, { countLike: "DESC" });
+  }
+
+  // where는 키를 하나씩 적는다 (page 등이 where에 들어가면 안 된다)
+  private findBoards(
+    {
+      isSuccess,
+      status,
+      page,
+      tagName,
+      categoryName,
+      keywordName,
+    }: BoardFilter,
+    order: FindOptionsOrder<Board>
+  ) {
     return this.boardRepository.find({
       where: {
         isSuccess,
@@ -59,70 +87,79 @@ export class BoardsService {
         categories: { name: categoryName },
         keywords: { name: keywordName },
       },
-      order: { createdAt: "DESC" },
-      relations: ["boardImage", "tags", "keywords", "categories"],
+      order,
+      relations: BOARD_RELATIONS,
       take: 10,
       skip: (page - 1) * 10 || 0,
     });
   }
 
-  async findAllByIds({ ids }: { ids: string[] }) {
+  // 전달받은 ids 순서(elasticsearch 관련도 순)대로 정렬하고, 삭제된 게시글은 제외한다.
+  private async findAllByIds(ids: string[]) {
     if (!ids.length) return [];
 
     const boards = await this.boardRepository.find({
       where: { id: In(ids) },
-      relations: ["boardImage", "tags", "keywords", "categories"],
+      relations: BOARD_RELATIONS,
     });
 
-    // 전달받은 ids 순서(elasticsearch 관련도 순)대로 정렬하고, 삭제된 게시글은 제외한다.
     return ids
       .map((id) => boards.find((board) => board.id === id))
       .filter(Boolean);
   }
 
-  findAllByLikes({
-    isSuccess,
-    status,
-    page,
-    tagName,
-    categoryName,
-    keywordName,
-  }) {
-    return this.boardRepository.find({
-      where: {
-        isSuccess,
-        status,
-        tags: { name: tagName },
-        categories: { name: categoryName },
-        keywords: { name: keywordName },
+  async search({ search, ...filter }: BoardFilter & { search?: string }) {
+    // 검색어가 없다면 모든 상품을 보여준다.
+    if (!search) return this.findAll(filter);
+
+    // 검색어가 1글자 이하라면 에러를 발생시킨다.
+    if (search.length <= 1)
+      throw new Error("검색어는 2글자 이상 입력해주세요.");
+
+    // 검색어에 공백만 있다면 에러를 발생시킨다.
+    if (search.match(/^\s+$/)) throw new Error("검색어를 입력해주세요.");
+
+    // elasticsearch에서 검색어로 검색한다.
+    const searchResult = await this.elasticsearchService.search({
+      index: "teamboard",
+      body: {
+        query: {
+          multi_match: {
+            query: search,
+            fields: ["title", "description"],
+          },
+        },
       },
-      order: { countLike: "DESC" },
-      relations: ["boardImage", "tags", "keywords", "categories"],
-      take: 10,
-      skip: (page - 1) * 10 || 0,
     });
+
+    // elasticsearch 검색 결과의 id로 DB에서 최신 게시글을 조회한다.
+    const ids = searchResult.hits.hits.map((hit) => hit._id);
+    const result = await this.findAllByIds(ids);
+
+    // redis에 검색어와 검색결과를 저장한다.
+    await this.cacheManager.set(search, result, { ttl: 60 });
+    return result;
   }
 
   findOne({ boardId }) {
     return this.boardRepository.findOne({
       where: { id: boardId },
-      relations: ["boardImage", "tags", "keywords", "categories"],
+      relations: BOARD_RELATIONS,
     });
   }
 
   async randomBoardByCategory({ userId, categoryId }) {
     // 모집중인 프로젝트들
     const waitingInfo = await this.boardRepository.find({
+      select: { id: true, startAt: true },
       where: {
         isSuccess: false,
         status: false,
       },
-      relations: ["boardImage", "tags", "keywords", "categories"],
     });
 
     const newWaitingInfo = waitingInfo.filter(
-      (ele) =>
-        new Date(ele.startAt) > new Date(new Intl.DateTimeFormat("kr").format())
+      (ele) => new Date(ele.startAt) > toLocalDate()
     );
 
     // 카테고리가 포함된 프로젝트들
@@ -135,11 +172,7 @@ export class BoardsService {
       })
       .execute();
 
-    const filt = [];
-    if (filtTemp.length)
-      for (const i of filtTemp) {
-        filt.push(i.boardId);
-      }
+    const filt = new Set(filtTemp.map((i) => i.boardId));
 
     //내가 지원하거나 포함된 프로젝트들
     const appliedTemp = await this.userBoardRepository.find({
@@ -147,17 +180,22 @@ export class BoardsService {
       relations: ["user", "board"],
     });
 
-    const applied = [];
-    if (appliedTemp.length)
-      for (const i of appliedTemp) {
-        applied.push(i.board.id);
-      }
+    // board가 soft delete된 행은 여기서 TypeError가 난다 (기존 동작 유지)
+    const applied = new Set(appliedTemp.map((i) => i.board.id));
 
     const filteredInfo = newWaitingInfo.filter(
-      (ele) => filt.includes(ele.id) && !applied.includes(ele.id)
+      (ele) => filt.has(ele.id) && !applied.has(ele.id)
     );
 
-    return filteredInfo[Math.floor(Math.random() * filteredInfo.length)];
+    const chosen =
+      filteredInfo[Math.floor(Math.random() * filteredInfo.length)];
+    // id 없이 findOne을 부르면 첫 행이 나오므로 후보가 없으면 바로 끝낸다
+    if (!chosen) return undefined;
+
+    return this.boardRepository.findOne({
+      where: { id: chosen.id },
+      relations: BOARD_RELATIONS,
+    });
   }
 
   async create({ leader, createBoardInput }) {
@@ -167,31 +205,9 @@ export class BoardsService {
 
     const { boardImage, tags, keywords, categories, ...board } =
       createBoardInput;
-    if (checkPoint.point < board.bail)
-      throw Error("보유 포인트가 보석금보다 적습니다.");
-    if (board.bail < 50000 || board.bail > 1000000)
-      throw Error("보석금이 범위 밖입니다.");
-    if (board.totalMember < 1 || board.totalMember > 6)
-      throw Error("총 인원 수가 범위 밖입니다.");
-    if (board.frequency < 1 || board.frequency > 7)
-      throw Error("모임 주기가 범위 밖입니다.");
-    if (board.closedAt > board.endAt)
-      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
-
-    const checkOtherBoard = await this.userBoardRepository.find({
-      where: {
-        user: { id: leader.id },
-        isAccepted: true,
-      },
-      relations: ["board"],
-    });
-
-    const now = new Date(new Intl.DateTimeFormat("kr").format());
-    for (let i = 0; checkOtherBoard && i < checkOtherBoard.length; i++) {
-      if (checkOtherBoard[i].board === null) continue;
-      if (checkOtherBoard[i].board.endAt > now)
-        throw Error("이미 진행중인 프로젝트가 있습니다.");
-    }
+    assertEnoughPoint(checkPoint, board);
+    this.assertBoardRules(board);
+    await assertNoOngoingProject(this.userBoardRepository, leader.id);
 
     // 썸네일 저장 후 이미지DB에 저장하는 로직
     const boardImageResult = await this.boardImageRepository.save({
@@ -199,50 +215,15 @@ export class BoardsService {
     });
 
     // 다대다 확인 후 등록 로직
-    const tagsResult = [];
-    for (let i = 0; tags && i < tags.length; i++) {
-      const prevTag = await this.tagRepository.findOne({
-        where: { name: tags[i] },
-      });
-
-      if (prevTag) tagsResult.push(prevTag);
-      else {
-        const newTag = await this.tagRepository.save({
-          name: tags[i],
-        });
-        tagsResult.push(newTag);
-      }
-    }
-
-    const keywordsResult = [];
-    for (let i = 0; keywords && i < keywords.length; i++) {
-      const prevKeyword = await this.keywordRepository.findOne({
-        where: { name: keywords[i] },
-      });
-
-      if (prevKeyword) keywordsResult.push(prevKeyword);
-      else {
-        const newKeyword = await this.keywordRepository.save({
-          name: keywords[i],
-        });
-        keywordsResult.push(newKeyword);
-      }
-    }
-
-    const categoriesResult = [];
-    for (let i = 0; categories && i < categories.length; i++) {
-      const prevCategory = await this.categoryRepository.findOne({
-        where: { name: categories[i] },
-      });
-
-      if (prevCategory) categoriesResult.push(prevCategory);
-      else {
-        const newKeyword = await this.categoryRepository.save({
-          name: categories[i],
-        });
-        categoriesResult.push(newKeyword);
-      }
-    }
+    const tagsResult = await findOrCreateByName(this.tagRepository, tags);
+    const keywordsResult = await findOrCreateByName(
+      this.keywordRepository,
+      keywords
+    );
+    const categoriesResult = await findOrCreateByName(
+      this.categoryRepository,
+      categories
+    );
 
     const savedInfo = await this.boardRepository.save({
       ...board,
@@ -274,41 +255,15 @@ export class BoardsService {
       updateBoardInput;
 
     if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
-    if (updateBoard.bail < 50000 || updateBoard.bail > 1000000)
-      throw Error("보석금이 범위 밖입니다.");
-    if (updateBoard.totalMember < 1 || updateBoard.totalMember > 6)
-      throw Error("총 인원 수가 범위 밖입니다.");
-    if (updateBoard.frequency < 1 || updateBoard.frequency > 7)
-      throw Error("모임 주기가 범위 밖입니다.");
-    if (updateBoard.closedAt > updateBoard.endAt)
-      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
+    this.assertBoardRules(updateBoard);
 
-    await this.dataSource.manager
-      .createQueryBuilder()
-      .delete()
-      .from("board_tags_tag")
-      .where("boardId = :boardId", {
-        boardId: boardId,
-      })
-      .execute();
-
-    await this.dataSource.manager
-      .createQueryBuilder()
-      .delete()
-      .from("board_keywords_keyword")
-      .where("boardId = :boardId", {
-        boardId: boardId,
-      })
-      .execute();
-
-    await this.dataSource.manager
-      .createQueryBuilder()
-      .delete()
-      .from("board_categories_category")
-      .where("boardId = :boardId", {
-        boardId: boardId,
-      })
-      .execute();
+    // boardImage 확인보다 먼저 지운다 (기존 순서 유지)
+    await deleteJoinRows(
+      this.dataSource.manager,
+      ["board_tags_tag", "board_keywords_keyword", "board_categories_category"],
+      "boardId",
+      boardId
+    );
 
     if (boardImage.url != "null") {
       await this.boardImageRepository.update(
@@ -320,54 +275,19 @@ export class BoardsService {
         }
       );
     }
-    const tagsResult = [];
-    const keywordsResult = [];
-    const categoriesResult = [];
 
-    for (let i = 0; tags && i < tags.length; i++) {
-      const prevTag = await this.tagRepository.findOne({
-        where: { name: tags[i] },
-      });
-
-      if (prevTag) tagsResult.push(prevTag);
-      else {
-        const newTag = await this.tagRepository.save({
-          name: tags[i],
-        });
-        tagsResult.push(newTag);
-      }
-    }
-
-    for (let i = 0; keywords && i < keywords.length; i++) {
-      const prevKeyword = await this.keywordRepository.findOne({
-        where: { name: keywords[i] },
-      });
-
-      if (prevKeyword) keywordsResult.push(prevKeyword);
-      else {
-        const newKeyword = await this.keywordRepository.save({
-          name: keywords[i],
-        });
-        keywordsResult.push(newKeyword);
-      }
-    }
-
-    for (let i = 0; categories && i < categories.length; i++) {
-      const prevCategory = await this.categoryRepository.findOne({
-        where: { name: categories[i] },
-      });
-
-      if (prevCategory) categoriesResult.push(prevCategory);
-      else {
-        const newKeyword = await this.categoryRepository.save({
-          name: categories[i],
-        });
-        categoriesResult.push(newKeyword);
-      }
-    }
+    const tagsResult = await findOrCreateByName(this.tagRepository, tags);
+    const keywordsResult = await findOrCreateByName(
+      this.keywordRepository,
+      keywords
+    );
+    const categoriesResult = await findOrCreateByName(
+      this.categoryRepository,
+      categories
+    );
 
     if (!originBoard.status && updateBoard.status) {
-      updateBoard.closedAt = new Date(new Intl.DateTimeFormat("kr").format());
+      updateBoard.closedAt = toLocalDate();
     }
 
     const updatedInfo = await this.boardRepository.save({
@@ -379,6 +299,18 @@ export class BoardsService {
     });
 
     return updatedInfo;
+  }
+
+  // 비교식은 그대로 둔다 (update에서는 값이 비어 있을 수 있다)
+  private assertBoardRules(board: Partial<CreateBoardInput>) {
+    if (board.bail < 50000 || board.bail > 1000000)
+      throw Error("보석금이 범위 밖입니다.");
+    if (board.totalMember < 1 || board.totalMember > 6)
+      throw Error("총 인원 수가 범위 밖입니다.");
+    if (board.frequency < 1 || board.frequency > 7)
+      throw Error("모임 주기가 범위 밖입니다.");
+    if (board.closedAt > board.endAt)
+      throw Error("모집 마감일이 프로젝트 시작일보다 빠릅니다.");
   }
 
   async updateFinish({ boardId, userId }) {
@@ -397,86 +329,52 @@ export class BoardsService {
       throw Error("프로젝트 리더만 완료할 수 있습니다.");
 
     // 출석률 계산
+    // 버그 유지: { board } 대신 boardId를 넘겨 여기서 항상 TypeError가 난다
     const attendance = await this.attendanceService.getAllAttendancePercent(
       boardId
     );
 
     // 출석률이 80% 이상이면 성공
-    if (attendance >= 80) {
-      await this.boardRepository.update(
+    const isSuccess = attendance >= 80;
+    const rate = isSuccess ? 1.1 : 0.4;
+
+    await this.boardRepository.update(
+      {
+        id: boardId,
+      },
+      {
+        isSuccess,
+        endAt: toLocalDate(),
+      }
+    );
+
+    const members = await this.userBoardRepository.find({
+      where: { board: { id: boardId }, isAccepted: true },
+      relations: ["user", "board"],
+    });
+
+    // 유저들에게 보석 지급 (포인트를 모두 반영한 뒤 이력을 저장한다)
+    for (const member of members) {
+      await this.userRepository.update(
         {
-          id: boardId,
+          id: member.user.id,
         },
         {
-          isSuccess: true,
-          endAt: new Date(new Intl.DateTimeFormat("kr").format()),
+          point: member.user.point + board.bail * rate,
         }
       );
-
-      // 성공한 유저들에게 보석 지급
-      const successUsers = await this.userBoardRepository.find({
-        where: { board: { id: boardId }, isAccepted: true },
-        relations: ["user", "board"],
-      });
-
-      for (let i = 0; successUsers && i < successUsers.length; i++) {
-        await this.userRepository.update(
-          {
-            id: successUsers[i].user.id,
-          },
-          {
-            point: successUsers[i].user.point + board.bail * 1.1,
-          }
-        );
-      }
-
-      // pointHistory에 저장
-      for (let i = 0; successUsers && i < successUsers.length; i++) {
-        await this.pointHistoryRepository.save({
-          user: successUsers[i].user,
-          amount: board.bail * 1.1,
-          pointHistory: "프로젝트 성공 보상",
-        });
-      }
-      return "프로젝트 성공";
-    } else {
-      await this.boardRepository.update(
-        {
-          id: boardId,
-        },
-        {
-          isSuccess: false,
-          endAt: new Date(new Intl.DateTimeFormat("kr").format()),
-        }
-      );
-
-      // 실패한 유저들에게 보석 차감
-      const failUsers = await this.userBoardRepository.find({
-        where: { board: { id: boardId }, isAccepted: true },
-        relations: ["user", "board"],
-      });
-
-      for (let i = 0; failUsers && i < failUsers.length; i++) {
-        await this.userRepository.update(
-          {
-            id: failUsers[i].user.id,
-          },
-          {
-            point: failUsers[i].user.point + board.bail * 0.4,
-          }
-        );
-      }
-
-      // pointHistory에 저장
-      for (let i = 0; failUsers && i < failUsers.length; i++) {
-        await this.pointHistoryRepository.save({
-          user: failUsers[i].user,
-          amount: board.bail * 0.4,
-          pointHistory: "프로젝트 실패 보상",
-        });
-      }
-      return "프로젝트 실패";
     }
+
+    // pointHistory에 저장
+    for (const member of members) {
+      await this.pointHistoryRepository.save({
+        user: member.user,
+        amount: board.bail * rate,
+        pointHistory: isSuccess ? "프로젝트 성공 보상" : "프로젝트 실패 보상",
+      });
+    }
+
+    return isSuccess ? "프로젝트 성공" : "프로젝트 실패";
   }
 
   async remove({ leader, boardId }) {
@@ -489,7 +387,7 @@ export class BoardsService {
 
     // softDelete ( id가 아닌 다른 요소로도 삭제 가능 )
     const result = await this.boardRepository.softDelete({ id: boardId });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 
   async onClickBoard({ boardId }) {
@@ -509,11 +407,8 @@ export class BoardsService {
     }
 
     // 종료일이 지났는지 확인한다.
-    const now = new Date(new Intl.DateTimeFormat("kr").format());
-    if (board.endAt < now) {
-      return "프로젝트를 최종적으로 성공했습니다.";
-    } else {
-      return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
-    }
+    const now = toLocalDate();
+    if (board.endAt < now) return "프로젝트를 최종적으로 성공했습니다.";
+    return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
   }
 }

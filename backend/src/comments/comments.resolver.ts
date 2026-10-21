@@ -1,10 +1,12 @@
-import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { CommentsService } from "./comments.service";
 import { Comment } from "./entities/comment.entity";
 import { CreateCommentInput } from "./dto/create-comment.input";
 import { UpdateCommentInput } from "./dto/update-comment.input";
 import { UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
+import { AuthUser } from "src/commons/type/context";
 
 @Resolver(() => Comment)
 export class CommentsResolver {
@@ -22,29 +24,32 @@ export class CommentsResolver {
   @Mutation(() => Comment)
   createComment(
     @Args("createCommentInput") createCommentInput: CreateCommentInput,
-    @Context() context
+    @CurrentUser() user: AuthUser
   ) {
-    const userId = context.req.user.id;
-    return this.commentsService.create({ userId, createCommentInput });
+    return this.commentsService.create({
+      userId: user.id,
+      createCommentInput,
+    });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   updateComment(
     @Args("updateCommentInput") updateCommentInput: UpdateCommentInput,
-    @Context() context
+    @CurrentUser() user: AuthUser
   ) {
-    const userId = context.req.user.id;
-    return this.commentsService.update({ userId, updateCommentInput });
+    return this.commentsService.update({
+      userId: user.id,
+      updateCommentInput,
+    });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   removeComment(
     @Args("commentId", { nullable: true }) commentId: string,
-    @Context() context
+    @CurrentUser() user: AuthUser
   ) {
-    const userId = context.req.user.id;
-    return this.commentsService.remove({ commentId, userId });
+    return this.commentsService.remove({ commentId, userId: user.id });
   }
 }

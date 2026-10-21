@@ -3,7 +3,6 @@ import { UsersService } from "./users.service";
 import { User } from "./entities/user.entity";
 import { CreateUserInput } from "./dto/create-user.input";
 import { UpdateUserInput } from "./dto/update-user.input";
-import * as bcrypt from "bcrypt";
 import {
   CACHE_MANAGER,
   Inject,
@@ -13,21 +12,21 @@ import {
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { Cache } from "cache-manager";
 import { Board } from "src/boards/entities/board.entity";
-import { EmailService } from "src/email/email.service";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
+import { bearerToken } from "src/commons/auth/token.utils";
+import { AuthUser, IContext } from "src/commons/type/context";
+import { hashPassword } from "src/commons/utils/password";
 
 @Resolver(() => User)
 export class UsersResolver {
   constructor(
     private readonly usersService: UsersService, //
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache, //
-    private readonly emailService: EmailService
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
   ) {}
 
   @Mutation(() => User)
   async createUser(@Args("createUserInput") createUserInput: CreateUserInput) {
-    const password = createUserInput.password;
-
-    const hashedPassword = await bcrypt.hash(password, 10.2);
+    const hashedPassword = await hashPassword(createUserInput.password);
 
     const result = await this.usersService.create({
       createUserInput,
@@ -50,17 +49,15 @@ export class UsersResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => User)
   async fetchLoginedUser(
-    @Context() context: any //
+    @Context() context: IContext //
   ) {
-    const validToken = context.req.headers["authorization"].split(" ")[1];
+    const validToken = bearerToken(context.req.headers["authorization"]);
     // redis에서 로그아웃 상태확인하기
+    // (접두사 없는 원시 토큰 키다. 무인증 mutation도 같은 키를 쓸 수 있으므로 지우면 동작이 바뀐다)
     if (await this.cacheManager.get(validToken)) {
       throw new UnauthorizedException("로그인하지 않았습니다.");
     }
-    const userId = context.req.user.id;
-    const result = await this.usersService.findOne({ userId });
-
-    return result;
+    return this.usersService.findOneByUserId({ userId: context.req.user.id });
   }
 
   // 유저 email로 유저 찾기
@@ -86,15 +83,8 @@ export class UsersResolver {
   async fetchProjectsOfUser(
     @Args("userId", { type: () => String }) userId: string //
   ) {
-    const user = await this.usersService.findOneByUserId({ userId });
-    if (!user) {
-      throw new Error("유저가 존재하지 않습니다.");
-    }
-    const boards = await this.usersService.findBoards({ userId });
-    if (!boards) {
-      throw new Error("유저와 관련된 프로젝트가 없습니다.");
-    }
-    return boards;
+    await this.assertUserExists(userId);
+    return this.usersService.findBoards({ userId });
   }
 
   //유저가 현재 진행하고 있는 프로젝트 찾기
@@ -102,10 +92,7 @@ export class UsersResolver {
   async fetchProjectOfUser(
     @Args("userId", { type: () => String }) userId: string //
   ) {
-    const user = await this.usersService.findOneByUserId({ userId });
-    if (!user) {
-      throw new Error("유저가 존재하지 않습니다.");
-    }
+    await this.assertUserExists(userId);
 
     const board = await this.usersService.findBoard({ userId });
     if (!board) {
@@ -117,20 +104,18 @@ export class UsersResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => User)
   updateUser(
-    @Context() context: any,
+    @CurrentUser() user: AuthUser,
     @Args("updateUserInput") updateUserInput: UpdateUserInput
   ) {
-    const userId = context.req.user.id;
-    return this.usersService.update({ userId, updateUserInput });
+    return this.usersService.update({ userId: user.id, updateUserInput });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   async removeUser(
-    @Context() context: any //
+    @CurrentUser() user: AuthUser //
   ) {
-    const userId = context.req.user.id;
-    return this.usersService.remove({ userId });
+    return this.usersService.remove({ userId: user.id });
   }
 
   @Mutation(() => Boolean)
@@ -140,36 +125,14 @@ export class UsersResolver {
     return this.usersService.restore({ userId });
   }
 
-  // 비밀번호 변경을 위한 이메일 토큰 생성
-  @UseGuards(GqlAuthAccessGuard)
-  @Mutation(() => Boolean)
-  async sendPasswordEmailToken(
-    @Context() context: any //
-  ) {
-    const user = context.req.user;
-    // 이메일 토큰 생성하기 문자 6자리
-    const emailToken = Math.random().toString(36).substring(2, 8);
-
-    // 3분동안 유효한 이메일 토큰 생성
-    await this.cacheManager.set(user.email, emailToken, { ttl: 180 });
-
-    // 이메일 토큰 전송하기
-    await this.emailService.sendEmail({
-      email: user.email,
-      emailToken,
-      changePassword: true,
-    });
-    return true;
-  }
-
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   async updatePassword(
-    @Context() context: any,
+    @CurrentUser() user: AuthUser,
     @Args("password", { type: () => String }) password: string
   ) {
-    const user = context.req.user;
-    const hashedPassword = await bcrypt.hash(password, 10.2);
+    // 기존 동작 유지: usersService.updatePassword에서 한 번 더 해싱한다
+    const hashedPassword = await hashPassword(password);
 
     await this.usersService.updatePassword({
       email: user.email,
@@ -191,7 +154,13 @@ export class UsersResolver {
   async checkEmailDuplicate(
     @Args("email", { type: () => String }) email: string //
   ) {
-    const result = await this.usersService.checkEmailDuplicate({ email });
-    return result;
+    return this.usersService.checkEmailDuplicate({ email });
+  }
+
+  private async assertUserExists(userId: string) {
+    const user = await this.usersService.findOneByUserId({ userId });
+    if (!user) {
+      throw new Error("유저가 존재하지 않습니다.");
+    }
   }
 }

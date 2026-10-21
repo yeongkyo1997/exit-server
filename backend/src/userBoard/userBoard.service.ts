@@ -6,9 +6,11 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
+import { USER_RELATIONS } from "src/commons/relations";
 import { User } from "src/users/entities/user.entity";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { UserBoard } from "./entities/userBoard.entity";
+import { assertEnoughPoint, assertNoOngoingProject } from "./userBoard.rules";
 
 @Injectable()
 export class UserBoardService {
@@ -23,7 +25,7 @@ export class UserBoardService {
 
   //프로젝트를 신청한 유저들(리더 제외) 불러오는 함수
   async findAll({ userId, boardId, isAccepted }) {
-    const users = await this.userBoardRepository.find({
+    const userBoards = await this.userBoardRepository.find({
       where: {
         user: { id: userId },
         board: { id: boardId },
@@ -31,22 +33,28 @@ export class UserBoardService {
       },
       relations: ["board", "user"],
     });
-    const result = [];
-    for (let i = 0; i < users.length; i++) {
-      if (users[i]["user"].id !== users[i]["board"].leader) {
-        const userData = await this.userRepository.findOne({
-          where: { id: users[i]["user"].id },
-          relations: ["userImage", "tags", "keywords", "categories"],
-        });
-        users[i]["user"]["tags"] = userData["tags"];
-        users[i]["user"]["keywords"] = userData["keywords"];
-        users[i]["user"]["categories"] = userData["categories"];
-        users[i]["user"]["userImage"] = userData["userImage"];
-        result.push(users[i]);
-      }
+
+    // 행 순서대로 user.id, board.leader를 읽어 soft-delete된 유저·보드면 지금처럼 TypeError
+    const members = userBoards.filter(
+      (userBoard) => userBoard.user.id !== userBoard.board.leader
+    );
+    if (!members.length) return members;
+
+    const users = await this.userRepository.find({
+      where: { id: In([...new Set(members.map((member) => member.user.id))]) },
+      relations: USER_RELATIONS,
+    });
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    for (const member of members) {
+      const userData = userMap.get(member.user.id);
+      member.user.tags = userData.tags;
+      member.user.keywords = userData.keywords;
+      member.user.categories = userData.categories;
+      member.user.userImage = userData.userImage;
     }
 
-    return result;
+    return members;
   }
 
   async create({ userId, createUserBoardInput }) {
@@ -60,20 +68,7 @@ export class UserBoardService {
 
     if (checkDuplication) throw new Error("이미 신청한 프로젝트입니다.");
 
-    const checkOtherBoard = await this.userBoardRepository.find({
-      where: {
-        user: { id: userId },
-        isAccepted: true,
-      },
-      relations: ["board"],
-    });
-
-    const now = new Date(new Intl.DateTimeFormat("kr").format());
-    for (let i = 0; checkOtherBoard && i < checkOtherBoard.length; i++) {
-      if (checkOtherBoard[i].board === null) continue;
-      if (checkOtherBoard[i].board.endAt > now)
-        throw Error("이미 진행중인 프로젝트가 있습니다.");
-    }
+    await assertNoOngoingProject(this.userBoardRepository, userId);
 
     const user = await this.userRepository.findOne({
       where: { id: userId },
@@ -82,8 +77,7 @@ export class UserBoardService {
       where: { id: boardId },
     });
 
-    if (user.point < board.bail)
-      throw Error("보유 포인트가 보석금보다 적습니다.");
+    assertEnoughPoint(user, board);
 
     return await this.userBoardRepository.save({
       user,
@@ -160,7 +154,7 @@ export class UserBoardService {
     });
 
     if (userBoardData.length == 1 && userBoardData[0].isAccepted) {
-      const updateCount = await this.boardRepository.update(
+      await this.boardRepository.update(
         {
           id: boardInfo.id,
         },

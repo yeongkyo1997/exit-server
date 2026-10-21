@@ -1,8 +1,21 @@
-import { Injectable } from "@nestjs/common";
+import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
+import { Cache } from "cache-manager";
 import * as nodemailer from "nodemailer";
+import { generateEmailCode } from "./email-code";
 
 @Injectable()
 export class EmailService {
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache //
+  ) {}
+
+  // 3분동안 유효한 이메일 토큰을 만들어 redis에 저장하고 반환
+  async issueToken(email: string) {
+    const emailToken = generateEmailCode();
+    await this.cacheManager.set(email, emailToken, { ttl: 180 });
+    return emailToken;
+  }
+
   async sendEmail({
     email,
     emailToken,
@@ -55,19 +68,18 @@ export class EmailService {
           <p style="font-size: 20px; font-weight: 400; margin-bottom: 30px;">인증번호는 <span style="font-weight: 700;">${emailToken}</span> 입니다.</p>
           `;
 
+    // 새 비밀번호 > 비밀번호 변경 > 이메일 인증 순으로 고른다
+    const [subject, html] = newPassword
+      ? ["새로운 비밀번호 발급", htmlForPassword]
+      : changePassword
+      ? ["비밀번호 변경 인증번호", htmlForChangePassword]
+      : ["이메일 인증", htmlForEmail];
+
     const message = {
       from: process.env.EMAIL_AUTH_EMAIL,
       to: email,
-      subject: newPassword
-        ? "새로운 비밀번호 발급"
-        : changePassword
-        ? "비밀번호 변경 인증번호"
-        : "이메일 인증",
-      html: newPassword
-        ? htmlForPassword
-        : changePassword
-        ? htmlForChangePassword
-        : htmlForEmail,
+      subject,
+      html,
     };
     await transporter.sendMail(message).then((info) => {
       console.log("Email sent: " + info.response);

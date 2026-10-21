@@ -2,14 +2,11 @@ import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { BoardImagesService } from "./board-images.service";
 import { BoardImage } from "./entities/board-image.entity";
 import { FileUpload, GraphQLUpload } from "graphql-upload";
-import { FilesService } from "src/files/files.service";
 
 @Resolver()
 export class BoardImagesResolver {
   constructor(
-    private readonly boardImagesService: BoardImagesService, //
-
-    private readonly filesService: FilesService
+    private readonly boardImagesService: BoardImagesService //
   ) {}
 
   @Mutation(() => String)
@@ -37,11 +34,4 @@ export class BoardImagesResolver {
   ) {
     return this.boardImagesService.delete({ boardImageId });
   }
-
-  // @Mutation(() => Boolean)
-  // async deleteBoardImage(
-  //   @Args("url") url: string //
-  // ) {
-  //   return await this.filesService.remove({ url });
-  // }
 }

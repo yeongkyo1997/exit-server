@@ -3,22 +3,18 @@ import { CommentsService } from "./comments.service";
 import { CommentsResolver } from "./comments.resolver";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Comment } from "./entities/comment.entity";
-import { SubCommentsService } from "src/sub-comments/sub-comments.service";
-import { User } from "src/users/entities/user.entity";
-import { SubComment } from "src/sub-comments/entities/sub-comment.entity";
+import { SubCommentsModule } from "src/sub-comments/sub-comments.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Comment, //
-      User,
-      SubComment,
     ]),
+    SubCommentsModule,
   ],
   providers: [
     CommentsResolver, //
     CommentsService,
-    SubCommentsService,
   ],
 })
 export class CommentsModule {}

@@ -1,26 +1,20 @@
-import {
-  ConflictException,
-  UnprocessableEntityException,
-  UseGuards,
-} from "@nestjs/common";
-import { Args, Context, Int, Mutation, Query, Resolver } from "@nestjs/graphql";
+import { UseGuards } from "@nestjs/common";
+import { Args, Int, Mutation, Query, Resolver } from "@nestjs/graphql";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
-import { IContext } from "src/commons/type/context";
-import { IamportService } from "../iamport/iamport.service";
+import { AuthUser } from "src/commons/type/context";
 import { Payment } from "./entities/payment.entity";
 import { PaymentsService } from "./payments.service";
 
 @Resolver()
 export class PaymentsResolver {
   constructor(
-    private readonly paymentsService: PaymentsService, //
-    private readonly iamportService: IamportService
+    private readonly paymentsService: PaymentsService //
   ) {}
 
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => [Payment])
-  async fetchPayments(@Context() context) {
-    const user = context.req.user;
+  async fetchPayments(@CurrentUser() user: AuthUser) {
     return this.paymentsService.findByUser({ user });
   }
 
@@ -29,30 +23,9 @@ export class PaymentsResolver {
   async createPayment(
     @Args("impUid") impUid: string,
     @Args({ name: "amount", type: () => Int }) amount: number,
-    @Context() context: IContext
+    @CurrentUser() user: AuthUser
   ) {
-    const user = context.req.user;
-
-    // impUid는 아임포트 API 경로에 그대로 들어가므로 정해진 형식만 허용한다
-    if (!/^imp_[0-9]+$/.test(impUid))
-      throw new UnprocessableEntityException("잘못된 결제 번호입니다.");
-
-    const access_Token = await this.iamportService.getToken();
-
-    // 클라이언트가 보낸 금액이 아니라 아임포트에 실제로 결제된 상태와 금액을 기준으로 검증
-    const iamportPayment = await this.iamportService.verifyToken({
-      accessToken: access_Token,
-      impUid,
-    });
-    if (iamportPayment?.status !== "paid")
-      throw new UnprocessableEntityException("결제가 완료되지 않았습니다.");
-    if (iamportPayment.amount - (iamportPayment.cancel_amount ?? 0) !== amount)
-      throw new UnprocessableEntityException("결제 금액이 일치하지 않습니다.");
-
-    const validPayment = await this.paymentsService.findStatus({ impUid });
-    if (validPayment) throw new ConflictException("이미 추가된 결제건입니다.");
-
-    return this.paymentsService.create({ impUid, amount, user });
+    return this.paymentsService.pay({ impUid, amount, user });
   }
 
   @UseGuards(GqlAuthAccessGuard)
@@ -62,33 +35,6 @@ export class PaymentsResolver {
     @Args({ name: "amount", type: () => Int }) amount: number,
     @Args("user") user: string
   ) {
-    const paymentInf = await this.paymentsService.findStatus({ impUid });
-    if (!paymentInf)
-      throw new UnprocessableEntityException("취소할 결제 내역이 없습니다.");
-
-    // 결제 취소금액이 다르면
-    if (paymentInf.amount !== amount)
-      throw new ConflictException("취소금액이 다릅니다.");
-
-    const accessToken = await this.iamportService.getToken();
-
-    const validCancel = await this.iamportService.verifyToken({
-      accessToken,
-      impUid,
-    });
-
-    if (validCancel.data.response.status === "cancelled")
-      throw new ConflictException("이미 결제가 취소되었습니다.");
-
-    await this.iamportService.cancelPayment({
-      accessToken,
-      impUid,
-    });
-
-    return this.paymentsService.createCancel({
-      impUid,
-      amount,
-      user,
-    });
+    return this.paymentsService.cancel({ impUid, amount, user });
   }
 }

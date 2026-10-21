@@ -1,10 +1,12 @@
-import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { UserBoardService } from "./userBoard.service";
 import { UserBoard } from "./entities/userBoard.entity";
 import { CreateUserBoardInput } from "./dto/create-userBoard.input";
 import { UpdateUserBoardInput } from "./dto/update-userBoard.input";
 import { UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
+import { AuthUser } from "src/commons/type/context";
 
 @Resolver(() => UserBoard)
 export class UserBoardResolver {
@@ -25,11 +27,13 @@ export class UserBoardResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => UserBoard)
   createUserBoard(
-    @Context() context: any,
+    @CurrentUser() user: AuthUser,
     @Args("createUserBoardInput") createUserBoardInput: CreateUserBoardInput
   ) {
-    const userId = context.req.user.id;
-    return this.userBoardService.create({ userId, createUserBoardInput });
+    return this.userBoardService.create({
+      userId: user.id,
+      createUserBoardInput,
+    });
   }
 
   @Mutation(() => UserBoard)
@@ -42,11 +46,14 @@ export class UserBoardResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => [String])
   removeUserBoards(
-    @Context() context: any,
+    @CurrentUser() user: AuthUser,
     @Args("userId", { nullable: true }) userId: string, //
     @Args("boardId", { nullable: true }) boardId: string //
   ) {
-    const requesterId = context.req.user.id;
-    return this.userBoardService.removeAll({ requesterId, userId, boardId });
+    return this.userBoardService.removeAll({
+      requesterId: user.id,
+      userId,
+      boardId,
+    });
   }
 }
