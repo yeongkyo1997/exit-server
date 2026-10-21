@@ -4,6 +4,7 @@ import { graphqlUploadExpress } from "graphql-upload";
 import { AppModule } from "./app.module";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { join } from "path";
+import { ALLOWED_ORIGINS } from "./commons/constants";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.useGlobalPipes(new ValidationPipe());
@@ -18,7 +19,7 @@ async function bootstrap() {
       "Accept",
     ],
     credentials: true,
-    origin: ["http://localhost:3000", "https://ex1t.shop"],
+    origin: ALLOWED_ORIGINS,
     exposedHeaders: ["Authorization", "Set-Cookie", "Cookie"],
   });
   app.useStaticAssets(join(__dirname, "..", "static"));

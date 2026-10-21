@@ -16,13 +16,8 @@ export class PointHistoryService {
       relations: ["user"],
       order: { createdAt: "DESC" },
       take: 5,
-      skip: 0,
     });
   }
-
-  // findOne(id: string) {
-  //   return `This action returns a #${id} pointHistory`;
-  // }
 
   async create({ userId, createPointHistoryInput }) {
     return await this.pointHistoryRepository.save({
@@ -42,6 +37,6 @@ export class PointHistoryService {
     const result = await this.pointHistoryRepository.delete({
       id: pointHistoryId,
     });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 }

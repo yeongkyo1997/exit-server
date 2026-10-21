@@ -1,8 +1,10 @@
-import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { PointHistoryService } from "./point-history.service";
 import { PointHistory } from "./entities/point-history.entity";
 import { UseGuards } from "@nestjs/common";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { AuthUser } from "src/commons/type/context";
 import { CreatePointHistoryInput } from "./dto/create-point-history.input";
 import { UpdatePointHistoryInput } from "./dto/update-point-history.input";
 
@@ -15,10 +17,9 @@ export class PointHistoryResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => [PointHistory])
   fetchLoginPointHistories(
-    @Context() context //
+    @CurrentUser() user: AuthUser //
   ) {
-    const userId = context.req.user.id;
-    return this.pointHistoryService.findAll({ userId });
+    return this.pointHistoryService.findAll({ userId: user.id });
   }
 
   @Query(() => [PointHistory])
@@ -28,26 +29,22 @@ export class PointHistoryResolver {
     return this.pointHistoryService.findAll({ userId });
   }
 
-  // @Query(() => PointHistory)
-  // fetchPointHistory(@Args("id") id: string) {
-  //   return this.pointHistoryService.findOne(id);
-  // }
-
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => PointHistory)
   createPointHistory(
-    @Context() context,
+    @CurrentUser() user: AuthUser,
     @Args("createPointHistoryInput")
     createPointHistoryInput: CreatePointHistoryInput //
   ) {
-    const userId = context.req.user.id;
-    return this.pointHistoryService.create({ userId, createPointHistoryInput });
+    return this.pointHistoryService.create({
+      userId: user.id,
+      createPointHistoryInput,
+    });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => PointHistory)
   updatePointHistory(
-    @Context() context,
     @Args("pointHistoryId") pointHistoryId: string, //
     @Args("updatePointHistoryInput")
     updatePointHistoryInput: UpdatePointHistoryInput

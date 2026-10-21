@@ -38,6 +38,6 @@ export class BoardImagesService {
     const result = await this.boardImageRepository.softDelete({
       id: boardImageId,
     });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 }

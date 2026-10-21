@@ -1,6 +1,8 @@
 import { UseGuards } from "@nestjs/common";
-import { Resolver, Query, Args, Mutation, Context } from "@nestjs/graphql";
+import { Resolver, Query, Args, Mutation } from "@nestjs/graphql";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
+import { AuthUser } from "src/commons/type/context";
 import { ChatService } from "./chat.service";
 import { ChatMessage } from "./entities/chatMessage.entity";
 import { ChatRoom } from "./entities/chatRoom.entity";
@@ -12,27 +14,19 @@ export class ChatResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => ChatRoom)
   createRoom(
-    @Context() context: any, //
+    @CurrentUser() user: AuthUser, //
     @Args("nickname") nickname: string
   ) {
-    const currentUser = {
-      id: context.req.user.id,
-      email: context.req.user.email,
-    };
-    return this.chatService.create({ nickname, currentUser });
+    return this.chatService.create({ nickname, currentUser: user });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => ChatRoom)
   connectionRoom(
-    @Context() context: any, //
+    @CurrentUser() user: AuthUser, //
     @Args("hostNickname") hostNickname: string
   ) {
-    const currentUser = {
-      id: context.req.user.id,
-      email: context.req.user.email,
-    };
-    return this.chatService.join({ currentUser, hostNickname });
+    return this.chatService.join({ currentUser: user, hostNickname });
   }
 
   @UseGuards(GqlAuthAccessGuard)

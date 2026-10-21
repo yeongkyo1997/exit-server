@@ -54,26 +54,16 @@ export class ChatService {
       where: { user: { id: currentUser.id } },
     });
 
-    let result;
-    for (let i = 0; i < host.length; i++) {
-      for (let j = 0; j < me.length; j++) {
-        if (host[i].room === me[j].room) {
-          result = host[i];
-        }
-      }
-    }
-
-    return result;
+    // 겹치는 방이 여러 개면 host 순서상 마지막 방
+    const myRooms = new Set(me.map((el) => el.room));
+    return host.filter((el) => myRooms.has(el.room)).pop();
   }
 
   async load({ room }) {
-    const result = await this.chatMessageRepository.find({
+    return await this.chatMessageRepository.find({
       where: { room: room },
       order: { createdAt: "ASC" },
       relations: ["user"],
     });
-
-    console.log(result, "result");
-    return result;
   }
 }

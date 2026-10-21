@@ -1,36 +1,21 @@
-import { Resolver, Query, Mutation, Args, Context } from "@nestjs/graphql";
+import { Resolver, Query, Mutation, Args } from "@nestjs/graphql";
 import { BoardsService } from "./boards.service";
 import { Board } from "./entities/board.entity";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { UpdateBoardInput } from "./dto/update-board.input";
-import { ElasticsearchService } from "@nestjs/elasticsearch";
-import {
-  CACHE_MANAGER,
-  Inject,
-  UnprocessableEntityException,
-  UseGuards,
-} from "@nestjs/common";
+import { UnprocessableEntityException, UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
-import { Cache } from "cache-manager";
+import { CurrentUser } from "src/commons/auth/current-user.decorator";
+import { AuthUser } from "src/commons/type/context";
 import { FileUpload, GraphQLUpload } from "graphql-upload";
 import { FilesService } from "src/files/files.service";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
 
 @Resolver(() => Board)
 export class BoardsResolver {
   constructor(
     private readonly boardsService: BoardsService, //
 
-    private readonly elasticsearchService: ElasticsearchService,
-
-    private readonly filesService: FilesService,
-
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManger: Cache,
-
-    @InjectRepository(Board)
-    private readonly boardRepository: Repository<Board>
+    private readonly filesService: FilesService
   ) {}
 
   @Query(() => [Board])
@@ -83,49 +68,15 @@ export class BoardsResolver {
     @Args("keywordName", { nullable: true }) keywordName: string,
     @Args("search", { nullable: true }) search: string
   ) {
-    // 검색어가 없다면 모든 상품을 보여준다.
-    if (!search)
-      return this.boardsService.findAll({
-        isSuccess,
-        status,
-        page,
-        tagName,
-        categoryName,
-        keywordName,
-      });
-
-    // 검색어가 1글자 이하라면 에러를 발생시킨다.
-    if (search.length <= 1)
-      throw new Error("검색어는 2글자 이상 입력해주세요.");
-
-    // 검색어에 공백만 있다면 에러를 발생시킨다.
-    if (search.match(/^\s+$/)) throw new Error("검색어를 입력해주세요.");
-
-    // redis에 검색어가 저장되어있는지 확인한다.
-    // if (await this.cacheManger.get(search)) {
-    //   return await this.cacheManger.get(search);
-    // }
-
-    // elasticsearch에서 검색어로 검색한다.
-    const searchResult = await this.elasticsearchService.search({
-      index: "teamboard",
-      body: {
-        query: {
-          multi_match: {
-            query: search,
-            fields: ["title", "description"],
-          },
-        },
-      },
+    return this.boardsService.search({
+      isSuccess,
+      status,
+      page,
+      tagName,
+      categoryName,
+      keywordName,
+      search,
     });
-
-    // elasticsearch 검색 결과의 id로 DB에서 최신 게시글을 조회한다.
-    const ids = searchResult.hits.hits.map((item) => item._id);
-    const result = await this.boardsService.findAllByIds({ ids });
-
-    // redis에 검색어와 검색결과를 저장한다.
-    await this.cacheManger.set(search, result, { ttl: 60 });
-    return result;
   }
 
   @Query(() => [Board])
@@ -159,19 +110,20 @@ export class BoardsResolver {
   @Query(() => Board)
   fetchBoardRandom(
     @Args("categoryId") categoryId: string, //
-    @Context() context
+    @CurrentUser() user: AuthUser
   ) {
-    const userId = context.req.user.id;
-    return this.boardsService.randomBoardByCategory({ userId, categoryId });
+    return this.boardsService.randomBoardByCategory({
+      userId: user.id,
+      categoryId,
+    });
   }
 
   @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Board)
   createBoard(
     @Args("createBoardInput") createBoardInput: CreateBoardInput, //
-    @Context() context
+    @CurrentUser() leader: AuthUser
   ) {
-    const leader = context.req.user;
     return this.boardsService.create({ leader, createBoardInput });
   }
 
@@ -180,9 +132,8 @@ export class BoardsResolver {
   async updateBoard(
     @Args("boardId") boardId: string,
     @Args("updateBoardInput") updateBoardInput: UpdateBoardInput, //
-    @Context() context
+    @CurrentUser() leader: AuthUser
   ) {
-    const leader = context.req.user;
     return this.boardsService.update({ leader, boardId, updateBoardInput });
   }
 
@@ -190,9 +141,8 @@ export class BoardsResolver {
   @Mutation(() => String)
   async updateBoardFinish(
     @Args("boardId") boardId: string, //
-    @Context() context: any
+    @CurrentUser() user: AuthUser
   ) {
-    const user = context.req.user;
     return this.boardsService.updateFinish({ boardId, userId: user.id });
   }
 
@@ -200,9 +150,8 @@ export class BoardsResolver {
   @Mutation(() => Boolean)
   removeBoard(
     @Args("boardId") boardId: string, //
-    @Context() context
+    @CurrentUser() leader: AuthUser
   ) {
-    const leader = context.req.user;
     return this.boardsService.remove({ leader, boardId });
   }
 
@@ -235,9 +184,7 @@ export class BoardsResolver {
   async removeZipFile(
     @Args("boardId") boardId: string //
   ) {
-    const board = await this.boardRepository.findOne({
-      where: { id: boardId },
-    });
+    const board = await this.boardsService.findOne({ boardId });
     if (!board) {
       throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
     }

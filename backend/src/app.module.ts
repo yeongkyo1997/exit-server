@@ -18,7 +18,6 @@ import * as redisStore from "cache-manager-redis-store";
 import { RedisClientOptions } from "redis";
 import { AuthsModule } from "./auths/auths.module";
 import { EmailModule } from "./email/email.module";
-import { IamportService } from "./iamport/iamport.service";
 import { ChatModule } from "./chat/chat.module";
 import { UserBoardModule } from "./userBoard/userBoard.module";
 import { AppController } from "./app.controller";
@@ -26,6 +25,7 @@ import { ConfigModule } from "@nestjs/config";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { TempModule } from "./temp/temp.module";
 import { PointHistoryModule } from "./point-history/point-history.module";
+import { ALLOWED_ORIGINS } from "./commons/constants";
 
 @Module({
   imports: [
@@ -35,7 +35,7 @@ import { PointHistoryModule } from "./point-history/point-history.module";
       autoSchemaFile: "src/commons/graphql/schema.gql",
       context: ({ req, res }) => ({ req, res }),
       cors: {
-        origin: ["http://localhost:3000", "https://ex1t.shop"],
+        origin: ALLOWED_ORIGINS,
         methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
         preflightContinue: false,
         optionsSuccessStatus: 204,
@@ -77,7 +77,6 @@ import { PointHistoryModule } from "./point-history/point-history.module";
     TempModule,
     PointHistoryModule,
   ],
-  providers: [IamportService],
   controllers: [AppController],
 })
 export class AppModule {}

@@ -38,6 +38,6 @@ export class UserImagesService {
     const result = await this.userImageRepository.softDelete({
       id: userImageId,
     });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 }

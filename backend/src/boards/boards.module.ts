@@ -9,11 +9,10 @@ import { Category } from "src/categories/entities/category.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { ElasticsearchModule } from "@nestjs/elasticsearch";
-import { FilesService } from "src/files/files.service";
 import { User } from "src/users/entities/user.entity";
 import { PointHistory } from "src/point-history/entities/point-history.entity";
-import { Attendance } from "src/attendance/entities/attendance.entity";
-import { AttendanceService } from "src/attendance/attendance.service";
+import { AttendanceModule } from "src/attendance/attendance.module";
+import { FilesModule } from "src/files/files.module";
 
 @Module({
   imports: [
@@ -26,17 +25,16 @@ import { AttendanceService } from "src/attendance/attendance.service";
       BoardImage,
       User,
       PointHistory,
-      Attendance,
     ]),
     ElasticsearchModule.register({
       node: "http://elasticsearch:9200",
     }),
+    AttendanceModule,
+    FilesModule,
   ],
   providers: [
     BoardsResolver, //
     BoardsService,
-    AttendanceService,
-    FilesService,
   ],
 })
 export class BoardsModule {}

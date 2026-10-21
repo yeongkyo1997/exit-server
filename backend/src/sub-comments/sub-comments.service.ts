@@ -1,38 +1,29 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "src/users/entities/user.entity";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { SubComment } from "./entities/sub-comment.entity";
 
 @Injectable()
 export class SubCommentsService {
   constructor(
     @InjectRepository(SubComment)
-    private readonly subCommentRepository: Repository<SubComment>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly subCommentRepository: Repository<SubComment>
   ) {}
 
   async findAll({ userId, commentId }) {
-    const subCommentData = await this.subCommentRepository.find({
+    const subComments = await this.subCommentRepository.find({
       where: {
         user: { id: userId },
         comment: { id: commentId },
       },
-      relations: ["comment", "user"],
+      relations: ["comment", "user", "user.userImage"],
       order: { createdAt: "ASC" },
     });
 
-    for (let i = 0; i < subCommentData.length; i++) {
-      const userData = await this.userRepository.findOne({
-        where: { id: subCommentData[i]["user"]["id"] },
-        relations: ["userImage"],
-      });
+    // 버그 유지: 작성자가 soft-delete된 대댓글은 user가 null이라 여기서 TypeError
+    subComments.map((subComment) => subComment.user.id);
 
-      subCommentData[i]["user"]["userImage"] = userData["userImage"];
-    }
-
-    return subCommentData;
+    return subComments;
   }
 
   async create({ userId, createSubCommentInput }) {
@@ -72,22 +63,12 @@ export class SubCommentsService {
     // commentId가 없으면 where 조건이 빠져 모든 대댓글이 조회되므로 아무것도 지우지 않는다
     if (!commentId) return [];
 
-    const deleteData = await this.subCommentRepository.find({
+    const subComments = await this.subCommentRepository.find({
+      select: { id: true },
       where: { comment: { id: commentId } },
-      relations: ["comment", "user"],
     });
-
-    const showResult = [];
-    for (let i = 0; i < deleteData.length; i++) {
-      const result = await this.subCommentRepository.softDelete({
-        id: deleteData[i].id,
-      });
-      showResult.push(
-        result.affected
-          ? `${deleteData[i].id} deleted`
-          : `${deleteData[i].id} delete fail`
-      );
-    }
-    return showResult;
+    const ids = subComments.map((subComment) => subComment.id);
+    if (ids.length) await this.subCommentRepository.softDelete({ id: In(ids) });
+    return ids;
   }
 }

@@ -3,10 +3,10 @@ import { BoardImagesService } from "./board-images.service";
 import { BoardImagesResolver } from "./board-images.resolver";
 import { BoardImage } from "./entities/board-image.entity";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { FilesService } from "src/files/files.service";
+import { FilesModule } from "src/files/files.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BoardImage])],
-  providers: [BoardImagesResolver, BoardImagesService, FilesService],
+  imports: [TypeOrmModule.forFeature([BoardImage]), FilesModule],
+  providers: [BoardImagesResolver, BoardImagesService],
 })
 export class BoardImagesModule {}

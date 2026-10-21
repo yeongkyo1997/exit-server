@@ -63,7 +63,7 @@ export class TagsService {
       throw new Error("존재하지 않는 태그입니다.");
     }
     const result = await this.tagsRepository.softDelete({ name });
-    return result.affected ? true : false;
+    return !!result.affected;
   }
 
   /**

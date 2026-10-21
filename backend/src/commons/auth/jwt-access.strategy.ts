@@ -2,6 +2,11 @@ import { UnauthorizedException, CACHE_MANAGER, Inject } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Cache } from "cache-manager";
 import { Strategy, ExtractJwt } from "passport-jwt";
+import {
+  accessTokenBlacklistKey,
+  bearerToken,
+  fromJwtPayload,
+} from "src/commons/auth/token.utils";
 
 export class JwtAccessStrategy extends PassportStrategy(Strategy, "access") {
   constructor(
@@ -16,17 +21,13 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, "access") {
   }
 
   async validate(req, payload) {
-    const accessToken = req.headers["authorization"].split(" ")[1];
+    const accessToken = bearerToken(req.headers["authorization"]);
     const validation = await this.cacheManager.get(
-      `accessToken:${accessToken}`
+      accessTokenBlacklistKey(accessToken)
     );
 
     if (validation) throw new UnauthorizedException();
 
-    return {
-      email: payload.email,
-      id: payload.sub,
-      nickname: payload.nickname,
-    };
+    return fromJwtPayload(payload);
   }
 }
