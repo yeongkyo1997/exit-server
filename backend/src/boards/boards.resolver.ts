@@ -119,41 +119,13 @@ export class BoardsResolver {
       },
     });
 
-    // 최신 정보를 result에 저장한다.
-    const result = searchResult.hits.hits.map((item) => item._source);
-
-    const result2 = result.map((item: object) => {
-      const boardImage =
-        item["boardImage"] == null
-          ? null
-          : item["boardImage"].replace("{", "").replace("}", "");
-
-      const boardImageId =
-        boardImage == null ? "" : boardImage.split(",")[0].split(":")[1];
-
-      const boardImageUrl =
-        boardImage == null ? "" : boardImage.split(",")[1].split(":")[1];
-
-      const tags = this.boardsService.myJsonParse(item["tags"]);
-      const keywords = this.boardsService.myJsonParse(item["keywords"]);
-      const categories = this.boardsService.myJsonParse(item["categories"]);
-      return {
-        ...item,
-        startAt: new Date(item["startAt"]),
-        endAt: new Date(item["endAt"]),
-        createdAt: new Date(item["createdAt"]),
-        closedAt: new Date(item["closedAt"]),
-        // boardImage가 있다면 boardImageId와 boardImageUrl을 추가하고 없다면 boardImage 넣지 않는다.
-        boardImage: { id: boardImageId, url: boardImageUrl },
-        tags,
-        keywords,
-        categories,
-      };
-    });
+    // elasticsearch 검색 결과의 id로 DB에서 최신 게시글을 조회한다.
+    const ids = searchResult.hits.hits.map((item) => item._id);
+    const result = await this.boardsService.findAllByIds({ ids });
 
     // redis에 검색어와 검색결과를 저장한다.
-    await this.cacheManger.set(search, result2, { ttl: 60 });
-    return result2;
+    await this.cacheManger.set(search, result, { ttl: 60 });
+    return result;
   }
 
   @Query(() => [Board])

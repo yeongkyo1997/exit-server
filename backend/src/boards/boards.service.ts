@@ -8,7 +8,7 @@ import { PointHistory } from "src/point-history/entities/point-history.entity";
 import { Tag } from "src/tags/entities/tag.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { User } from "src/users/entities/user.entity";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, In, Repository } from "typeorm";
 import { Board } from "./entities/board.entity";
 
 interface board {
@@ -64,6 +64,20 @@ export class BoardsService {
       take: 10,
       skip: (page - 1) * 10 || 0,
     });
+  }
+
+  async findAllByIds({ ids }: { ids: string[] }) {
+    if (!ids.length) return [];
+
+    const boards = await this.boardRepository.find({
+      where: { id: In(ids) },
+      relations: ["boardImage", "tags", "keywords", "categories"],
+    });
+
+    // 전달받은 ids 순서(elasticsearch 관련도 순)대로 정렬하고, 삭제된 게시글은 제외한다.
+    return ids
+      .map((id) => boards.find((board) => board.id === id))
+      .filter(Boolean);
   }
 
   findAllByLikes({
@@ -501,17 +515,5 @@ export class BoardsService {
     } else {
       return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
     }
-  }
-
-  myJsonParse(data: string) {
-    if (!data) return [];
-    return data.split("},{").map((el: string) => {
-      const id = el.split(",")[0].split(":")[1];
-      const name = el.split(",")[1].split(":")[1].replace("}", "");
-      return {
-        id,
-        name,
-      };
-    });
   }
 }
