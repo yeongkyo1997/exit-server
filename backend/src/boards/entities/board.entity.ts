@@ -101,7 +101,7 @@ export class Board {
 
   @JoinColumn()
   @OneToOne(() => BoardImage)
-  @Field(() => BoardImage)
+  @Field(() => BoardImage, { nullable: true })
   boardImage: BoardImage;
 
   @JoinTable()
