@@ -69,6 +69,9 @@ export class SubCommentsService {
   }
 
   async removeAll({ commentId }) {
+    // commentId가 없으면 where 조건이 빠져 모든 대댓글이 조회되므로 아무것도 지우지 않는다
+    if (!commentId) return [];
+
     const deleteData = await this.subCommentRepository.find({
       where: { comment: { id: commentId } },
       relations: ["comment", "user"],

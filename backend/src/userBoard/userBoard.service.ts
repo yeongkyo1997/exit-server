@@ -1,4 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
@@ -130,22 +135,34 @@ export class UserBoardService {
     });
   }
 
-  async removeAll({ userId, boardId }) {
+  async removeAll({ requesterId, userId, boardId }) {
+    // boardId가 없으면 where 조건이 빠져 모든 프로젝트의 신청 내역이 지워진다
+    if (!boardId) throw new BadRequestException("boardId가 필요합니다.");
+
+    const boardInfo = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!boardInfo)
+      throw new NotFoundException("존재하지 않는 프로젝트입니다.");
+
+    // 리더는 멤버를(userId를 생략하면 전체를) 내보낼 수 있고, 그 외에는 본인 신청만 취소할 수 있다
+    if (boardInfo.leader !== requesterId && userId !== requesterId)
+      throw new ForbiddenException(
+        "본인의 신청이거나 프로젝트 리더일 때만 삭제할 수 있습니다."
+      );
+
     const userBoardData = await this.userBoardRepository.find({
       where: {
         user: { id: userId },
-        board: { id: boardId },
+        board: { id: boardInfo.id },
       },
       relations: ["board", "user"],
     });
 
     if (userBoardData.length == 1 && userBoardData[0].isAccepted) {
-      const boardInfo = await this.boardRepository.findOne({
-        where: { id: boardId },
-      });
       const updateCount = await this.boardRepository.update(
         {
-          id: boardId,
+          id: boardInfo.id,
         },
         {
           countMember: boardInfo.countMember - 1,

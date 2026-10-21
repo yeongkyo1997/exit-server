@@ -1,15 +1,13 @@
 import { CreateUserInput } from "./create-user.input";
-import { Field, InputType, Int, PartialType } from "@nestjs/graphql";
+import { Field, InputType, OmitType, PartialType } from "@nestjs/graphql";
 
+// email/password는 인증 절차가 있는 별도 mutation으로만 바꾸고, point는 결제·정산으로만 바뀐다
 @InputType()
-export class UpdateUserInput extends PartialType(CreateUserInput) {
-  //FE 실험용(나중에 최종 배포할 때는 없애야 함)
-
+export class UpdateUserInput extends PartialType(
+  OmitType(CreateUserInput, ["email", "password"] as const)
+) {
   @Field(() => String, { nullable: true })
   userUrl: string;
-
-  @Field(() => Int, { nullable: true })
-  point: number;
 
   @Field(() => [String], { nullable: true })
   tags: string[];

@@ -1,7 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersService } from "src/users/users.service";
 import * as bcrypt from "bcrypt";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class AuthsService {
@@ -13,7 +14,7 @@ export class AuthsService {
   async setRefreshToken({ user, res, req }) {
     const refreshToken = this.jwtService.sign(
       { email: user.email, sub: user.id, nickname: user.nickname },
-      { secret: "myRefreshKey", expiresIn: "2w" }
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: "2w" }
     );
 
     // 배포환경 (팀프로젝트)
@@ -43,17 +44,22 @@ export class AuthsService {
   getAccessToken({ user }) {
     return this.jwtService.sign(
       { email: user.email, sub: user.id, nickname: user.nickname },
-      { secret: "myAccessKey", expiresIn: "1h" }
+      { secret: process.env.JWT_ACCESS_SECRET, expiresIn: "1h" }
     );
   }
 
   async socialLogin({ req, res }) {
-    const user = await this.usersService.findOneByEmail({
+    // 이메일이 없으면 어떤 계정으로 로그인시킬지 알 수 없다
+    if (!req.user.email)
+      throw new UnauthorizedException("이메일 제공 동의가 필요합니다.");
+
+    let user = await this.usersService.findOneByEmail({
       email: req.user.email,
     });
 
     if (!user) {
-      const password = await bcrypt.hash(req.user.password, 10.2);
+      // 소셜 가입자는 비밀번호 로그인을 쓰지 않으므로 추측할 수 없는 임의 값을 저장한다
+      const password = await bcrypt.hash(randomBytes(32).toString("hex"), 10.2);
 
       const createUserInput = req.user;
 
@@ -61,13 +67,13 @@ export class AuthsService {
         url: "null",
       };
 
-      await this.usersService.create({
+      user = await this.usersService.create({
         createUserInput,
         password,
       });
     }
 
-    this.setRefreshToken({ user, res, req });
+    await this.setRefreshToken({ user, res, req });
 
     res.redirect("http://localhost:3000");
   }

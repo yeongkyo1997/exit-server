@@ -36,6 +36,14 @@ export class AuthsResolver {
       throw new UnprocessableEntityException("존재하지 않는 이메일입니다.");
     }
 
+    // 예전 소셜 가입자는 이메일이 비밀번호로 저장되어 있으므로 이메일과 같은 비밀번호는 거부
+    // (입력값은 대소문자만 바꿔도 같은 유저가 조회되므로 저장된 이메일과 비교한다)
+    if (password === user.email) {
+      throw new UnprocessableEntityException(
+        "이메일과 같은 비밀번호로는 로그인할 수 없습니다. 비밀번호를 재발급 받아주세요."
+      );
+    }
+
     // 3. 일치하는 유저가 있지만, 비밀번호가 일치하지 않으면!? 에러 발생
     const isAuth = await bcrypt.compare(password, user.password);
     if (!isAuth) {
@@ -67,8 +75,8 @@ export class AuthsResolver {
      * 인증이 되었는지 확인하는 로직
      */
     try {
-      jwt.verify(accessToken, "myAccessKey");
-      jwt.verify(refreshToken, "myRefreshKey");
+      jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET);
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     } catch {
       throw new UnauthorizedException();
     }

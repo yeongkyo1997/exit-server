@@ -12,9 +12,12 @@ export class JwtKakaoStrategy extends PassportStrategy(Strategy, "kakao") {
   }
 
   validate(accessToken, refreshToken, profile) {
+    // 카카오가 유효·인증 확인하지 않은 이메일로는 기존 계정에 연결하지 않는다
+    const account = profile._json.kakao_account;
+    const isVerified =
+      account?.is_email_valid !== false && account?.is_email_verified !== false;
     return {
-      email: profile._json.kakao_account.email,
-      password: profile._json.kakao_account.email,
+      email: isVerified ? account?.email : undefined,
       nickname: profile._json.properties.nickname,
     };
   }

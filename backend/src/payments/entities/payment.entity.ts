@@ -6,6 +6,7 @@ import {
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from "typeorm";
 
 export enum PAYMENT_TRANSACTION_STATUS_ENUM {
@@ -18,6 +19,8 @@ registerEnumType(PAYMENT_TRANSACTION_STATUS_ENUM, {
 });
 
 @Entity()
+// 같은 결제건(impUid)은 결제/취소 각각 한 번만 기록된다
+@Unique(["impUid", "status"])
 @ObjectType()
 export class Payment {
   @PrimaryGeneratedColumn("uuid")

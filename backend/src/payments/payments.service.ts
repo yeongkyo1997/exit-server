@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PointHistory } from "src/point-history/entities/point-history.entity";
 import { DataSource, Repository } from "typeorm";
@@ -92,6 +92,11 @@ export class PaymentsService {
       // ================================== rollback 되돌리기 =======================
       await queryRunner.rollbackTransaction();
       // ==========================================================================
+
+      // 같은 결제건이 동시에 들어오면 (impUid, status) unique 제약에 걸린다
+      if (error.code === "ER_DUP_ENTRY")
+        throw new ConflictException("이미 추가된 결제건입니다.");
+      throw error;
     } finally {
       // ================================== 연결 해제 ===============================
       await queryRunner.release();
