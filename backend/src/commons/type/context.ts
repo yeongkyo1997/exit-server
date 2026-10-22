@@ -14,4 +14,6 @@ export interface IUser {
 export interface IContext {
   req?: Request & IUser;
   res?: Response;
+  // 가드 없는 요청에서도 토큰으로 알아낸 요청자 (resolveViewer가 요청당 한 번만 계산해 둔다)
+  viewer?: Promise<AuthUser | null>;
 }

@@ -1,18 +1,28 @@
-import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
+import {
+  CACHE_MANAGER,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Cache } from "cache-manager";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, EntityManager, Repository } from "typeorm";
 import { Attendance } from "./entities/attendance.entity";
 import * as geolib from "geolib";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
 import { AuthUser } from "src/commons/type/context";
 import { toLocalDate } from "src/commons/utils/date";
+import { leaderLocationKey } from "src/commons/cache-keys";
 
 // 리더의 출석시간을 기준으로 10분 이후의 시간
 const attendanceWindowEnd = (attendedAt: Date) =>
   toLocalDate(attendedAt.getTime() + 10 * 60000);
+
+// where에 빈 값이 들어가면 TypeORM 0.3.9가 조건을 버려 아무 행이나 매칭되므로 조회 전에 거른다
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.length > 0;
 
 @Injectable()
 export class AttendanceService {
@@ -28,8 +38,6 @@ export class AttendanceService {
     @InjectRepository(Board)
     private readonly boardRepository: Repository<Board>,
 
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource
   ) {}
 
@@ -44,50 +52,77 @@ export class AttendanceService {
     longitude: number;
     boardId: string;
   }) {
-    const board = await this.boardRepository.findOne({
-      where: { id: boardId },
-    });
+    // 이 보드의 팀장이거나 승인된 팀원만 출석할 수 있다 (없는 보드도 같은 에러)
+    const board = await this.findBoardOfMember({ boardId, userId: user?.id });
+    if (!board) throw new ForbiddenException("유효하지 않은 유저입니다.");
 
-    const validate = await this.effectiveUser({ user });
-    if (!validate) {
-      throw new Error("유효하지 않은 유저입니다.");
-    }
+    return this.dataSource.transaction(async (manager) => {
+      // 같은 유저의 출석 요청은 하나씩 처리한다 (중복 확인과 저장 사이에 같은 유저의 다른 요청이 끼지 않게)
+      const lockedUser = await manager.findOne(User, {
+        where: { id: user.id },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!lockedUser)
+        throw new ForbiddenException("유효하지 않은 유저입니다.");
 
-    // 리더가 아니고(팀원일 경우) 리더가 캐시에 없으면 error
-    if (board.leader !== user.id) {
-      // 이미 출석한 유저인지 확인
-      // 버그 유지: await하지 않아 Promise를 검사하므로 항상 통과한다
-      if (!this.checkAttendance({ user })) {
-        throw new Error("이미 출석한 유저입니다.");
+      // 리더가 아니고(팀원일 경우) 리더가 캐시에 없으면 error
+      if (board.leader !== user.id) {
+        // 이미 출석한 유저인지 확인 (이 보드에서)
+        if (await this.hasAttended(manager, { board, userId: user.id })) {
+          throw new Error("이미 출석한 유저입니다.");
+        }
+        // 리더를 레디스에서 찾기
+        const isLeader = await this.getLeaderLocation(board.leader);
+        if (!isLeader) {
+          throw new Error("팀장이 출석을 활성화하지 않았습니다.");
+        }
+
+        // 출석 체크
+        return this.checkLocation({
+          manager,
+          user,
+          latitude,
+          longitude,
+          board,
+        });
       }
-      // 리더를 레디스에서 찾기
-      const isLeader = await this.cacheManager.get(board.leader);
-      if (!isLeader) {
-        throw new Error("팀장이 출석을 활성화하지 않았습니다.");
-      }
 
-      // 출석 체크
-      return this.checkLocation({ user, latitude, longitude, board });
-    }
+      // 리더인 경우
+      // 이미 출석한 경우
+      const isUser = await this.getLeaderLocation(user.id);
+      if (isUser) throw new Error("이미 출석이 활성화되었습니다.");
 
-    // 리더인 경우
-    // 이미 출석한 경우
-    const isUser = await this.cacheManager.get(user.id);
-    if (isUser) throw new Error("이미 출석이 활성화되었습니다.");
-
-    // 레디스에 위도 경도를 저장하고 ttl을 10분으로 설정
-    await this.cacheManager.set(user.id, `${latitude},${longitude}`, {
-      ttl: 600,
+      // 레디스에 위도 경도를 저장하고 ttl을 10분으로 설정
+      await this.cacheManager.set(
+        leaderLocationKey(user.id),
+        `${latitude},${longitude}`,
+        { ttl: 600 }
+      );
+      await this.checkLocation({ manager, user, latitude, longitude, board });
+      return true;
     });
-    await this.checkLocation({ user, latitude, longitude, board });
-    return true;
   }
 
-  async checkLocation({ user, latitude, longitude, board }) {
+  async checkLocation({
+    manager,
+    user,
+    latitude,
+    longitude,
+    board,
+  }: {
+    manager: EntityManager;
+    user: AuthUser;
+    latitude: number;
+    longitude: number;
+    board: Board;
+  }) {
     const leader = board.leader;
 
     // 리더와 현재 유저의 위치를 비교한다
-    const leaderLocation = await this.cacheManager.get(leader);
+    const leaderLocation = await this.getLeaderLocation(leader);
+    if (!leaderLocation) {
+      throw new Error("팀장이 출석을 활성화하지 않았습니다.");
+    }
     const userLocation = {
       latitude: Number(latitude),
       longitude: Number(longitude),
@@ -95,8 +130,8 @@ export class AttendanceService {
 
     // 리더의 현재 위치를 start로 설정
     const start = {
-      latitude: Number(leaderLocation.toString().split(",")[0]),
-      longitude: Number(leaderLocation.toString().split(",")[1]),
+      latitude: Number(leaderLocation.split(",")[0]),
+      longitude: Number(leaderLocation.split(",")[1]),
     };
 
     // 두 위치의 거리를 계산
@@ -106,13 +141,8 @@ export class AttendanceService {
     if (!distance) {
       throw new Error("출석이 불가능한 거리입니다.");
     } else {
-      // 이미 출석한 유저인지 확인
-      // 버그 유지: get()을 await하지 않고 객체를 키로 넘긴다
-      if (user === this.cacheManager.get(user))
-        throw new Error("이미 출석한 유저입니다.");
-
       // 출석 테이블에 저장
-      await this.attendanceRepository.save({
+      await manager.save(Attendance, {
         // 현재 시간 저장
         nickname: user.nickname,
         userId: user.id,
@@ -126,29 +156,64 @@ export class AttendanceService {
     }
   }
 
-  async effectiveUser({ user }) {
-    const currentUser = await this.userBoardRepository.findOne({
+  // 팀장이 활성화한 출석 위치("위도,경도"). 없거나 문자열이 아니면 null (= 활성화되지 않음)
+  private async getLeaderLocation(leaderUserId: string) {
+    if (!isNonEmptyString(leaderUserId)) return null;
+    const location = await this.cacheManager.get(
+      leaderLocationKey(leaderUserId)
+    );
+    return isNonEmptyString(location) ? location : null;
+  }
+
+  // 이 보드의 팀장(board.leader)이거나 승인된 팀원이면 보드를, 아니면(없는 보드 포함) null을 돌려준다
+  private async findBoardOfMember({
+    boardId,
+    userId,
+  }: {
+    boardId: string;
+    userId: string;
+  }) {
+    if (!isNonEmptyString(boardId) || !isNonEmptyString(userId)) return null;
+
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!board) return null;
+    if (board.leader === userId) return board;
+
+    const membership = await this.userBoardRepository.findOne({
       where: {
-        user: user,
+        user: { id: userId },
+        board: { id: boardId },
         isAccepted: true,
       },
     });
-
-    return !!currentUser;
+    return membership ? board : null;
   }
 
-  // leader의 최근 출석기록을 가져온다
+  // 출석 위치는 해당 프로젝트의 팀장이나 승인된 팀원만 볼 수 있다 (없는 보드와 비멤버는 같은 에러)
+  async assertBoardMember({
+    boardId,
+    userId,
+  }: {
+    boardId: string;
+    userId: string;
+  }) {
+    const board = await this.findBoardOfMember({ boardId, userId });
+    if (!board) {
+      throw new ForbiddenException("프로젝트 참여자만 볼 수 있습니다.");
+    }
+    return board;
+  }
+
+  // leader의 최근 출석기록을 가져온다 (닉네임은 중복될 수 있으므로 user id로 찾는다)
   private async findLeaderLatestAttendance(boardId: string) {
     const board = await this.boardRepository.findOne({
       where: { id: boardId },
     });
 
-    const leader = await this.userRepository.findOne({
-      where: { id: board.leader },
-    });
-
     return this.attendanceRepository.findOne({
-      where: { nickname: leader.nickname },
+      where: { userId: board.leader },
       order: { attendedAt: "DESC" },
     });
   }
@@ -215,45 +280,22 @@ export class AttendanceService {
     return this.getAllAttendancePercent({ board });
   }
 
-  // 이미 출석한 유저인지 확인
-  async checkAttendance({ user }) {
-    // 유저가 참석하고 있는 보드의 아이디를 가져온다
-    const board = await this.userBoardRepository.findOne({
+  // 이미 출석한 유저인지 확인: 출석 시각은 날짜만 저장되므로(toLocalDate), 이번에 저장할 값(오늘)으로
+  // 이 보드에 오늘 출석한 기록이 있는지 본다 (팀장의 최근 출석은 다른 날일 수 있어 기준으로 쓰지 않는다)
+  // (checkIn의 트랜잭션 안에서 같은 유저 행을 잠근 뒤 호출한다)
+  private async hasAttended(
+    manager: EntityManager,
+    { board, userId }: { board: Board; userId: string }
+  ) {
+    const count = await manager.count(Attendance, {
       where: {
-        user,
-        isAccepted: true,
-      },
-      relations: ["board"],
-    });
-
-    const leaderAttendance = await this.attendanceRepository.findOne({
-      where: {
-        userId: board.board.leader,
-      },
-      order: {
-        attendedAt: "DESC",
+        userId,
+        board: { id: board.id },
+        attendedAt: toLocalDate(),
       },
     });
 
-    // leader의 출석기록을 기준으로 10분 이내에 출석한 유저인지 확인
-    const attendance = await this.dataSource.manager
-      .createQueryBuilder(Attendance, "attendance")
-      .where(
-        "attendance.attendedAt >= :attendedAt AND attendance.attendedAt <= :finish",
-        {
-          attendedAt: leaderAttendance.attendedAt,
-          finish: attendanceWindowEnd(leaderAttendance.attendedAt),
-        }
-      )
-      .andWhere("attendance.nickname = :nickname", {
-        nickname: user.nickname,
-      })
-      .getOne();
-
-    if (!attendance) {
-      return true;
-    }
-    return false;
+    return count > 0;
   }
 
   // board에 남은 출석 가능한 시간을 반환
@@ -272,22 +314,27 @@ export class AttendanceService {
     )}초`;
   }
 
-  // 팀원의 현재 위치를 반환
-  async getLocationCrew({ boardId, userId }) {
-    const member = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-
+  // 팀원의 현재 위치를 반환 (닉네임은 중복될 수 있으므로 user id와 보드로 찾는다)
+  async getLocationCrew({
+    boardId,
+    userId,
+  }: {
+    boardId: string;
+    userId: string;
+  }) {
     // 팀원의 출석기록을 가져온다
-    const memberAttendance = await this.attendanceRepository.findOne({
-      where: {
-        nickname: member.nickname,
-        board: { id: boardId },
-      },
-      order: {
-        attendedAt: "DESC",
-      },
-    });
+    const memberAttendance =
+      isNonEmptyString(boardId) && isNonEmptyString(userId)
+        ? await this.attendanceRepository.findOne({
+            where: {
+              userId,
+              board: { id: boardId },
+            },
+            order: {
+              attendedAt: "DESC",
+            },
+          })
+        : null;
 
     // 출석기록이 없으면 에러를 반환
     if (!memberAttendance) {
@@ -298,9 +345,28 @@ export class AttendanceService {
     return `${memberAttendance.latitude},${memberAttendance.longitude}`;
   }
 
-  // 팀장의 현재 위치를 반환
-  async getLocationLeader({ boardId }) {
-    const leaderAttendance = await this.findLeaderLatestAttendance(boardId);
+  // 팀장의 현재 위치를 반환 (이 보드에서 팀장이 출석한 기록, user id 기준)
+  async getLocationLeader({ boardId }: { boardId: string }) {
+    const board = isNonEmptyString(boardId)
+      ? await this.boardRepository.findOne({ where: { id: boardId } })
+      : null;
+
+    const leaderAttendance = isNonEmptyString(board?.leader)
+      ? await this.attendanceRepository.findOne({
+          where: {
+            userId: board.leader,
+            board: { id: board.id },
+          },
+          order: {
+            attendedAt: "DESC",
+          },
+        })
+      : null;
+
+    // 출석기록이 없으면 에러를 반환
+    if (!leaderAttendance) {
+      throw new Error("출석 기록이 없습니다.");
+    }
 
     // 위치를 반환
     return `${leaderAttendance.latitude},${leaderAttendance.longitude}`;

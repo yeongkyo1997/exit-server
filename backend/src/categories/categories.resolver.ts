@@ -3,6 +3,11 @@ import { CategoriesService } from "./categories.service";
 import { Category } from "./entities/category.entity";
 import { CreateCategoryInput } from "./dto/create-category.input";
 import { UpdateCategoryInput } from "./dto/update-category.input";
+import { UseGuards } from "@nestjs/common";
+import {
+  GqlAdminGuard,
+  GqlAuthAccessGuard,
+} from "src/commons/auth/gql-auth.guard";
 
 @Resolver(() => Category)
 export class CategoriesResolver {
@@ -22,6 +27,8 @@ export class CategoriesResolver {
     return this.categoriesService.findOne(id);
   }
 
+  // 운영자만 쓸 수 있다 (ADMIN_USER_IDS, 비어 있으면 아무도 못 씀)
+  @UseGuards(GqlAuthAccessGuard, GqlAdminGuard)
   @Mutation(() => Category)
   createCategory(
     @Args("createCategoryInput") createCategoryInput: CreateCategoryInput
@@ -29,6 +36,8 @@ export class CategoriesResolver {
     return this.categoriesService.create(createCategoryInput);
   }
 
+  // 운영자만 쓸 수 있다 (ADMIN_USER_IDS, 비어 있으면 아무도 못 씀)
+  @UseGuards(GqlAuthAccessGuard, GqlAdminGuard)
   @Mutation(() => Category)
   updateCategory(
     @Args("updateCategoryInput") updateCategoryInput: UpdateCategoryInput
@@ -39,6 +48,8 @@ export class CategoriesResolver {
     );
   }
 
+  // 운영자만 쓸 수 있다 (ADMIN_USER_IDS, 비어 있으면 아무도 못 씀)
+  @UseGuards(GqlAuthAccessGuard, GqlAdminGuard)
   @Mutation(() => Boolean)
   removeCategory(
     @Args("name", { type: () => String }) name: string //
@@ -46,6 +57,8 @@ export class CategoriesResolver {
     return this.categoriesService.remove({ name });
   }
 
+  // 운영자만 쓸 수 있다 (ADMIN_USER_IDS, 비어 있으면 아무도 못 씀)
+  @UseGuards(GqlAuthAccessGuard, GqlAdminGuard)
   @Mutation(() => Category)
   restoreCategory(
     @Args("id", { type: () => String }) id: string //

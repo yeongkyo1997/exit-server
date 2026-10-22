@@ -1,7 +1,10 @@
-import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  UnprocessableEntityException,
+} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ElasticsearchService } from "@nestjs/elasticsearch";
-import { Cache } from "cache-manager";
 import { AttendanceService } from "src/attendance/attendance.service";
 import { BoardImage } from "src/board-images/entities/board-image.entity";
 import { Category } from "src/categories/entities/category.entity";
@@ -20,7 +23,7 @@ import {
   assertNoOngoingProject,
 } from "src/userBoard/userBoard.rules";
 import { User } from "src/users/entities/user.entity";
-import { DataSource, FindOptionsOrder, In, Repository } from "typeorm";
+import { DataSource, FindOptionsOrder, In, Not, Repository } from "typeorm";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { Board } from "./entities/board.entity";
 
@@ -54,9 +57,7 @@ export class BoardsService {
     private readonly pointHistoryRepository: Repository<PointHistory>,
     private readonly dataSource: DataSource,
     private readonly attendanceService: AttendanceService,
-    private readonly elasticsearchService: ElasticsearchService,
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache
+    private readonly elasticsearchService: ElasticsearchService
   ) {}
 
   findAll(filter: BoardFilter) {
@@ -136,8 +137,7 @@ export class BoardsService {
     const ids = searchResult.hits.hits.map((hit) => hit._id);
     const result = await this.findAllByIds(ids);
 
-    // redis에 검색어와 검색결과를 저장한다.
-    await this.cacheManager.set(search, result, { ttl: 60 });
+    // 검색 결과는 redis에 저장하지 않는다 (사용자가 정한 검색어가 키가 되면 다른 키를 덮어쓸 수 있다)
     return result;
   }
 
@@ -227,6 +227,8 @@ export class BoardsService {
 
     const savedInfo = await this.boardRepository.save({
       ...board,
+      // 생성 시점에 성공한 프로젝트는 있을 수 없다 (클라이언트 값 무시)
+      isSuccess: false,
       leader: leader.id,
       leaderNickname: leader.nickname,
       boardImage: boardImageResult,
@@ -256,6 +258,28 @@ export class BoardsService {
 
     if (originBoard.leader != leader.id) throw Error("작성자가 아닙니다.");
     this.assertBoardRules(updateBoard);
+
+    // 아래 검사는 거부될 때 분류 join 행이 지워지지 않도록 deleteJoinRows보다 먼저 한다
+    // 신청자·참여자가 생긴 뒤에는 보석금을 바꿀 수 없다 (정산 금액이 신청 시점 조건과 달라진다)
+    if (updateBoard.bail != null && updateBoard.bail !== originBoard.bail) {
+      const others = await this.userBoardRepository.count({
+        where: { board: { id: boardId }, user: { id: Not(leader.id) } },
+      });
+      if (others > 0)
+        throw Error(
+          "신청자나 참여자가 있는 프로젝트는 보석금을 바꿀 수 없습니다."
+        );
+      // 바꾼 보석금도 리더 포인트 안이어야 한다 (생성 때와 같은 규칙)
+      const leaderUser = await this.userRepository.findOne({
+        where: { id: leader.id },
+      });
+      assertEnoughPoint(leaderUser, { bail: updateBoard.bail });
+    }
+    if (
+      updateBoard.totalMember != null &&
+      updateBoard.totalMember < originBoard.countMember
+    )
+      throw Error("총 인원 수를 현재 참여 인원보다 적게 바꿀 수 없습니다.");
 
     // boardImage 확인보다 먼저 지운다 (기존 순서 유지)
     await deleteJoinRows(
@@ -293,12 +317,47 @@ export class BoardsService {
     const updatedInfo = await this.boardRepository.save({
       ...originBoard,
       ...updateBoard,
+      // 성공 처리된 프로젝트는 되돌릴 수 없다 (updateFinish 재실행으로 보상을 다시 받는 것을 막는다)
+      isSuccess: originBoard.isSuccess || updateBoard.isSuccess === true,
       tags: tagsResult,
       keywords: keywordsResult,
       categories: categoriesResult,
     });
 
     return updatedInfo;
+  }
+
+  // 리더 본인의 게시글인지 확인한다 (zip 업로드·삭제는 이 확인을 업로드보다 먼저 한다)
+  async findOwnedBoard({
+    boardId,
+    userId,
+  }: {
+    boardId: string;
+    userId: string;
+  }) {
+    // 값이 비면 TypeORM이 where 조건을 빼 버려 첫 행이 잡히므로 먼저 막는다
+    if (!boardId)
+      throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
+    const board = await this.boardRepository.findOne({
+      where: { id: boardId },
+    });
+    if (!board)
+      throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
+    if (!userId || board.leader !== userId)
+      throw new ForbiddenException("프로젝트 리더만 할 수 있습니다.");
+    return board;
+  }
+
+  // projectUrl만 바꾼다 (다른 필드는 updateBoard로만 바꾼다)
+  async updateProjectUrl({
+    boardId,
+    projectUrl,
+  }: {
+    boardId: string;
+    projectUrl: string;
+  }) {
+    await this.boardRepository.update({ id: boardId }, { projectUrl });
+    return projectUrl;
   }
 
   // 비교식은 그대로 둔다 (update에서는 값이 비어 있을 수 있다)

@@ -36,11 +36,17 @@ export class UserBoardResolver {
     });
   }
 
+  // 게시글 리더가 신청자(updateUserBoardInput.userId)를 수락한다
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => UserBoard)
   updateUserBoard(
+    @CurrentUser() user: AuthUser,
     @Args("updateUserBoardInput") updateUserBoardInput: UpdateUserBoardInput
   ) {
-    return this.userBoardService.update({ updateUserBoardInput });
+    return this.userBoardService.update({
+      requesterId: user.id,
+      updateUserBoardInput,
+    });
   }
 
   @UseGuards(GqlAuthAccessGuard)

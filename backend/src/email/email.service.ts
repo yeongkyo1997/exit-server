@@ -1,7 +1,7 @@
 import { CACHE_MANAGER, Inject, Injectable } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import * as nodemailer from "nodemailer";
-import { generateEmailCode } from "./email-code";
+import { issueEmailCode } from "src/commons/auth/email-verification";
 
 @Injectable()
 export class EmailService {
@@ -9,11 +9,14 @@ export class EmailService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache //
   ) {}
 
-  // 3분동안 유효한 이메일 토큰을 만들어 redis에 저장하고 반환
+  // 3분동안 유효한 이메일 토큰을 접두사 키(emailCode:<email>)에 저장하고 반환
+  // (대기 중인 번호가 있으면 같은 번호를 다시 쓰고, 같은 이메일로 60초 안에 다시 요청하면 거절한다)
   async issueToken(email: string) {
-    const emailToken = generateEmailCode();
-    await this.cacheManager.set(email, emailToken, { ttl: 180 });
-    return emailToken;
+    const result = await issueEmailCode(this.cacheManager, email);
+    if (result.status === "invalid") throw new Error("이메일을 입력해주세요.");
+    if (result.status === "cooldown")
+      throw new Error("잠시 후 다시 시도해주세요.");
+    return result.code;
   }
 
   async sendEmail({

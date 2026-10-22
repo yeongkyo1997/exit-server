@@ -18,13 +18,22 @@ import {
 import {
   accessTokenBlacklistKey,
   bearerToken,
+  isUserRevokedSince,
+  refreshCookieToken,
   refreshTokenBlacklistKey,
   toJwtPayload,
 } from "src/commons/auth/token.utils";
+import { normalizeEmail } from "src/commons/utils/email";
 import { hashPassword } from "src/commons/utils/password";
+
+// 가입 여부가 드러나지 않도록 로그인 실패 메시지는 하나로 통일한다
+const INVALID_LOGIN_MESSAGE = "이메일 또는 비밀번호가 일치하지 않습니다.";
 
 @Injectable()
 export class AuthsService {
+  // 미가입 이메일에도 같은 bcrypt 비교 시간을 쓰기 위한 더미 해시
+  private readonly dummyHash = hashPassword(randomBytes(16).toString("hex"));
+
   constructor(
     private readonly usersService: UsersService, //
     private readonly jwtService: JwtService, //
@@ -32,27 +41,35 @@ export class AuthsService {
   ) {}
 
   async login({ email, password, req, res }) {
-    // 1. email로 유저 찾기
-    const user = await this.usersService.findOneByEmailForAuth({ email });
-
-    // 2. 일치하는 유저가 없으면 에러
-    if (!user) {
-      throw new UnprocessableEntityException("존재하지 않는 이메일입니다.");
-    }
-
-    // 예전 소셜 가입자는 이메일이 비밀번호로 저장되어 있으므로 이메일과 같은 비밀번호는 거부
-    // (입력값은 대소문자만 바꿔도 같은 유저가 조회되므로 저장된 이메일과 비교한다)
-    if (password === user.email) {
+    // 레거시 소셜 가입자 안내는 계정 존재 여부와 무관하게 입력값만으로 판단한다
+    if (password === email) {
       throw new UnprocessableEntityException(
         "이메일과 같은 비밀번호로는 로그인할 수 없습니다. 비밀번호를 재발급 받아주세요."
       );
     }
 
-    // 3. 일치하는 유저가 있지만, 비밀번호가 일치하지 않으면!? 에러 발생
-    const isAuth = await bcrypt.compare(password, user.password);
-    if (!isAuth) {
-      throw new UnprocessableEntityException("비밀번호가 일치하지 않습니다.");
+    // 조회 전에 시각을 잡아 둔다: 옛 해시를 읽은 뒤 비밀번호 변경·재설정·탈퇴로 무효화되면 아래에서 거부한다
+    const loginStartedAt = Math.floor(Date.now() / 1000);
+
+    // 1. email로 유저 찾기
+    const user = await this.usersService.findOneByEmailForAuth({ email });
+
+    // 2. 가입 여부와 무관하게 bcrypt 비교를 정확히 한 번 수행해 응답 시간을 맞춘다
+    const isAuth = await bcrypt.compare(
+      password,
+      user ? user.password : await this.dummyHash
+    );
+
+    // 3. 미가입·비밀번호 불일치·저장 이메일과 같은 비밀번호(예전 소셜 가입자는 이메일이 비밀번호로 저장됨,
+    //    입력과 대소문자 등만 다른 경우)는 모두 같은 메시지로 거부한다
+    if (!user || !isAuth || password === user.email) {
+      throw new UnprocessableEntityException(INVALID_LOGIN_MESSAGE);
     }
+
+    // 로그인이 시작된 뒤(같은 초 포함) 무효화되었으면 옛 비밀번호로 확인한 로그인이므로 토큰을 발급하지 않는다.
+    // 이 검사와 서명(setRefreshToken 첫 줄에서 동기로 서명) 사이에는 await를 두지 않는다
+    if (await isUserRevokedSince(this.cacheManager, user.id, loginStartedAt))
+      throw new UnprocessableEntityException(INVALID_LOGIN_MESSAGE);
 
     // 4. 일치하는 유저가 있고, 비밀번호가 일치하면?!
     // (기존 동작 유지: await하지 않으므로 리프레시 토큰 발급이 실패해도 로그인은 성공한다)
@@ -64,9 +81,10 @@ export class AuthsService {
 
   // 가드 없이 두 토큰을 직접 검증한 뒤 블랙리스트에 등록한다
   async logout({ req }) {
+    // 가드·전략과 같은 추출기를 써야 블랙리스트 키가 검증된 토큰과 같은 문자열이 된다
     const accessToken = bearerToken(req.headers["authorization"]);
-    // refreshCookieToken()(replace)과 파싱 결과가 달라 기존 split("=")[1]을 그대로 쓴다 (기존 동작 유지)
-    const refreshToken = req.headers["cookie"].split("=")[1];
+    const refreshToken = refreshCookieToken(req.headers["cookie"]);
+    if (!accessToken || !refreshToken) throw new UnauthorizedException();
 
     // 인증이 되었는지 확인하는 로직
     try {
@@ -137,6 +155,13 @@ export class AuthsService {
     let user = await this.usersService.findOneByEmailForAuth({
       email: req.user.email,
     });
+
+    // DB collation은 악센트·대소문자를 무시하므로 victim@gmäil.com 같은 변형 주소도 기존 계정으로 조회된다.
+    // 공백·ASCII 대소문자 차이만 같은 주소로 인정하고, 그 밖에 다르면 그 계정으로 로그인시키지 않는다
+    if (user && normalizeEmail(user.email) !== normalizeEmail(req.user.email))
+      throw new UnauthorizedException(
+        "가입된 계정의 이메일과 일치하지 않습니다."
+      );
 
     if (!user) {
       // 소셜 가입자는 비밀번호 로그인을 쓰지 않으므로 추측할 수 없는 임의 값을 저장한다
