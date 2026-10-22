@@ -7,18 +7,24 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Cache } from "cache-manager";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
-import { DataSource, EntityManager, Repository } from "typeorm";
+import { Between, DataSource, EntityManager, Repository } from "typeorm";
 import { Attendance } from "./entities/attendance.entity";
 import * as geolib from "geolib";
 import { Board } from "src/boards/entities/board.entity";
 import { User } from "src/users/entities/user.entity";
 import { AuthUser } from "src/commons/type/context";
-import { toLocalDate } from "src/commons/utils/date";
+import { serviceDayRange, toLocalDate } from "src/commons/utils/date";
 import { leaderLocationKey } from "src/commons/cache-keys";
+import {
+  ATTENDANCE_RADIUS_METERS,
+  ATTENDANCE_WINDOW_SECONDS,
+} from "src/commons/constants";
 
-// 리더의 출석시간을 기준으로 10분 이후의 시간
+const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
+
+// 리더의 출석시간을 기준으로 출석 가능 시간(ATTENDANCE_WINDOW_SECONDS) 이후의 시간
 const attendanceWindowEnd = (attendedAt: Date) =>
-  toLocalDate(attendedAt.getTime() + 10 * 60000);
+  new Date(attendedAt.getTime() + ATTENDANCE_WINDOW_SECONDS * 1000);
 
 // where에 빈 값이 들어가면 TypeORM 0.3.9가 조건을 버려 아무 행이나 매칭되므로 조회 전에 거른다
 const isNonEmptyString = (value: unknown): value is string =>
@@ -92,11 +98,11 @@ export class AttendanceService {
       const isUser = await this.getLeaderLocation(user.id);
       if (isUser) throw new Error("이미 출석이 활성화되었습니다.");
 
-      // 레디스에 위도 경도를 저장하고 ttl을 10분으로 설정
+      // 레디스에 위도 경도를 저장하고 ttl을 출석 가능 시간으로 설정
       await this.cacheManager.set(
         leaderLocationKey(user.id),
         `${latitude},${longitude}`,
-        { ttl: 600 }
+        { ttl: ATTENDANCE_WINDOW_SECONDS }
       );
       await this.checkLocation({ manager, user, latitude, longitude, board });
       return true;
@@ -135,7 +141,11 @@ export class AttendanceService {
     };
 
     // 두 위치의 거리를 계산
-    const distance = geolib.isPointWithinRadius(start, userLocation, 100);
+    const distance = geolib.isPointWithinRadius(
+      start,
+      userLocation,
+      ATTENDANCE_RADIUS_METERS
+    );
 
     // 출석이 가능한 거리인지 확인
     if (!distance) {
@@ -146,7 +156,7 @@ export class AttendanceService {
         // 현재 시간 저장
         nickname: user.nickname,
         userId: user.id,
-        attendedAt: toLocalDate(),
+        attendedAt: new Date(),
         latitude: Number(latitude),
         longitude: Number(longitude),
         board,
@@ -206,14 +216,14 @@ export class AttendanceService {
     return board;
   }
 
-  // leader의 최근 출석기록을 가져온다 (닉네임은 중복될 수 있으므로 user id로 찾는다)
+  // 이 보드에서 leader의 최근 출석기록을 가져온다 (닉네임은 중복될 수 있으므로 user id로 찾는다)
   private async findLeaderLatestAttendance(boardId: string) {
     const board = await this.boardRepository.findOne({
       where: { id: boardId },
     });
 
     return this.attendanceRepository.findOne({
-      where: { userId: board.leader },
+      where: { userId: board.leader, board: { id: board.id } },
       order: { attendedAt: "DESC" },
     });
   }
@@ -221,10 +231,11 @@ export class AttendanceService {
   async getAttendanceCount({ boardId }) {
     const leaderAttendance = await this.findLeaderLatestAttendance(boardId);
 
-    // leader의 출석기록을 기준으로 10분 이내에 출석한 유저들의 수를 가져온다
+    // 이 보드에서 leader의 출석기록을 기준으로 출석 가능 시간 안에 출석한 유저들의 수를 가져온다
     const attendanceCount = await this.dataSource.manager
       .createQueryBuilder(Attendance, "attendance")
-      .where(
+      .where("attendance.boardId = :boardId", { boardId })
+      .andWhere(
         "attendance.attendedAt >= :attendedAt AND attendance.attendedAt <= :finish",
         {
           attendedAt: leaderAttendance.attendedAt,
@@ -252,8 +263,7 @@ export class AttendanceService {
 
     // 프로젝트 시작으로부터 몇 주차인지 가져온다.
     const weekCount = Math.floor(
-      (toLocalDate().getTime() - board.startAt.getTime()) /
-        (1000 * 60 * 60 * 24)
+      (toLocalDate().getTime() - board.startAt.getTime()) / MS_PER_WEEK
     );
     // 출석해야 하는 총 횟수를 계산한다.
     const totalAttendanceCount = weekCount * frequency * userCount;
@@ -280,18 +290,19 @@ export class AttendanceService {
     return this.getAllAttendancePercent({ board });
   }
 
-  // 이미 출석한 유저인지 확인: 출석 시각은 날짜만 저장되므로(toLocalDate), 이번에 저장할 값(오늘)으로
-  // 이 보드에 오늘 출석한 기록이 있는지 본다 (팀장의 최근 출석은 다른 날일 수 있어 기준으로 쓰지 않는다)
+  // 이미 출석한 유저인지 확인: 이 보드에 오늘(SERVICE_TIMEZONE 기준) 출석한 기록이 있는지 본다
+  // (팀장의 최근 출석은 다른 날일 수 있어 기준으로 쓰지 않는다)
   // (checkIn의 트랜잭션 안에서 같은 유저 행을 잠근 뒤 호출한다)
   private async hasAttended(
     manager: EntityManager,
     { board, userId }: { board: Board; userId: string }
   ) {
+    const { start, end } = serviceDayRange();
     const count = await manager.count(Attendance, {
       where: {
         userId,
         board: { id: board.id },
-        attendedAt: toLocalDate(),
+        attendedAt: Between(start, end),
       },
     });
 
@@ -303,8 +314,8 @@ export class AttendanceService {
     const leaderAttendance = await this.findLeaderLatestAttendance(boardId);
 
     const finish = attendanceWindowEnd(leaderAttendance.attendedAt);
-    // 현재 시간과 10분 이후의 시간을 비교하여 남은 시간을 반환
-    const remainingTime = finish.getTime() - toLocalDate().getTime();
+    // 현재 시간과 출석 마감 시간을 비교하여 남은 시간을 반환
+    const remainingTime = finish.getTime() - Date.now();
     if (remainingTime < 0) {
       throw new Error("출석 가능한 시간이 아닙니다.");
     }
@@ -383,14 +394,11 @@ export class AttendanceService {
       },
     });
 
-    // 당일 출석한 유저의 출석기록을 반환
-    return attendanceList.filter((attendance) => {
-      const today = toLocalDate();
-      return (
-        attendance.attendedAt.getFullYear() === today.getFullYear() &&
-        attendance.attendedAt.getMonth() === today.getMonth() &&
-        attendance.attendedAt.getDate() === today.getDate()
-      );
-    });
+    // 당일(SERVICE_TIMEZONE 기준) 출석한 유저의 출석기록을 반환
+    const { start, end } = serviceDayRange();
+    return attendanceList.filter(
+      (attendance) =>
+        attendance.attendedAt >= start && attendance.attendedAt < end
+    );
   }
 }

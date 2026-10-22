@@ -11,6 +11,12 @@ import { Category } from "src/categories/entities/category.entity";
 import { BOARD_RELATIONS } from "src/commons/relations";
 import { toLocalDate } from "src/commons/utils/date";
 import {
+  FAIL_REWARD_RATE,
+  NO_IMAGE_URL,
+  SUCCESS_ATTENDANCE_PERCENT,
+  SUCCESS_REWARD_RATE,
+} from "src/commons/constants";
+import {
   deleteJoinRows,
   findOrCreateByName,
 } from "src/commons/utils/repository";
@@ -289,7 +295,7 @@ export class BoardsService {
       boardId
     );
 
-    if (boardImage.url != "null") {
+    if (boardImage && boardImage.url != NO_IMAGE_URL) {
       await this.boardImageRepository.update(
         {
           id: originBoard.boardImage.id,
@@ -393,9 +399,11 @@ export class BoardsService {
       boardId
     );
 
-    // 출석률이 80% 이상이면 성공
-    const isSuccess = attendance >= 80;
-    const rate = isSuccess ? 1.1 : 0.4;
+    // 출석률이 SUCCESS_ATTENDANCE_PERCENT 이상이면 성공
+    const isSuccess = attendance >= SUCCESS_ATTENDANCE_PERCENT;
+    const rate = isSuccess ? SUCCESS_REWARD_RATE : FAIL_REWARD_RATE;
+    // point·amount는 int 컬럼이므로 소수점 이하는 버린다
+    const reward = Math.floor(board.bail * rate);
 
     await this.boardRepository.update(
       {
@@ -419,7 +427,7 @@ export class BoardsService {
           id: member.user.id,
         },
         {
-          point: member.user.point + board.bail * rate,
+          point: member.user.point + reward,
         }
       );
     }
@@ -428,7 +436,7 @@ export class BoardsService {
     for (const member of members) {
       await this.pointHistoryRepository.save({
         user: member.user,
-        amount: board.bail * rate,
+        amount: reward,
         pointHistory: isSuccess ? "프로젝트 성공 보상" : "프로젝트 실패 보상",
       });
     }
@@ -461,13 +469,13 @@ export class BoardsService {
         board,
       });
 
-    if (attendancePercent < 80) {
-      return "출석률이 80% 미만입니다.";
+    if (attendancePercent < SUCCESS_ATTENDANCE_PERCENT) {
+      return `출석률이 ${SUCCESS_ATTENDANCE_PERCENT}% 미만입니다.`;
     }
 
     // 종료일이 지났는지 확인한다.
     const now = toLocalDate();
     if (board.endAt < now) return "프로젝트를 최종적으로 성공했습니다.";
-    return "프로젝트가 종료되지 않았지만, 출석률이 80% 이상입니다.";
+    return `프로젝트가 종료되지 않았지만, 출석률이 ${SUCCESS_ATTENDANCE_PERCENT}% 이상입니다.`;
   }
 }

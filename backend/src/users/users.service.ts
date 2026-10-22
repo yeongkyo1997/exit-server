@@ -13,6 +13,7 @@ import { Category } from "src/categories/entities/category.entity";
 import { UserBoard } from "src/userBoard/entities/userBoard.entity";
 import { BOARD_RELATIONS, USER_RELATIONS } from "src/commons/relations";
 import { toLocalDate } from "src/commons/utils/date";
+import { NO_IMAGE_URL } from "src/commons/constants";
 import { hashPassword } from "src/commons/utils/password";
 import {
   deleteJoinRows,
@@ -273,7 +274,7 @@ export class UsersService {
       select: { id: true },
       relations: ["userImage"],
     });
-    const result = users.filter((user) => user.userImage.url !== "null");
+    const result = users.filter((user) => user.userImage.url !== NO_IMAGE_URL);
 
     const randomUser = result[Math.floor(Math.random() * result.length)];
     // 후보가 없을 때 id 없이 조회하면 첫 번째 유저가 나오므로 바로 반환

@@ -45,8 +45,8 @@ export class TempService {
       DELETE FROM board_tags_tag;
       DELETE FROM user_tags_tag;
       DELETE FROM board_categories_category;
-      DELETE FROM tags;
-      DELETE FROM categories;
+      DELETE FROM tag;
+      DELETE FROM category;
     `);
   }
 }
