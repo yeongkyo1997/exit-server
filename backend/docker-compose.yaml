@@ -19,7 +19,7 @@ services:
     image: mysql:latest
     environment:
       MYSQL_DATABASE: "teamdocker"
-      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_ROOT_PASSWORD: "${DATABASE_PASSWORD}"
       TZ: Asia/Seoul
     ports:
       - 3306:3306

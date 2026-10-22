@@ -13,6 +13,7 @@ import { randomBytes } from "crypto";
 import {
   ACCESS_TOKEN_TTL,
   ALLOWED_ORIGINS,
+  NO_IMAGE_URL,
   REFRESH_TOKEN_TTL,
 } from "src/commons/constants";
 import {
@@ -118,8 +119,6 @@ export class AuthsService {
       expiresIn: REFRESH_TOKEN_TTL,
     });
 
-    // 배포환경 (팀프로젝트)
-    res.setHeader("Access-Control-Allow-Origin", "https://ex1t.shop");
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader(
       "Access-Control-Allow-Methods",
@@ -134,9 +133,13 @@ export class AuthsService {
       "Access-Control-Allow-Headers",
       "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With, Origin, Accept,Access-Control-Requested-Method, Access-Control-Request-Headers"
     );
+    // COOKIE_DOMAIN이 없으면 domain 속성을 빼서 응답한 호스트에만 쿠키를 둔다
+    const cookieDomain = process.env.COOKIE_DOMAIN
+      ? `; domain=${process.env.COOKIE_DOMAIN}`
+      : "";
     res.setHeader(
       "Set-Cookie",
-      `refreshToken=${refreshToken}; path=/; domain=.mainproject04.shop; httpOnly; SameSite=None; Secure`
+      `refreshToken=${refreshToken}; path=/${cookieDomain}; httpOnly; SameSite=None; Secure`
     );
   }
 
@@ -170,7 +173,7 @@ export class AuthsService {
       const createUserInput = req.user;
 
       createUserInput["userImage"] = {
-        url: "null",
+        url: NO_IMAGE_URL,
       };
 
       user = await this.usersService.create({
@@ -181,6 +184,6 @@ export class AuthsService {
 
     await this.setRefreshToken({ user, res, req });
 
-    res.redirect("http://localhost:3000");
+    res.redirect(process.env.FRONTEND_URL || "http://localhost:3000");
   }
 }

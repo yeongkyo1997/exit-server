@@ -50,8 +50,9 @@ import { JwtGlobalModule } from "./commons/auth/jwt-global.module";
       password: process.env.DATABASE_PASSWORD,
       database: process.env.DATABASE_DATABASE,
       entities: [__dirname + "/**/*.entity.*"],
-      synchronize: true,
-      logging: true,
+      // 마이그레이션이 없어 기본은 기존처럼 켠다. 운영에서는 env로 "false"를 줘서 끈다
+      synchronize: process.env.DB_SYNCHRONIZE !== "false",
+      logging: process.env.DB_LOGGING !== "false",
       // timezone: "Z",
     }),
     CacheModule.register<RedisClientOptions>({

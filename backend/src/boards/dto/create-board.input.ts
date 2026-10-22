@@ -1,6 +1,7 @@
 import { InputType, Field, Int } from "@nestjs/graphql";
 import { CreateBoardImageInput } from "src/board-images/dto/create-board-image.input";
 import { Max, Min } from "class-validator";
+import { NO_IMAGE_URL } from "src/commons/constants";
 
 @InputType()
 export class CreateBoardInput {
@@ -42,7 +43,7 @@ export class CreateBoardInput {
   @Field(() => Date)
   closedAt: Date;
 
-  @Field(() => CreateBoardImageInput, { defaultValue: { url: "null" } })
+  @Field(() => CreateBoardImageInput, { defaultValue: { url: NO_IMAGE_URL } })
   boardImage: CreateBoardImageInput;
 
   @Field(() => [String], { nullable: true })
