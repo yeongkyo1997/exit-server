@@ -158,6 +158,19 @@ export class UsersService {
     const { userImage, tags, keywords, categories, ...updateUser } =
       updateUserInput;
 
+    // 닉네임은 채팅 상대·출석·프로필 조회의 식별자로 쓰이므로 다른 유저와 겹치면 안 된다 (create와 같은 검사).
+    // 바뀔 때만 확인한다: 이미 다른 유저와 겹쳐 있던 기존 닉네임을 그대로 보내는 프로필 수정은 막지 않는다
+    if (
+      typeof updateUser.nickname === "string" &&
+      updateUser.nickname !== originUser.nickname
+    ) {
+      const findNickname = await this.userRepository.findOne({
+        where: { nickname: updateUser.nickname },
+      });
+      if (findNickname && findNickname.id !== userId)
+        throw new ConflictException("이미 존재하는 닉네임입니다.");
+    }
+
     if (userImage) {
       await this.userImageRepository.update(
         {
@@ -187,13 +200,24 @@ export class UsersService {
       categories
     );
 
-    return this.userRepository.save({
-      ...originUser,
+    // point와 password는 저장하지 않는다. 처음에 읽은 값을 그대로 쓰면 그사이 결제로 충전된 포인트나
+    // 바뀐 비밀번호를 옛 값으로 되돌린다 (save는 undefined인 컬럼을 건드리지 않는다)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { point, password, ...userWithoutSecrets } = originUser;
+    const savedUser = await this.userRepository.save({
+      ...userWithoutSecrets,
       ...updateUser,
       tags: saveTags,
       keywords: saveKeywords,
       categories: saveCategories,
     });
+
+    // 응답의 point(Int!)는 저장한 뒤 새로 읽은 값으로 채운다
+    const currentUser = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { id: true, point: true },
+    });
+    return { ...savedUser, point: currentUser ? currentUser.point : point };
   }
 
   async remove({ userId }) {
@@ -227,15 +251,20 @@ export class UsersService {
     return false;
   }
 
+  // 평문 비밀번호를 받아 여기서 한 번만 해싱한다 (호출하는 쪽에서 해싱하지 않는다)
   async updatePassword({ email, password }) {
-    const findUser = await this.userRepository.findOne({ where: { email } });
+    // email이 없으면 null을 반환하는 조회를 써서 where가 빠진 '첫 유저' 조회를 막는다
+    const findUser = await this.findOneByEmailForAuth({ email });
+    if (!findUser) throw new NotFoundException("존재하지 않는 유저입니다.");
 
     const hashedPassword = await hashPassword(password);
 
-    return this.userRepository.save({
-      ...findUser,
-      password: hashedPassword,
-    });
+    // 비밀번호 컬럼만 바꾼다 (해싱하는 동안 결제로 충전된 point를 읽어 둔 옛 값으로 덮어쓰지 않게)
+    await this.userRepository.update(
+      { id: findUser.id },
+      { password: hashedPassword }
+    );
+    return { ...findUser, password: hashedPassword };
   }
 
   async fetchUserRandom() {

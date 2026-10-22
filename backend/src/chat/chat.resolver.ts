@@ -31,7 +31,11 @@ export class ChatResolver {
 
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => [ChatMessage])
-  fetchLogs(@Args("room") room: string) {
-    return this.chatService.load({ room });
+  fetchLogs(
+    @Args("room") room: string, //
+    @CurrentUser() user: AuthUser
+  ) {
+    // 채팅방 참여자만 대화 내역을 볼 수 있다 (아니면 403)
+    return this.chatService.load({ room, currentUser: user });
   }
 }

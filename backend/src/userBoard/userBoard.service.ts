@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -85,47 +86,62 @@ export class UserBoardService {
     });
   }
 
-  async update({ updateUserBoardInput }) {
+  // 게시글 리더가 신청자를 수락한다 (거절·내보내기는 removeUserBoards)
+  async update({ requesterId, updateUserBoardInput }) {
     const { isAccepted, boardId, userId } = updateUserBoardInput;
 
-    // 이미 참석한 프로젝트인지 확인
-    const checkAccepted = await this.userBoardRepository.findOne({
-      where: {
-        user: { id: userId },
-        board: { id: boardId },
-        isAccepted: true,
-      },
-    });
+    // 값이 비면 TypeORM이 where 조건을 빼 버려 엉뚱한 행이 잡히므로 먼저 막는다
+    if (!boardId || !userId)
+      throw new BadRequestException("boardId와 userId가 필요합니다.");
 
-    // 이미 참석한 프로젝트라면 에러
-    if (checkAccepted) {
-      return new Error("이미 참석한 프로젝트입니다.");
-    }
-
-    const getId = await this.userBoardRepository.findOne({
-      where: {
-        user: { id: userId },
-        board: { id: boardId },
-      },
-      relations: ["board", "user"],
-    });
-
-    const boardInfo = await this.boardRepository.findOne({
+    const board = await this.boardRepository.findOne({
       where: { id: boardId },
     });
+    if (!board) throw new NotFoundException("존재하지 않는 프로젝트입니다.");
+    if (!requesterId || board.leader !== requesterId)
+      throw new ForbiddenException(
+        "프로젝트 리더만 신청을 처리할 수 있습니다."
+      );
 
-    if (isAccepted) {
-      await this.boardRepository.save({
-        ...boardInfo,
-        countMember: boardInfo.countMember + 1,
-      });
+    const application = await this.userBoardRepository.findOne({
+      where: { user: { id: userId }, board: { id: boardId } },
+      relations: ["board", "user"],
+    });
+    if (!application) throw new NotFoundException("신청 내역이 없습니다.");
+    if (application.isAccepted)
+      throw new ConflictException("이미 참석한 프로젝트입니다.");
+
+    // 수락이 아니면 바꿀 것이 없다
+    if (!isAccepted) return application;
+
+    if (board.countMember >= board.totalMember)
+      throw new BadRequestException("모집 인원이 가득 찼습니다.");
+    await assertNoOngoingProject(this.userBoardRepository, userId);
+
+    // 정원 안에서만 인원을 늘린다 (동시에 여러 명을 수락해도 totalMember를 넘지 않게)
+    const increased = await this.boardRepository
+      .createQueryBuilder()
+      .update(Board)
+      .set({ countMember: () => "countMember + 1" })
+      .where("id = :id AND countMember < totalMember", { id: boardId })
+      .execute();
+    if (!increased.affected)
+      throw new BadRequestException("모집 인원이 가득 찼습니다.");
+
+    // 같은 신청이 동시에 두 번 수락돼도 한 번만 반영되도록 아직 미수락인 행만 바꾼다
+    const accepted = await this.userBoardRepository.update(
+      { id: application.id, isAccepted: false },
+      { isAccepted: true }
+    );
+    if (!accepted.affected) {
+      await this.boardRepository.decrement({ id: boardId }, "countMember", 1);
+      throw new ConflictException("이미 참석한 프로젝트입니다.");
     }
 
-    return await this.userBoardRepository.save({
-      id: getId.id,
-      board: boardInfo,
-      user: await this.userRepository.findOne({ where: { id: userId } }),
-      isAccepted,
+    // UserBoard의 board/user는 non-null 필드라 관계를 붙여 다시 조회해 돌려준다
+    return this.userBoardRepository.findOne({
+      where: { id: application.id },
+      relations: ["board", "user"],
     });
   }
 

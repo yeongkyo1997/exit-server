@@ -3,7 +3,7 @@ import { BoardsService } from "./boards.service";
 import { Board } from "./entities/board.entity";
 import { CreateBoardInput } from "./dto/create-board.input";
 import { UpdateBoardInput } from "./dto/update-board.input";
-import { UnprocessableEntityException, UseGuards } from "@nestjs/common";
+import { UseGuards } from "@nestjs/common";
 import { GqlAuthAccessGuard } from "src/commons/auth/gql-auth.guard";
 import { CurrentUser } from "src/commons/auth/current-user.decorator";
 import { AuthUser } from "src/commons/type/context";
@@ -162,31 +162,33 @@ export class BoardsResolver {
     return this.boardsService.onClickBoard({ boardId });
   }
 
+  // 리더만, 리더 확인을 업로드보다 먼저 한다. projectUrl만 바꾼다
+  // (updateBoardInput은 스키마 호환을 위해 남겨 두지만 쓰지 않는다. 다른 필드는 updateBoard로 바꾼다)
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => String)
   async uploadZipFile(
     @Args("boardId") boardId: string, //
-    @Args("updateBoardInput") updateBoardInput: UpdateBoardInput,
-    @Args({ name: "zip", type: () => [GraphQLUpload] }) zip: FileUpload[]
+    @Args("updateBoardInput") _updateBoardInput: UpdateBoardInput,
+    @Args({ name: "zip", type: () => [GraphQLUpload] }) zip: FileUpload[],
+    @CurrentUser() user: AuthUser
   ) {
-    const url = await this.filesService.upload({ file: zip, type: "zip" });
-    const board = await this.boardsService.findOne({ boardId });
-    updateBoardInput.projectUrl = url[0].toString();
-
-    const result = await this.boardsService.update({
-      updateBoardInput,
-      leader: board.leader,
-      boardId,
+    await this.boardsService.findOwnedBoard({ boardId, userId: user.id });
+    const [url] = await this.filesService.upload({
+      file: zip.slice(0, 1),
+      type: "zip",
     });
-    return result.projectUrl;
+    return this.boardsService.updateProjectUrl({ boardId, projectUrl: url });
   }
 
+  // 리더만 projectUrl을 비울 수 있다 (Board.projectUrl의 기본값이 "")
+  @UseGuards(GqlAuthAccessGuard)
   @Mutation(() => Boolean)
   async removeZipFile(
-    @Args("boardId") boardId: string //
+    @Args("boardId") boardId: string, //
+    @CurrentUser() user: AuthUser
   ) {
-    const board = await this.boardsService.findOne({ boardId });
-    if (!board) {
-      throw new UnprocessableEntityException("존재하지 않는 프로젝트입니다.");
-    }
+    await this.boardsService.findOwnedBoard({ boardId, userId: user.id });
+    await this.boardsService.updateProjectUrl({ boardId, projectUrl: "" });
+    return true;
   }
 }

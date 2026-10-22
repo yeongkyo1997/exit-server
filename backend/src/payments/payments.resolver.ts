@@ -15,7 +15,7 @@ export class PaymentsResolver {
   @UseGuards(GqlAuthAccessGuard)
   @Query(() => [Payment])
   async fetchPayments(@CurrentUser() user: AuthUser) {
-    return this.paymentsService.findByUser({ user });
+    return this.paymentsService.findByUser({ userId: user.id });
   }
 
   @UseGuards(GqlAuthAccessGuard)
@@ -33,7 +33,9 @@ export class PaymentsResolver {
   async createCancel(
     @Args("impUid") impUid: string,
     @Args({ name: "amount", type: () => Int }) amount: number,
-    @Args("user") user: string
+    // 하위 호환용으로 스키마에만 남긴다. 값은 쓰지 않고 로그인 사용자 기준으로 처리한다
+    @Args("user") _legacyUser: string,
+    @CurrentUser() user: AuthUser
   ) {
     return this.paymentsService.cancel({ impUid, amount, user });
   }

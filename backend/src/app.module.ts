@@ -26,6 +26,7 @@ import { AttendanceModule } from "./attendance/attendance.module";
 import { TempModule } from "./temp/temp.module";
 import { PointHistoryModule } from "./point-history/point-history.module";
 import { ALLOWED_ORIGINS } from "./commons/constants";
+import { JwtGlobalModule } from "./commons/auth/jwt-global.module";
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ALLOWED_ORIGINS } from "./commons/constants";
       url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
       isGlobal: true,
     }),
+    JwtGlobalModule, // JwtService를 모든 모듈에서 쓴다 (필드 공개 범위·채팅 소켓 인증)
     AuthsModule,
     UsersModule,
     BoardsModule,

@@ -41,21 +41,44 @@ export class AttendanceResolver {
     return this.attendanceService.getRemainingTime({ boardId });
   }
 
+  // 출석 위치(좌표)는 로그인한 그 프로젝트의 팀장이나 승인된 팀원만 볼 수 있다
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => String)
-  getLocationCrew(
+  async getLocationCrew(
     @Args("boardId") boardId: string, //
-    @Args("userId") userId: string
+    @Args("userId") userId: string,
+    @CurrentUser() user: AuthUser
   ) {
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: user.id,
+    });
     return this.attendanceService.getLocationCrew({ boardId, userId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => String)
-  async getLocationLeader(@Args("boardId") boardId: string) {
+  async getLocationLeader(
+    @Args("boardId") boardId: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: user.id,
+    });
     return this.attendanceService.getLocationLeader({ boardId });
   }
 
+  @UseGuards(GqlAuthAccessGuard)
   @Query(() => [Attendance])
-  async fetchAttendance(@Args("boardId") boardId: string) {
+  async fetchAttendance(
+    @Args("boardId") boardId: string,
+    @CurrentUser() user: AuthUser
+  ) {
+    await this.attendanceService.assertBoardMember({
+      boardId,
+      userId: user.id,
+    });
     return this.attendanceService.getAttendanceList({ boardId });
   }
 }
