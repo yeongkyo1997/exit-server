@@ -33,6 +33,10 @@ const chatRequiresAuth = () => process.env.CHAT_REQUIRE_AUTH === "true";
 // 로그인한 소켓을 접속 때 넣어 두는 개인 room (채팅방 id인 v4 uuid, socket id와 겹치지 않는다)
 const userRoom = (userId: string) => `user:${userId}`;
 
+// 인증된 소켓의 토큰을 주기적으로 다시 확인하는 간격.
+// 메시지를 보내지 않고 받기만 하는 소켓도 로그아웃·무효화·만료 뒤 이 시간 안에 끊긴다
+const SOCKET_AUTH_RECHECK_MS = 60 * 1000;
+
 // CORS는 polling에만 적용되고 websocket upgrade에는 적용되지 않는다.
 // 접근 통제는 핸드셰이크 토큰 검증과 채팅방 참여자 확인이 담당한다
 @WebSocketGateway({
@@ -60,16 +64,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
   // 토큰은 io(url, { auth: { token } }) 또는 Authorization 헤더로 받는다 (쿼리스트링은 받지 않고, 토큰은 로그에 남기지 않는다)
   afterInit(server: Namespace) {
     server.use((socket, next) => {
-      verifyAccessToken(
-        this.jwtService,
-        this.cacheManager,
-        socketAccessToken(socket.handshake)
-      ).then(
+      const token = socketAccessToken(socket.handshake);
+      verifyAccessToken(this.jwtService, this.cacheManager, token).then(
         (user) => {
           // CHAT_REQUIRE_AUTH === "true"(정확히)일 때만 미인증 소켓을 거부한다
           if (!user && chatRequiresAuth())
             return next(new Error("Unauthorized"));
           socket.data.user = user; // AuthUser | null (null = 미인증, 플래그가 꺼져 있을 때만)
+          // 인증된 소켓은 토큰을 보관해 메시지마다·주기적으로 다시 확인한다 (로그아웃·무효화·만료)
+          socket.data.token = user ? token : null;
           next();
         },
         () => next(new Error("Unauthorized"))
@@ -77,10 +80,34 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
     });
   }
 
-  // 로그인한 소켓은 자기 개인 room에 넣는다 (접속 뒤에 생긴 채팅방의 메시지도 입장 없이 받는다)
+  // 로그인한 소켓은 자기 개인 room에 넣는다 (접속 뒤에 생긴 채팅방의 메시지도 입장 없이 받는다).
+  // 받기만 하는 소켓도 토큰이 무효가 되면 끊기도록 주기적으로 다시 확인한다
   handleConnection(client: Socket) {
     const me: AuthUser | null = client.data.user ?? null;
-    if (me?.id) client.join(userRoom(me.id));
+    if (!me?.id) return;
+
+    client.join(userRoom(me.id));
+    const timer = setInterval(() => {
+      this.isTokenStillValid(client).then(
+        (valid) => valid || client.disconnect(true),
+        () => client.disconnect(true)
+      );
+    }, SOCKET_AUTH_RECHECK_MS);
+    timer.unref();
+    client.once("disconnect", () => clearInterval(timer));
+  }
+
+  // 인증된 소켓의 토큰이 지금도 유효한지 접속 때와 같은 규칙(서명·만료·로그아웃 블랙리스트·유저 단위 무효화)으로 다시 확인한다
+  private async isTokenStillValid(client: Socket) {
+    const me: AuthUser | null = client.data.user ?? null;
+    if (!me) return true; // 미인증 소켓(플래그가 꺼져 있을 때만 접속된다)은 확인할 토큰이 없다
+
+    const current = await verifyAccessToken(
+      this.jwtService,
+      this.cacheManager,
+      client.data.token
+    );
+    return !!current && current.id === me.id;
   }
 
   // 보낸 사람을 정하고 이 채팅방의 참여자인지 확인한다.
@@ -98,6 +125,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
 
     const me: AuthUser | null = client.data.user ?? null;
     if (me) {
+      // 접속 뒤 로그아웃·무효화(비밀번호 변경·탈퇴)·만료된 토큰이면 처리하지 않고 연결을 끊는다
+      if (!(await this.isTokenStillValid(client))) {
+        client.disconnect(true);
+        throw new WsException("Unauthorized");
+      }
+
       if (
         typeof me.id !== "string" ||
         !me.id ||
